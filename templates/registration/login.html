@@ -1,0 +1,48 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+
+<div style="width:200px; margin: auto">
+{% if next %}
+  {% if user.is_authenticated %}
+    <p>Your account doesn't have access to this page. To proceed,
+    please login with an account that has access.</p>
+  {% else %}
+    <p>Необходима авторизация</p>
+  {% endif %}
+{% endif %}
+</div>
+<form method="post" action="{% url 'login' %}">
+{% csrf_token %}
+
+
+<table style="font-size:22px; width: auto; margin: 100px auto 0; background: #def; padding: 5px; border: 3px solid #aaa">
+<tr>
+	<td colspan=2 style="text-align: center; padding-bottom: 5px">
+{% if form.errors %}
+  <div>Имя с ошибкой. Или пароль. Или оба.</div>
+{% endif %}
+	</td>
+</tr>
+
+
+<tr>
+  <td>Имя</td>
+  <td>{{ form.username }}</td>
+</tr>
+
+<tr>
+  <td>Пароль</td>
+  <td>{{ form.password }}</td>
+</tr>
+
+<tr>
+	<td colspan=2 style="text-align: center;  padding-top: 5px">
+		<input type="submit" value="Login" />
+		<input type="hidden" name="next" value="{{ next }}" />
+	</td>
+</tr>
+</table>
+</form>
+
+{% endblock %}

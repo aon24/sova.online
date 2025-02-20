@@ -1,0 +1,13 @@
+.c_dayx  {font-weight: bold; color: #048; background: #eeeeee;} /* gray */
+
+.c_dayx1 {font-weight: bold; color: #048; background: #d4ffd4;} /* green */
+.c_dayxL {font-weight: bold; color: #048; background: #ffd4d4;} /* розовый */
+.c_dayxT {font-weight: bold; color: #048; background: #d4d4ff;} /* голубой */
+.c_dayxP1 {font-weight: bold; color: #048; background: #99cc99;} /* зеленый+ */
+.c_dayxP2 {font-weight: bold; color: #048; background: #99cc99;} /* зеленый+ */
+.c_dayxE {font-weight: bold; color: #048; background: #cccc99;} /* бежевый */
+.c_dayxCL {font-weight: bold; color: #048; background: #eaff00;} /* gelb */
+
+.c_dayx > div, .c_dayx1 > div, .c_dayxL > div, .c_dayxT > div, .c_dayxP > div, .c_dayxE > div, .c_dayxCL > div {
+	font-weight: normal; color: black;
+}
