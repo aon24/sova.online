@@ -3,14 +3,9 @@ Created on 2024
 
 @author: aon24
 '''
-from arm.tools.DC import well, toWell, config
 from arm.api.forms.formTools import style, _div, _btnD, _lc, _field, labField, _a
 from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
-from arm.tools.common import generate_cv_code
-from arm.settings import ALLOWED_HOSTS
-
-import uuid
 
 # *** *** ***
 
@@ -27,7 +22,7 @@ class etc(Page):
 
 # *** *** ***
 
-    def office(self, vkAuth):
+    def office(self):
         return _div(
             children=[
             _div(**style(margin='10px auto', height=1, width=250, border='0 solid #036', borderTopWidth=1)),
@@ -40,7 +35,6 @@ class etc(Page):
             _btnD('3 D L', 'previewArm', 'newForm=v_more&title=Лендинговые страницы',
                 title='Лендинговые страницы', className='rsvTop',
                 **style(width=150, margin='10px auto')),
-            # _a('VK: обновить доступ', href=vkAuth, target='_blank', **style(margin='10px auto')),
 
             _div(**style(margin='4px auto', height=1, width=250, border='0 solid #036', borderTopWidth=1)),
 
@@ -50,21 +44,6 @@ class etc(Page):
         ])
 
     def page(self, request):
-        url = 'https://id.vk.com/authorize'
-        state = uuid.uuid4().hex
-        toWell(state, 'vkState')
-
-        param = '&'.join([
-            f'response_type=code',
-            f'client_id={config.vk_app_id}',
-            f'redirect_uri=https://{ALLOWED_HOSTS[0]}/api/vkcallback/',
-            f'state={state}',
-            f'code_challenge={generate_cv_code()}',  # возвращает code_challenge и сохраняет toWell(code_verifier, 'code_verifier')
-            f'code_challenge_method=s256',
-            'scope=friends groups',
-        ])
-        vkAuth = f'{url}?{param}'
-
         _etc = [
             _div(**style(height='100%', overflow='auto', textAlign='center'), children=[
                 _lc('Размер'),
@@ -83,7 +62,7 @@ class etc(Page):
                     _btnD('\xa0очистить\xa0', 'reset_etc', className='toolbar-button'),
                 ]),
 
-                request.dcUK._staff and self.office(vkAuth)
+                request.dcUK._staff and self.office()
             ])
         ]
         

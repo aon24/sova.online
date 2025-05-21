@@ -4,19 +4,11 @@ AON 2020
 """
 
 from arm.tools.first import err
-from arm.tools.DC import toWell
 
 import re, os
 from datetime import datetime
 import traceback
 
-import uuid
-import base64
-import hashlib
-
-# *** *** ***
-
-sovaOnline = 'sova.online'
 
 # *** *** ***
 
@@ -24,23 +16,6 @@ busyFunc = {}
 
 # *** *** ***
 
-
-def cleanPhone(phone):
-    phone = re.sub(r'[^\d]', '', phone or '')
-    if phone:
-        return '+7' + phone[1:] if phone[0] == '8' else '+' + phone
-    return ''
-
-
-def generate_cv_code():
-    code_verifier = f'{uuid.uuid4()}-{uuid.uuid4()}'
-    toWell(code_verifier, 'code_verifier')
-
-    hash_object = hashlib.sha256(code_verifier.encode())
-    hash_bytes = hash_object.digest()
-    return base64.urlsafe_b64encode(hash_bytes).decode('utf-8').rstrip('=')
-
-# *** *** ***
 
 
 def checkBusy(func):
@@ -62,6 +37,15 @@ def checkBusy(func):
 
 # *** *** ***
 
+def cleanPhone(phone):
+    phone = re.sub(r'[^\d]', '', phone or '')
+    if phone:
+        return '+7' + phone[1:] if phone[0] == '8' else '+' + phone
+    return ''
+
+
+# *** *** ***
+
 
 def now(dlm='.'):
     if dlm == '.':
@@ -70,10 +54,6 @@ def now(dlm='.'):
         return datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
     else:
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    # if dlm == '.':
-        # return datetime.now(tz=get_current_timezone()).strftime('%d.%m.%Y %H:%M:%S')
-    # else:
-        # return datetime.now(tz=get_current_timezone()).strftime('%Y-%m-%d %H:%M:%S')
 
 # *** *** ***
 
@@ -168,73 +148,6 @@ def sndErr(func):
             err(f'{ex}\n{traceback.format_exc()}', cat=f'Y-{func.__name__}')
 
     return wrapper
-
-# *** *** ***
-
-
-def setLevel(inh, d):
-
-    def incAA(s):  # увеличивает заданный в s o_level
-        if len(s) < 3 or not('.aa' <= s < '.zz'):
-            return '.aa'
-
-        if ord(s[2]) < ord('z'):
-            return '.' + s[1] + chr(ord(s[2]) + 1)
-        else:
-            return '.' + chr(ord(s[1]) + 1) + 'a'
-
-    # *** *** ***
-
-    dic = {}
-    first = d.form[0].lower()
-
-    for r in d.db.getResponses(d.ref):
-        if r.form.split('.')[0] == d.form and r.o_level and r.dir != 'd':
-            dic[r.o_level] = r
-
-    if not dic:
-        return first + '.aa'
-
-    sk = sorted(dic.keys())
-
-    if not (inh.ref and inh.o_level):
-        return first + incAA(sk[-1][1:])
-
-    io_level = inh.o_level
-    lol = len(io_level)
-
-    for i in range(len(sk)):
-        if io_level == dic[sk[i]].o_level[:lol]:  # ищем свою ветку
-
-            while i < len(sk):
-                if io_level != dic[sk[i]].o_level[:lol]:  # своя ветка кончилась ?
-                    if io_level == dic[sk[i - 1]].F('o_level'):
-                        return io_level + '.aa'
-                    return io_level + incAA(sk[i - 1][lol:])
-
-                i += 1
-
-            if io_level == dic[sk[i - 1]].o_level:
-                return io_level + '.aa'
-            return io_level + incAA(sk[i - 1][lol:])
-
-    return first + incAA(sk[-1][1:])
-
-# *** *** ***
-
-
-user_regex = re.compile(
-    r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z]+)*\Z"  # dot-atom
-    r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-\011\013\014\016-\177])*"\Z)',  # quoted-string
-    re.IGNORECASE)
-domain_regex = re.compile(
-    r'((?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+)(?:[A-Z0-9-]{2,63}(?<!-))\Z',
-    re.IGNORECASE)
-
-
-def emailValidator(value):
-    user_part, _, domain_part = value.partition('@')
-    return user_regex.match(user_part) and domain_regex.match(domain_part)
 
 # *** *** ***
 

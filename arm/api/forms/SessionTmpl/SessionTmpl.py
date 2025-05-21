@@ -10,7 +10,6 @@ from arm.tools.DC import well, config, DC
 from arm.api.forms.formTools import style, _div, _field, _btnD, _teg, _tabNew
 from arm.api.forms.classPage import Page
 from arm.api.forms.YandexDisk.YandexTools import makeVideoY, getVideoUrlY, testYDFolder, getYDisk, y_makeFolder
-from arm.api.forms.YandexDisk.VKTools import makeVideoVK, getVideoUrlVK
 from arm.tools.httpMisc import nvResponse
 
 import json
@@ -54,13 +53,8 @@ class SessionTmpl(Page):
 
         if dcUK.cmd == 'getVideoUrlY':
             return getVideoUrlY(dcUK)
-        if dcUK.cmd == 'getVideoUrlVK':
-            return getVideoUrlVK(dcUK)
-
         elif dcUK.cmd == 'makeVideoY':
             data = makeVideoY(dcUK)
-        elif dcUK.cmd == 'makeVideoVK':
-            data = makeVideoVK(dcUK)
         else:
             data = f'invalid cmd: {dcUK.cmd}'
             err(f'invalid cmd: {dcUK.cmd}', cat='SessionTmpl.getData')

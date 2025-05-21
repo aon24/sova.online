@@ -17,11 +17,10 @@ Created on 2020.
 from .a_screens import blankScreens
 from .fields import getField
 from arm.tools.first import err
-from arm.tools.dbToolkit.Book import histFromDB
+from arm.tools.dbToolkit.Book import histFromDB, snoDB
 from arm.tools.loadWell import loadLanding
 from arm.settings import BASE_DIR
 
-from arm.api.forms.sno import snoDB
 from arm.api.forms.formTools import style, _div, _field
 from arm.api.forms.toolbars import toolbar
 from arm.api.forms.classPage import Page

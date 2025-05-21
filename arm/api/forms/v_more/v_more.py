@@ -50,7 +50,7 @@ class v_more(Page):
     def page(self, request):
         self.upField = _div(children=[
             _div(className='toolbar',children=[toolbar.close_]),
-            _field('key', 'band', swell('3dKeys') + ['все'], recalcText=1, **style(margin='auto', display='table', width='auto'))
+            _field('key', 'band', swell('3dKeys') or [] + ['все'], recalcText=1, **style(margin='auto', display='table', width='auto'))
         ])
 
         self.leftList = _field('leftList', 'band', [], className='list3str')

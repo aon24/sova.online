@@ -85,8 +85,6 @@ def download_file(request):
 
 
 urlpatterns = [
-    # path('/accounts/vk/login/callback/', apiDoGet),
-
     # api
     re_path('^api/post/', doPost),
     re_path('^api/upload', uploadFile),
@@ -102,8 +100,6 @@ urlpatterns = [
     re_path('^download/', download_file),
 
     re_path('^accounts/login', CustomLoginView.as_view(), name="account_login"),
-    re_path('^accounts/google', apiDoGet),
-    re_path('^accounts/vk', apiDoGet),
     re_path('^accounts/yandex', apiDoGet),
     path('accounts/signup/', CustomSignupView.as_view(), name="account_signup"),
     path('accounts/', include('allauth.urls')),

@@ -47,7 +47,6 @@ def loadWell(key, param=None):
             loadPayments()
             loadModule()
             loadReport()
-            YandexDisk()
             loadLanding()
 
             toSwell(['2d', '3d', '3d+'], '3dKeys')
@@ -401,8 +400,6 @@ def loadProfiles():
     alls = set()
     profiles = {}
     profByUserId = {}
-    profilesByEmail = {}
-    profilesForVK = {}  # by field "VK". VK: extra_data['screen_name'] - моя страница
     profilesByPhone = {}
     students_grId = {}
     more = []
@@ -428,12 +425,6 @@ def loadProfiles():
 
         if dc.user:
             profByUserId[dc.user] = dc  # for django login
-
-        if dc.email:
-            profilesByEmail[dc.email.lower()] = dc  # for login via yandex or google
-
-        if dc.vk:
-            profilesForVK[dc.vk] = dc  # for login via vk
 
         phone = cleanPhone(dc.phone.partition(',')[0].partition('\n')[0])
         if phone:
@@ -485,9 +476,6 @@ def loadProfiles():
     toWell(sorted(alls), 'alls')
     toWell(profiles, 'profiles')
     toWell(profByUserId, 'profByUserId')
-
-    toWell(profilesByEmail, 'profilesByEmail')
-    toWell(profilesForVK, 'profilesForVK')
     toWell(profilesByPhone, 'profilesByPhone')
 
     clearWell('students_grId')  # for students by group
@@ -517,15 +505,6 @@ def loadPayments():
     for k, v in payments_profile.items():
         toWell(sorted(v, key=lambda dc: dc.PAY_DATE, reverse=True), 'payments_profile', k)
 
-# *** *** ***
-
-
-def YandexDisk():
-    from arm.tools.dbToolkit.Book import allFromDB
-
-    for dc in allFromDB(dbAlias='y'):
-        if dc.status != 'closed':
-            toWell(dc, 'Y_folders_stmplid', dc.stmpl_id)
 
 # *** *** ***
 

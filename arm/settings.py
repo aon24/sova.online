@@ -96,8 +96,6 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.vk',
     'allauth.socialaccount.providers.yandex',
 
     'nv',
@@ -108,14 +106,6 @@ INSTALLED_APPS = [
 
 # состав extra_data определяется в вк-AllAuth в массиве USER_FIELDS
 SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': ['profile', 'email', ],
-        'AUTH_PARAMS': {'access_type': 'online', }
-    },
-    'vk': {
-        'SCOPE': ['friends', 'groups', 'email'],  # это права доступа
-        'AUTH_PARAMS': {'access_type': 'online', }
-    },
     'yandex': {
         'SCOPE': [],
         'AUTH_PARAMS': {'access_type': 'online', }

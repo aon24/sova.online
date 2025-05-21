@@ -41,9 +41,6 @@ def apiDoGet(request):
         if right == 'dbAlias':
             if request.dcUK.dbAlias in ['draft', 'dba']:
                 return handler(request)
-        if right == 'vk':
-            if 1:
-                return handler(request)
         if right == 'form':
             if request.dcUK.form in ['login']:
                 return handler(request)
@@ -146,23 +143,6 @@ def _loadForm(request):  # при перезагрузкe форма может 
     return nvResponse (js or '"{}"', 'application/json')
 
 # *** *** ***
-
-
-def vkCallback(request):
-    request.dcUK.mode = 'new'
-    request.dcUK.form = 'vkCallback'
-    return returnPageOrDoc(request)
-
-# *** *** ***
-
-
-def callback(request):
-    request.dcUK.mode = 'new'
-    request.dcUK.form = 'vkCallback'
-    return returnPageOrDoc(request)
-
-# *** *** ***
-
 
 def _newForm(request):  # возможно для отладки React-form
     '''
@@ -336,8 +316,6 @@ _apiGetList = {
     'getData': ('form', _getData),
     # authenticated need
     'runCmd': (None, apiRunCmd),
-    'vkcallback': ('vk', vkCallback),
-    'callback': ('all', callback),
 }
 
 # *** *** ***
