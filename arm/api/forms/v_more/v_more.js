@@ -1,64 +1,66 @@
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.v_more = {
-	init2: doc => {
-		let more = doc.getField('upList').partition()[1]
-		doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeUp&uplist=${more}`)
-			.then( newList => doc.changeDropList('leftList', newList, 0))
-			.catch( e => {} );
-		},
-
-	// *** *** ***
-	hide: {},
+    init2: doc => {
+		let key = doc.getField('key');
+		doc.util.jsonByUrl(doc, `/api/getData?form=v_more&cmd=getLeftList&key=${key}`)
+			.then( prj => doc.changeDropList('leftList', prj, 0))
+			.catch( () => {});				
+	},
+    
 	// *** *** ***
 	
 	cmd: {
-		cmdNewPay: (doc, pk) => {
-			let view = doc.getControl('mainList');
-			view.rowClick(pk);
-			let page = {
-				rsMode: `new`,
-				newForm: `Payment&profile=${pk}`,
-				dbAlias: 'nv_Payment',
-				unid: 'new',
-				title: 'Новый платеж',
-			};
-			doc.previewNew(page);
+/*
+		saved: doc => {
+			if (doc.mainDoc !== doc) {
+				let parentDoc = doc.page.owner;
+				let view = parentDoc.getControl('mainList');
+				view && view.loadView(true, doc.unid);
+			}
 		},
-		cmdNew: doc => {
-			let page = {
-				rsMode: 'new',
-				newForm: `Profile`,
-				dbAlias: 'nv_Profile',
-				unid: 'new',
-				title: 'Новый пользователь',
-			};
-			doc.previewNew(page);
-		},
-		cmdEdit:(doc, pk, ctrlKey, shiftKey) => {
+*/		
+		cmdNew: (doc, p) => doc.util.xopen(`/api/new?dbAlias=draft&form=${p}&project=${doc.getField('leftList')}&key=${doc.getField('key')}`),
+
+		cmdView:(doc, pk, ctrlKey, shiftKey) => {
 			let view = doc.getControl('mainList');
 			view.rowClick(pk);
 			let page = doc.util.urlKeys(view.props.previewUrl);
-			page.title = 'Редактирование ' + doc.getField('leftList');
+			page.title = 'Просмотр';
 			page.unid = pk;
-			page.rsMode = 'edit';
+			page.rsMode = 'read';
+			//page.form = 'a_design';
 			doc.previewNew(page, ctrlKey, shiftKey);
+		},
+		
+		cmdEdit:(doc, pk, ctrlKey, shiftKey) => {
+			let view = doc.getControl('mainList');
+			view.rowClick(pk);
+			if (ctrlKey && shiftKey) {
+				let page = doc.util.urlKeys(view.props.previewUrl);
+				page.title = 'Просмотр';
+				page.unid = pk;
+				doc.previewNew(page, ctrlKey, shiftKey);
+			}
+			else
+				doc.util.xopen(`/api/opendoc?dbAlias=draft&unid=${pk}&mode=edit`)
 		},
 		search: doc => doc.getControl('mainList').search(doc.getField('search')),
 		reset: doc => {
 			doc.setField('search', '');
 			doc.getControl('mainList').search('');
 		},
-		// *** *** ***
-	},
-	recalc: {
-		STATUS: doc => doc.loadView('mainList', true),
-		LEFTLIST: doc => doc.loadView('mainList', true),
 
-		UPLIST: (doc, more) => {
-			more = more.partition()[1]
-			doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeUp&uplist=${more}`)
-				.then( newList => doc.changeDropList('leftList', newList, 0))
-				.catch( e => {} );
+	},
+
+	// *** *** ***
+
+	recalc: {
+		KEY: (doc, key) => {
+			doc.util.jsonByUrl(doc, `/api/getData?form=v_more&cmd=getLeftList&key=${key}`)
+				.then( prj => doc.changeDropList('leftList', prj, 0))
+				.catch( () => {});				
 		},
+		
+		LEFTLIST: doc => doc.loadView('mainList', true),
 	}
 };

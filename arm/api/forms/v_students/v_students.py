@@ -4,7 +4,7 @@ Created on 2023
 
 @author: aon24
 '''
-from arm.tools.DC import well
+from arm.tools.DC import well, swell
 from ..formTools import style, _div, _field, _btnDel, _btnEdit, _btnNew
 from ..classPage import Page
 from arm.api.forms.toolbars import toolbar
@@ -14,7 +14,9 @@ import json
 # *** *** ***
 
 class v_students(Page):
-
+    '''
+    button "Студенты по гр."
+    '''
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
@@ -26,6 +28,9 @@ class v_students(Page):
     # *** *** ***
 
     def getData(self, dcUK):
+        if not dcUK._staff:
+            return '{}'
+
         if dcUK.cmd == 'getSelected':
             data = self.getView(dcUK)
         else:
@@ -70,9 +75,9 @@ class v_students(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = 1
-        dcUK.doc.leftList = json.dumps(well('groups'), ensure_ascii=False)
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = 1
+        r.dcUK.doc.leftList = json.dumps(swell('groups'), ensure_ascii=False)
 
     # *** *** ***
 

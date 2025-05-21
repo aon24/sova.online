@@ -122,7 +122,7 @@ window.sovaActions.img = {
 		chDir: (doc, path) => {
 			doc._path = path;
 			
-		    let url = `/api/newForm?form=img&list=${doc.getField('list')}&subDir=${path}&vl=${doc.fieldValues['VL'] || ''}`;
+		    let url = `/api/newForm?form=img&list=${doc.getField('list')}&subDir=${path}&vl=${doc.getField('VL')}`;
 		    doc.util.jsonByUrl(doc, url)
 		        .then( jsn => {
 		            doc.setDocProps(jsn);
@@ -139,7 +139,7 @@ window.sovaActions.img = {
 	},
 	recalc: {
 		BTNLIST: (doc, val) => {
-			let url = `/api/newForm?form=img&list=${val}&subDir=${doc._path}&vl=${doc.fieldValues['VL'] || ''}`;
+			let url = `/api/newForm?form=img&list=${val}&subDir=${doc._path}&vl=${doc.getField('VL')}`;
 		    doc.util.jsonByUrl(doc, url)
 		        .then( jsn => {
 		            doc.setDocProps(jsn);

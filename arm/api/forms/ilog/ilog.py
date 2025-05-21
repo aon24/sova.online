@@ -1,16 +1,20 @@
-# -*- coding: utf-8 -*-
 '''
 Created on 2020.
 
 @author: aon
 '''
-from ..formTools import gridStyle, style, _div, _field, _mainPage, navigator
-from ..classPage import Page
+from arm.api.forms.formTools import gridStyle, style, _div, _field
+from arm.api.forms.classPage import Page
 from arm.tools.first import sovaLogger, err
 
 import re, os, json
 
 # *** *** ***
+
+s_subCats = {}
+s_DBC = {}
+s_cats = ['__Все__', 'Ошибки', 'Сообщения', 'Отладка']
+logList = []
 
 
 class ilog(Page):
@@ -19,60 +23,69 @@ class ilog(Page):
         self.title = 'Log'
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.subCats = {}
-        self.DBC = {}
         self.noCaching = True
         super().__init__(request)
 
     def page(self, request):
-        cats = {'__Все__': '', 'Ошибки': '', 'Сообщения': '', 'Отладка': ''}
-
-        btns = [_div(f'{i+1}' , title='Системный журнал') for i in range(len(self.logList)) ]
-
-        return _mainPage(className='page51', children=[
-            _div(**style(margin='auto'), className='cellbg-green', children=[
-            _div(**gridStyle('170px 1fr'), children=[
-                navigator(self.form, cats, 'calc(100vh - 180px'),
-                _div(**style(display='table-cell', background='#dfe'), children=[
-                    _div(**style(padding=3, background='#dfe', border='0 solid #eee', borderBottomWidth=2),
-                        children=[_field('log_0_6', 'band', btns, className='logband')]
-                    ),
-                    _div(**style(height='calc(100vh - 50px)', maxWidth='calc(100vw - 170px)', overflow='auto', background='#fff'),
-                         children=[_field('msg', 'fd', br=1, **style(font='normal 14px Courier'))]
-                    )
-                ])
-            ])
-            ])
+        leftList = _div(**style(height='100vh', background='#44880030'),
+            children=[
+            _field('cat', 'list', s_cats, alias=1, className='navBtn', listItemClassName='rsvTop'),
+            _field('subCat', 'list', f'CAT|||/api/get/getData?cmd=getSubCats&form=ilog&mode=new&cat={{FIELD}}',
+                **style(overflow='hidden auto', width='90%', margin='auto', height='calc(100vh - 185px'),
+                saveAlias=1, evenColor='#f4f8ff', default=-1)
         ])
+
+        btns = [_div(f'{i+1}' , title='Системный журнал') for i in range(len(logList))]
+
+        return _div(children=[
+            _div(**style(overflow='hidden'), children=[
+                _div(**gridStyle('170px auto', height='100%'), children=[
+                    leftList,
+
+                    _div(children=[
+                        _div(**style(padding=3, background='#dfe', border='0 solid #eee', borderBottomWidth=2),
+                            children=[_field('log_0_6', 'band', btns, className='logband')]
+                        ),
+                        _div(**style(height='calc(100vh - 50px)', maxWidth='calc(100vw - 170px)', overflow='auto', background='#fff'),
+                            children=[_field('msg', 'fd', br=1, **style(font='normal 14px Courier'))]
+                        )
+                    ]),
+                ]),
+            ]),
+        ])
+
 
     # *** *** ***
 
-    def queryOpen(self, dcUK):
-        dcUK.doc.msg = 'загрузка...'
+    def queryOpen(self, r):
+        global s_subCats, logList
+        r.dcUK.doc.msg = 'загрузка...'
 
-        self.logList = []
+        logList = []
         for i in range(10):
             try:
                 f = sovaLogger.logPath % i
-                self.logList.append({'time': os.stat(f).st_mtime, 'file': f})
+                logList.append({'time': os.stat(f).st_mtime, 'file': f})
             except:
                 pass
-        self.logList = sorted(self.logList, key=lambda x: x['time'], reverse=True)
+
+        logList.sort(key=lambda x: x['time'], reverse=True)
 
         try:
             self.loadLog(0)
         except Exception as ex:
             err(f'queryOpen: {ex}', cat='classPage: log')
-            self.subCats = {'__Все__': [], 'Отладка': [], 'Ошибки': [], 'Сообщения': []}
+            s_subCats = {k:[] for k in s_cats}
 
     # *** *** ***
 
     def loadLog(self, num):
+        global s_DBC, s_subCats, logList
         ALL = '__Все__'
-        self.DBC = {}
-        self.subCats = {ALL: [], 'Отладка': [], 'Ошибки': [], 'Сообщения': []}
+        s_DBC = {}
+        s_subCats = {k:[] for k in s_cats}
 
-        with open(self.logList[int(num or 0)]['file'], 'rt', encoding='utf-8', errors='ignore') as f:
+        with open(logList[int(num or 0)]['file'], 'rt', encoding='utf-8', errors='ignore') as f:
             lsMsg = f.read().split('¤')
 
         reCat = re.compile(r' \[(.+?)\] ')
@@ -93,17 +106,17 @@ class ilog(Page):
             else:
                 continue
 
-            if subCat not in self.subCats[ALL]:
-                self.subCats[ALL].append(subCat)
-            if subCat not in self.subCats[cat]:
-                self.subCats[cat].append(subCat)
+            if subCat not in s_subCats[ALL]:
+                s_subCats[ALL].append(subCat)
+            if subCat not in s_subCats[cat]:
+                s_subCats[cat].append(subCat)
 
             for k in [f'{ALL}|', f'{ALL}|{subCat}', f'{cat}|', f'{cat}|{subCat}']:
-                self.DBC[k] = self.DBC.get(k, [])
-                self.DBC[k].append(msg)
+                s_DBC[k] = s_DBC.get(k, [])
+                s_DBC[k].append(msg)
 
-        for k in self.subCats:
-            self.subCats[k] = sorted(self.subCats[k], key=lambda k: k.lower())
+        for k in s_subCats:
+            s_subCats[k].sort(key=lambda k: k.lower())
 
     # *** *** ***
 
@@ -113,9 +126,9 @@ class ilog(Page):
                 self.loadLog(dcUK.log)
 
             if dcUK.cmd == 'getSubCats':
-                return json.dumps(self.subCats.get(dcUK.cat, []), ensure_ascii=False)
+                return json.dumps(s_subCats.get(dcUK.cat, []), ensure_ascii=False)
             else:
-                return ''.join(reversed(self.DBC.get(dcUK.key, []))) or 'empty'
+                return ''.join(reversed(s_DBC.get(dcUK.key, []))) or 'empty'
         except Exception as ex:
             err(f'{ex}', cat='form-ilog-getData ')
 

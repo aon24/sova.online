@@ -26,7 +26,7 @@ busyFunc = {}
 
 
 def cleanPhone(phone):
-    phone = re.sub(r'[^\d]', '', phone)
+    phone = re.sub(r'[^\d]', '', phone or '')
     if phone:
         return '+7' + phone[1:] if phone[0] == '8' else '+' + phone
     return ''
@@ -38,11 +38,7 @@ def generate_cv_code():
 
     hash_object = hashlib.sha256(code_verifier.encode())
     hash_bytes = hash_object.digest()
-    b64_encoded_hash = base64.urlsafe_b64encode(hash_bytes).decode('utf-8').rstrip('=')
-        
-    code_challenge = f'{b64_encoded_hash}'
-    
-    return code_challenge
+    return base64.urlsafe_b64encode(hash_bytes).decode('utf-8').rstrip('=')
 
 # *** *** ***
 

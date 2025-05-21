@@ -8,7 +8,6 @@ window.sovaActions.v_students = {
 				rsMode: 'new',
 				newForm: `Profile`,
 				dbAlias: 'nv_Profile',
-				unid: 'new',
 				title: 'Новый пользователь',
 				addUrl: `&group=${doc.getField('leftList')}`,
 			};

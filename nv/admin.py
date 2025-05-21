@@ -7,11 +7,6 @@ from arm.tools.first import err
 from django.db.models import Model
 from django.db.models.base import ModelBase
 
-#from django.contrib import admin
-#from django.contrib.auth import get_user_model
-#
-#User = get_user_model()
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
@@ -24,10 +19,6 @@ admin.site.unregister(User)
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = ('id', 'username', 'email', 'first_name', 'last_name')  # Добавьте нужные поля
-
-#@admin.register(User)
-#class UserAdmin(admin.ModelAdmin):
-#    list_display = ('id', 'username', 'email', 'first_name', 'last_name')  # Добавьте нужные поля
 
 # *** *** ***
 
@@ -65,10 +56,10 @@ def getModel(dcUK, cat):
         err(f'"{dcUK.dbAlias}" invalid db', cat=cat)
         return None, None
 
-    mmm = all_ml.get(model.lower())
-    if not mmm:
+    m = all_ml.get(model.lower())
+    if not m:
         err(f'"{dcUK.dbAlias}" not in all_models', cat=cat)
         return None, None
 
-    return mmm, model
+    return m, model
 

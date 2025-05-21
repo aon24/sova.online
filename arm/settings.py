@@ -3,86 +3,77 @@
 AON 2023
 
 """
-# CSRF_COOKIE_DOMAIN = '.192.168.0.102'
-
-# Для корректной работы с Nginx
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-DEBUG = True
-
-# SECURE_SSL_REDIRECT = True
-# SESSION_COOKIE_SECURE = True
-
+from arm.tools.DC import config
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-NV_REPORTS = dict(dbAlias='REPORTS', domain='rf_nv')
-
-TEMPLATE_DIR = BASE_DIR / 'templates'
-
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticRoot'
-
-MEDIA_ROOT = BASE_DIR / 'static' / 'media'
-MEDIA_URL = "/media/"
-
-API_DIR = BASE_DIR / 'arm' / 'api'
-IMAGE_DIR = API_DIR / 'react' / 'images'
-REPORT_DIR = BASE_DIR / 'nv_reports' / NV_REPORTS['domain']
-
-LOG_DIR = BASE_DIR / 'log'
-DB_DIR = BASE_DIR / 'DB'
-
-
 # *** *** *** loadIniFile
-
-import os
-
-fromIni = {}
 
 with open(os.path.join(BASE_DIR, 'DB', 'sova.ini'), 'rt') as f:
     for s in f.readlines():
         l, _, r = s.partition('=')
         l, r = l.strip(), r.strip()
         if r and not l.startswith('#'):
-            fromIni[l] = r
+            config[l] = r
+try:
+    with open(os.path.join(BASE_DIR, 'DB', 'contacts.txt'), 'rt') as f:
+        config.contacts = f.read()
+except:
+    pass
 
-SECRET_KEY = fromIni.get('SECRET_KEY')
+DEMO_MODE = config.DEMO_MODE
+DEVELOPMENT_MODE = config.DEVELOPMENT_MODE
+
+SECRET_KEY = config.SECRET_KEY
+DEBUG = bool(config.DEBUG)
+ALLOWED_HOSTS = [config.HOST]
+ALLOWED_HOSTS += [h.strip() for h in config.addAllowedHosts.split(',')]
+
+DEFAULT_FROM_EMAIL = config.DEFAULT_FROM_EMAIL
+EMAIL_HOST = config.EMAIL_HOST
+EMAIL_PORT = int(config.EMAIL_PORT or '587', 10)
+EMAIL_USE_TLS = bool(config.EMAIL_USE_TLS)
+EMAIL_HOST_USER = config.EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = config.EMAIL_HOST_PASSWORD
+if DEVELOPMENT_MODE:  # Письма сохраняются в файлы
+    EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+    EMAIL_FILE_PATH = BASE_DIR / 'test_emails'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# *** *** ***
+# Для корректной работы с Nginx
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_COOKIE_SAMESITE = 'Lax'  # 'None'
+CSRF_COOKIE_SECURE = True
 
 # *** *** ***
 
 SESSION_COOKIE_AGE = 3600 * 24 * 300
-
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
-
-
+ACCOUNT_SESSION_REMEMBER = True
 
 # *** *** ***
 
-if 0 and DEBUG:
-    LOGGING = {
-        'version': 1,
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-            },
-        },
-        'loggers': {
-            'django.db.backends': {
-                'level': 'DEBUG',
-            },
-        },
-        'root': {
-            'handlers': ['console'],
-        }
-    }
+STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+
+TEMPLATE_DIR = BASE_DIR / 'templates'
+STATIC_DIR = BASE_DIR / 'static'
+STATICFILES_DIRS = [STATIC_DIR]
+MEDIA_ROOT = BASE_DIR / 'static' / 'media'
+
+API_DIR = BASE_DIR / 'arm' / 'api'
+REPORT_DIR = BASE_DIR / 'nv_reports' / 'rf_nv'
+LOG_DIR = BASE_DIR / 'log'
+DB_DIR = BASE_DIR / 'DB'
 
 # *** *** ***
 
-LOGIN_URL = '/api/login/'
+LOGIN_URL = '/api/login'
+LOGIN_INVALID_URL = '/api/login?error=1'
 LOGOUT_URL = '/admin/logout'
 LOGIN_REDIRECT_URL = '/api/new?form=arm'
 LOGOUT_REDIRECT_URL = '/'
@@ -90,12 +81,8 @@ LOGOUT_REDIRECT_URL = '/'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 15  # 15M
 FILE_UPLOAD_MAX_MEMORY_SIZE = DATA_UPLOAD_MAX_MEMORY_SIZE
 
-CSRF_TRUSTED_ORIGINS = []
-
 # *** *** ***
 
-ALLOWED_HOSTS = ['sova.online', 'result-systems.ru', '127.0.0.1', 'localhost', '192.168.0.102']
-DEVELOPMENT_MODE = False
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -117,7 +104,6 @@ INSTALLED_APPS = [
     'nv_c',
     'nv_lm',
     'nv_reports',
-    'landing',
 ]
 
 # состав extra_data определяется в вк-AllAuth в массиве USER_FIELDS
@@ -136,26 +122,6 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-QUERY_EMAIL = True
-
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.go1.unisender.ru'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = '5961271'
-EMAIL_HOST_PASSWORD = '6zfwttxcbemtf969x7wpkaoku38qr8bad8x5tq8a'
-
-ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/accounts/email/confirm/'
-ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = '/accounts/email/confirm/'
-ACCOUNT_EMAIL_CONFIRMATION_HMAC = True
-ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 3
-# ACCOUNT_EMAIL_CONFIRMATION_COOLDOWN = 3600
-# ACCOUNT_RATE_LIMITS = ???????????????
-
-DEFAULT_FROM_EMAIL = 'info@sova.online'
-
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -168,8 +134,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',  # без нее не работает админка
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # защиты от атак типа Clickjacking (подмена кликов)
     'arm.middleware.MobileMW',
     'allauth.account.middleware.AccountMiddleware',
 ]
@@ -199,23 +165,28 @@ DATABASE_ROUTERS = ['arm.multirouter.MultiRouter']
 DATABASES = {
     'nv': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'DB/nv.sqlite3',
+        'NAME': DB_DIR / 'nv.sqlite3',
     },
     'lm': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'DB/lm.sqlite3',
+        'NAME': DB_DIR / 'lm.sqlite3',
     },
     'reports': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'DB/reports.sqlite3',
+        'NAME': DB_DIR / 'reports.sqlite3',
     },
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'DB/common.sqlite3',
+        'NAME': DB_DIR / 'common.sqlite3',
     },
 }
 
-AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS = [{
+    'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    'OPTIONS': {
+        'min_length': 5,
+    }
+}]
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

@@ -11,19 +11,18 @@ from django.middleware.csrf import get_token
 
 
 class signup(Page):
-    def __init__(self, form):
+    def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = f'/api/jsv?forms/{self.form}/{self.form}.js'
         self.title = 'Sova'
         self.noCaching = True
 
-        super().__init__(form)
+        super().__init__(request)
 
     # ***
 
 
     def page(self, request):
-
         body = _div(
             **style(fontSize=40),
             children=[
@@ -40,7 +39,7 @@ class signup(Page):
                 _form(
                     id='signup', name='signup',
                     **style(border='0 solid #fff', borderTopWidth=2, width='100%', textAlign='left'),
-                    method='post', action="/api/signup", children=[
+                    method='post', action='/api/signup/', children=[
                     _div(children=[_input(type="hidden",
                         name="csrfmiddlewaretoken",
                         value=f'{get_token(request)}'
@@ -67,7 +66,7 @@ class signup(Page):
                             required=True,
                             placeholder="Пароль",
                             autoComplete="new-password",
-                            minLength=6,
+                            minLength=1,
                         )
                     ]),
                     _div(children=[
@@ -78,7 +77,7 @@ class signup(Page):
                             required=True,
                             placeholder="Пароль (еще раз)",
                             autoComplete="new-password",
-                            minLength=6,
+                            minLength=1,
                         )
                     ]),
 
@@ -98,12 +97,17 @@ class signup(Page):
                             _input(type="checkbox", id="scales", name="scales", required=True),
                             _teg('label', 'согласие на обработку персональных данных', **style(fontSize=20), htmlFor="scales")
                     ]),
-                    _input(type="hidden", name="first_name", id="first_name"),
-                    _input(type="hidden", name="last_name", id="last_name"),
+                    _input(type="hidden", name="first_name", id="first_name"),  # И.О.
+                    _input(type="hidden", name="last_name", id="last_name"),  # phone
 
                     _div(**style(textAlign='center', padding='15px 0', border='0 solid #fff', borderBottomWidth=2), children=[
-                        _input(**style(border=0, height=50, padding=10, fontSize=24, margin='auto'),
-                               className='rsvTop', type="submit", form='signup'),
+
+                        _btnD('Отправить', 'submit', f'signup',
+                            **style(width=170, height=50, padding=10, fontSize=24, margin='auto'),
+                        ),
+
+                        # _input(**style(border=0, height=50, padding=10, fontSize=24, margin='auto'),
+                        #        className='rsvTop', type="submit", form='signup'), +7(884) 729-09-99
                     ]),
 
                     _div(**style(lineHeight='12px', textAlign='center', padding=10, border='0 solid #fff', borderBottomWidth=2), children=[
@@ -146,7 +150,7 @@ class signup(Page):
         
     # *** *** ***
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = 1
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = 1
         # dcUK.doc.phone = '+7(902) 694-10-43'
 

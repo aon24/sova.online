@@ -5,7 +5,7 @@ Created on 2023
 @author: aon24
 '''
 
-from arm.tools.DC import well
+from arm.tools.DC import well, swell
 from arm.api.forms.formTools import style,_div,_search,_field,_btnDel,_btnEdit,_btnNew
 from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
@@ -36,7 +36,7 @@ class v_classifiers(Page):
     def page(self, request):
         status = ['актив', 'архив', 'все']
         category = set()
-        [category.add(dc.category) for dc in well('classifiers') if dc.category]
+        [category.add(dc.category) for dc in swell('classifiers') if dc.category]
         category = sorted(category)
         category.append('все')
 
@@ -60,7 +60,7 @@ class v_classifiers(Page):
         category = dcUK.category
         mainDocs = []
 
-        for cls in sorted(well('classifiers'), key=lambda dc: dc.description.lower()):
+        for cls in sorted(swell('classifiers'), key=lambda dc: dc.description.lower()):
             pk = cls.pk
 
             if status != 'все':
@@ -87,7 +87,7 @@ class v_classifiers(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = 1
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = 1
 
 # *** *** ***

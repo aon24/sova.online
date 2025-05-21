@@ -47,7 +47,7 @@ class Payment(Page):
 
                 label('назначение платежа'),
                 _field('nvEvent', 'tx', readOnly=1,
-                    **style(color='#048', fontWeight=700, margin='5px 0', width=230)
+                    **style(color='#036', fontWeight=700, margin='5px 0', width=230)
                 ),
                 _field('purpose', 'lbme', '/api/well?clues=sessionTmpl_nve_band|1'),
             ]),
@@ -58,27 +58,29 @@ class Payment(Page):
 
     # ***
 
-    def queryOpen(self, dcUK):
+    def queryOpen(self, r):
+        dcUK = r.dcUK
         d = dcUK.doc
         d.pref = d.pref or dcUK.profile
         prof = well('profiles',d.pref)
 
         if dcUK.mode == 'new':
-            d.nvEvent = well('eventsByCode', dcUK.nvEvent)
             d.pay_date = today('-')
             d.fio = prof.full_name
             d.phone = prof.phone
             d.status = 'active'
 
-            if dcUK.purpose:  # create from SessionSt-form
-                gr = dcUK.group
-                d.purpose = dcUK.purpose
-                d.t1 = dcUK.t1
-                d.sstId = dcUK.sstId
+            if dcUK.sgrId:  # create from SessionSt-form
+                sgr = well('sessionGr_Id', dcUK.sgrId)
+                d.nvEvent = well('eventsByCode', sgr.nvEvent)
+                d.nvgroup = sgr.nvgroup
+                d.group = well('groups_groupId', sgr.nvgroup).title
+                d.purpose = sgr.title
+                d.t1 = sgr.DATE_BEGIN
             else:
                 gr = prof.student_groups
-            gr = gr.partition('\n')[0]
-            d.group, _, d.nvgroup = gr.partition('|')
+                gr = gr.partition('\n')[0]
+                d.group, _, d.nvgroup = gr.partition('|')
 
         elif not d.group and prof.student_groups:
             d.group, _, d.nvgroup = prof.student_groups.partition('\n')[0].partition('|')

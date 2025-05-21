@@ -3,7 +3,7 @@
 AON 2020
 
 """
-from arm.settings import BASE_DIR
+from arm.settings import BASE_DIR, DEMO_MODE
 from arm.tools.httpMisc import accessDenied, nvResponse
 from arm.tools.DC import DC
 from arm.tools.loadWell import loadWell
@@ -38,25 +38,23 @@ def doPost(request):
         return nvResponse(f'POST error for "{request.dcUK._path}": {ex}', status=500)
 
 
-def errAD(request):
-    err(f'"{request.dcUK._path}": {request.dcUK.fullName}(Role:{request.dcUK._role})', cat='doPost-AD')
-    return accessDenied(request)
-
-
-def checkRight(dcUK, student=None):
+def checkRight(dcUK, saveDoc=None):
     # dbAlias=${this.dbAlias}&unid=${this.unid}&form=${this.form}
+
+    if DEMO_MODE and not dcUK._superUser:
+        return
 
     if dcUK._staff or 'куратор' in dcUK._role:
         return True
 
+    if dcUK.dbAlias == 'nv_Profile' and dcUK.doc and dcUK._profilePK == dcUK.doc.id:  # может править свой профайл
+        return True
+
     elif 'преподаватель' in dcUK._role:
-        if dcUK.dbAlias == 'nv_c_Profile':  # может править свой профайл
-            if dcUK._profilePK == dcUK.unid:
-                return True
-        elif dcUK.dbAlias == 'nv_SessionTmpl':  # может править с-тмпл
+        if dcUK.dbAlias == 'nv_SessionTmpl':  # может править с-тмпл
             return True
 
-    elif student and dcUK.doc and 'студент' in dcUK._role:  # может править толко с-ст и только свою
+    if saveDoc and dcUK.doc:  # может править толко с-ст и только свою
         if dcUK.dbAlias == 'nv_SessionSt' and dcUK.doc.pref == dcUK._profilePK:
             return True
 
@@ -75,31 +73,29 @@ def apiSaveDoc(request, buf):
         return nvResponse(s, status=400)
 
     oldF, newF = {}, {}
-    r = None
+    script = None
     for k, v in jsonO.items():
         if k == 'THESCRIPT':
-            r = zlib.compress(v[1].encode(), 9)
+            script = zlib.compress(v[1].encode(), 9)
             newF[k] = 'saved'
         else:
             oldF[k], newF[k] = v
 
-    oldPage = dcUK.unid != 'new' and dcUK.loadDoc()  # возвращает запись(модель типа Page для dcUK.dbAlias == 'draft')
+    oldPage = dcUK.unid and dcUK.loadDoc()  # возвращает запись(модель типа Page для dcUK.dbAlias == 'draft')
 
     # check right in dcUK old doc
-    if not checkRight(dcUK, student=True):
-        return errAD(request)
-
+    if not checkRight(dcUK, saveDoc=True):
+        return accessDenied(f'{dcUK.fullName}(Role:{dcUK._role})')
 
     # ***
 
-    # dcUK.unid = newF['UNID'] = newF.get('UNID', uuid.uuid4().hex)
-    if r:
+    if script:
         try:
             path = os.path.join(BASE_DIR, 'DB', 'scripts', dcUK.fullName.partition(' ')[0] or 'guest')
             os.makedirs(path, exist_ok=True)
 
             with open(os.path.join(path, dcUK.unid), 'bw') as f:
-                f.write(r)
+                f.write(script)
         except Exception as ex:
             err(f'the script saved error: {ex}', cat=cat)
 
@@ -145,24 +141,6 @@ def apiSaveDoc(request, buf):
         newF['FORM'] = newF.get('FORM') or dcUK.doc.form
         # костыль для заполнения форм после загрузки базы из скрипта
 
-    # v = json.loads(newF['ROOT'])
-    # for i in range(10):
-        # v = v.get('boxes')
-        # if not v:
-            # break
-        # if not len(v):
-            # break
-        # v = v[0]
-        # t = v.get('tuning')
-        # if t.get('wall'):
-            # for k, vv in t.items():
-                # print('tuning:', k, vv)
-            # t = v.get('rect')
-            # for k, vv in t.items():
-                # print('rect', k, vv)
-            # break
-    # return
-
     newF['FORM'] = newF.get('FORM') or dcUK.form
     # костыль для заполнения форм после загрузки базы из скрипта
 
@@ -188,7 +166,7 @@ def apiSaveDoc(request, buf):
     else:
         if opg and not opg.afterSave(dcUK):
             return nvResponse('AfterSave error', status=400)
-        return nvResponse(f'OK|{dcUK.unid}')
+        return nvResponse(f'OK|{dcUK.doc.unid}')
 
 # *** *** ***
 
@@ -198,7 +176,7 @@ def deleteFromDB(request, buf=None):
     dcUK = request.dcUK
 
     if not checkRight(dcUK):
-        return errAD(request)
+        return accessDenied(f'{dcUK.fullName}(Role:{dcUK._role})')
 
     dcUK.unid = dcUK.unid or dcUK.pk
     if not dcUK.loadDoc():
@@ -224,7 +202,7 @@ def create(request, buf):
 
     # check right
     if not checkRight(dcUK):
-        return errAD(request)
+        return accessDenied(f'{dcUK.fullName}(Role:{dcUK._role})')
 
     # ***
 

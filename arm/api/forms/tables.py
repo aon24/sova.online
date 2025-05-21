@@ -12,12 +12,12 @@ def paymentsList(dcUK):
     for pay in well('payments_profile', dcUK.showLK_id or dcUK._profilePK):
         ch = pay.cash[:1].upper()
         date = _div(f"{pay.D('pay_date')}\n{ch}: {pay.summa}",
-            className='mCell', s2=1, br=1, **style(color='#048'))
+            className='mCell', s2=1, br=1, **style(color='#036'))
         if pay.t1:
             t12 = f'{pay.D("t1")} - {pay.D("t2")}' if pay.t2 else pay.D('t1')
         else:
             t12 = ''
-        btnV = _btnView('previewArm', f'form=Payment&dbAlias=nv_Payment&unid={pay.pk}&mode=preview')
+        btnV = _btnView('previewArm', f'form=Payment&dbAlias=nv_Payment&unid={pay.pk}&mode=preview&title=Оплата')
         title = _div(f"{pay.PURPOSE}\n{t12}",
             className='mCell', s2=1, br=1, **style(letterSpacing=1))
         row = _div(**gridStyle('90px 1fr 33px', border='0 solid #aaa', borderBottomWidth=1),
@@ -33,7 +33,6 @@ def paymentsList(dcUK):
 def analyst(dcUK):
     # getView()
     return _div('')
-    pass
     
 
 def reportList(dcUK):

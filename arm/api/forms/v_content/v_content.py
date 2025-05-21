@@ -5,7 +5,7 @@ Created on 2023
 @author: aon24
 '''
 
-from arm.tools.DC import well
+from arm.tools.DC import well, swell
 from arm.api.forms.formTools import style, _div, _field, _btnDel, _btnEdit, _btnCopy
 from arm.api.forms.classPage import Page
 from arm.api.forms.lk_tools import showCourse
@@ -31,6 +31,9 @@ class v_content(Page):
         super().__init__(request)
 
     def getData(self, dcUK):
+        if not (dcUK._staff or 'преподаватель' in dcUK._role):
+            return '{}'
+
         if dcUK.cmd == 'showC':
             if dcUK.view != '0':
                 data = showCourse(dcUK)
@@ -51,7 +54,7 @@ class v_content(Page):
     # *** *** ***
 
     def page(self, request):
-        events = well('events')  # названия мерориятия | code
+        events = swell('events')  # названия мерориятия | code
 
         lsNew = []
         for c in events:
@@ -60,12 +63,8 @@ class v_content(Page):
         self.leftList = _field('leftList', 'band', [], className='list3str')
 
         self.viewbar = self.makeViewbar(
-            leftBtn=[_field('status', 'band', ['актив', 'архив'], className='radioBand')],
-            rightBtn=[
-                _field('view', 'band', ['спис', 'эскиз'], className='radioBand',
-                     title='список/эскизы',
-                    **style(position='absolute', top=3, right=2))
-            ],
+            leftBtn=[_field('view', 'band', ['спис', 'эскиз'], className='radioBand', title='список/эскизы',)],
+            rightBtn=[_field('status', 'band', ['актив', 'архив'], className='radioBand', **style(marginLeft='auto '))],
         )
 
         # 1 вверху экрана список мероприятий
@@ -109,8 +108,8 @@ class v_content(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, dcUK):
-        dcUK.doc.upList = well('events')[0]
+    def queryOpen(self, r):
+        r.dcUK.doc.upList = swell('events')[0]
 
     # *** *** ***
 

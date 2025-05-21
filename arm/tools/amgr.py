@@ -24,8 +24,6 @@ def amgrLoop():
     '''
 
     while True:
-        # time.sleep(1)
-
         if well('reloadWell') and not well('busy'):
             toWell(0, 'reloadWell')
             loadWell('all')

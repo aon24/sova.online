@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 '''
 Created on 24 apr 2020
 
@@ -6,10 +5,10 @@ Created on 24 apr 2020
 '''
 
 # *** *** ***
-from arm.settings import API_DIR
+from arm.settings import API_DIR, DEBUG
 from arm.tools.common import setVersionFiles
 from arm.tools.first import err, versionString
-from arm.tools.DC import DC, well, toWell
+from arm.tools.DC import DC, well, toWell, swell
 from arm.api.forms.formTools import infoPage, infoQueryOpen, _btnNew, _teg, _btnD, _fileShow, style, _div, _field, labell, labeldc, gridStyle, labField, label
 from arm.api.forms.toolbars import toolbar
 
@@ -17,13 +16,11 @@ from django.http import HttpResponse
 
 import json
 import importlib
-import uuid
 from copy import deepcopy
 from zlib import crc32
 import traceback
 
 # *** *** ***
-
 
 def getPageObj(request):
     '''
@@ -32,11 +29,10 @@ def getPageObj(request):
     dcUK = request.dcUK
 
     page = dcUK.form or (dcUK.doc and dcUK.doc.form) or dcUK.page
-    if (not page):
-        page = {'draft': 'a_design'}.get(dcUK.dbAlias, '')
 
     if page:
-        opg = well('forms', page)
+        key = f"{page}-{dcUK.mode or 'read'}-{dcUK._userAgent}-{dcUK._role}-{dcUK._staff}-{dcUK.noicons}"
+        opg = well('forms', key)
         if opg:
             return opg
 
@@ -45,11 +41,14 @@ def getPageObj(request):
         try:
             module = importlib.import_module(path)
             opg = getattr(module, page)(request)
-            toWell(opg, 'forms', page)
+
+            toWell(opg, 'forms', key)
             return opg
         except Exception as ex:
-            # return err(f'Page not found: "{path}"', cat='getPageObj')
-            return err(f'Page not found: "{path}"\n {ex} \n*** *** *** {traceback.format_exc()}', cat='getPageObj')
+            if DEBUG:
+                err(f'Page not found: "{path}"\n {ex} \n*** *** *** {traceback.format_exc()}', cat='getPageObj')
+            else:
+                err(f'Page not found: "{path}"', cat='getPageObj')
 
 # *** *** ***
 
@@ -60,16 +59,21 @@ class Page(object):
     '''
 
     def __init__(self, request):
-        self.styles = ''
-        self.urlForms = {}  # key = '-'.join([key, mode, multiPage, smartPhone ...etc])
+        dcUK = request.dcUK
+        self.urlForms = ''
+        self.mode = dcUK.mode
+        self._userAgent = dcUK._userAgent
+        self._role = dcUK._role
+        self._staff = dcUK._staff
+        self.noicons = dcUK.noicons
 
-        for a in ['jsCssUrl', 'jsCssUrlRead', 'jsCssUrlEdit', 'dbAlias', 'noCaching']:
+        for a in ['jsCssUrl', 'jsCssUrlRead', 'jsCssUrlEdit', 'dbAlias', 'noCaching', 'styles']:
             not getattr(self, a, None) and setattr(self, a, '')
 
         self.title = getattr(self, 'title', 'sova.online')
         self.form = getattr(self, 'form', 'noform')
         self.leftWidth = getattr(self, 'leftWidth', 0)
-        self.status = well('status')
+        self.status = swell('status')
 
         if self.jsCssUrl:
             self.jsCssUrlRead = self.jsCssUrlEdit = setVersionFiles(self.jsCssUrl, API_DIR)
@@ -84,73 +88,78 @@ class Page(object):
         fормирует словарь для отправки клиенту
         '''
         dcUK = request.dcUK
+        if dcUK.doc:  # доступ к конкретному документу
+            if dcUK.dbAlias.startswith('nv_') and dcUK.unid:  # django
+                if dcUK.dbAlias.rpartition('_')[2] != self.form and self.form != 'info':
+                    return '{}'  # защита от подмены form=qqq в url "/api/opendoc?dbAlias=nv_SessionSt&unid=5481&form=SessionGr&mode=edit"
 
-        if not dcUK.doc:
-            dcUK.doc = DC()
-        dcUK.doc.form = dcUK.doc.form or self.form
-        if dcUK.mode in ['edit', 'admin']:  # чтобы можно было установить новое значение в queryOpen
-            do = {k: dcUK.doc[k] for k in dcUK.doc.keys()}  # save oldValues in 'do'
+            dcUK.doc.form = dcUK.doc.form or self.form
+            if dcUK.mode == 'edit':  # чтобы можно было установить новое значение в queryOpen
+                do = {k: dcUK.doc[k] for k in dcUK.doc.keys()}  # save oldValues in 'do'
 
-        if dcUK.dbAlias.startswith('nv_'):
-            dcUK.unid = dcUK.unid or dcUK.doc.id
-        elif dcUK.dbAlias != 'no':
-            if dcUK.unid == 'new' or dcUK.doc.unid == 'new':
-                dcUK.unid = dcUK.doc.unid = uuid.uuid4().hex
-            else:
-                dcUK.unid = dcUK.unid or dcUK.doc.unid or uuid.uuid4().hex
+        else:
+            do = {}
+            dcUK.doc = DC(form=self.form)
 
         try:
-            self.queryOpen(request if self.form == 'login' else dcUK)
+            self.queryOpen(request)
 
             fv = {}  # fieldValues- KV для отправки клиенту
             for k, v in dcUK.doc.items():  # dcUK.doc - DC-object
                 if 'PASSW' not in k:
-                    if type(v) == str:
-                        fv[k] = v.replace('\u2028', ' ').replace('\u2029', ' ')
-                    else:
-                        fv[k] = v
+                    fv[k] = v.replace('\u2028', ' ').replace('\u2029', ' ')
+
             ds = dict(
                     form=self.form,
                     fieldValues=fv,
-                    rsMode=dcUK.mode,
+                    rsMode=self.mode,
                     dbAlias=dcUK.dbAlias or self.dbAlias,
                     fullName=dcUK.fullName,
                     unid=dcUK.unid,
                     urlForm=self.getUrl(request),
-                    cssJsUrl=self.getJsCssUrl(dcUK.mode),
+                    cssJsUrl=self.getJsCssUrl(request),
                     version=f'{versionString}',
                     fd=dcUK.fd
                 )
-            if  dcUK.mode == 'new':
+            if self.mode == 'new':
                 ds['oldValues'] = {k: '' for k in fv}
-            elif dcUK.mode in ['edit', 'admin']:  # чтобы можно было установить новое значение в queryOpen
-                # костыль, чтобы никто не видел поля с оценкой, если есть noAss_fd
-                ds['oldValues'] = {k: do.get(k, '') for k in fv if do.get(k, '') != fv[k] and not (fv.get('NOASS_FD') and k.startswith('ASSLEC'))}
-        except Exception as ex:
-            df = str(dcUK.doc)
+            elif self.mode == 'edit':  # чтобы можно было установить новое значение в queryOpen
+                if self.form == 'info' and not request.dcUK._superUser:
+                    ds['oldValues'] = {}
+                else:
+                    # костыль, чтобы никто не видел поля с оценкой, если есть noAss_fd
+                    ds['oldValues'] = {k: do.get(k, '') for k in fv if do.get(k, '') != fv[k] and not (fv.get('NOASS_FD') and k.startswith('ASSLEC'))}
+        except Exception as e:
+            ex = str(e)
             tr = str(traceback.format_exc())
-            err(f'{ex}\n{dcUK._QUERY}\n{df}\n{tr}', cat='queryOpen')
+            url = f'{dcUK._path}?{dcUK._QUERY}'
+            err(f'{ex}\nURL: {url}\n{tr}', cat='queryOpen')
+            if ex == 'Access denied':
+                dcUK.doc = DC()
+            else:
+                dcUK.doc['3_Fields'] = str(dcUK.doc)
 
-            dcUK.doc['0_queryOpen_EX'] = f'{ex}'
-            dcUK.doc['1_Traceback'] = f'{tr}'
-            dcUK.doc['2_Fields'] = f'{df}'
-            dcUK.doc['3_Query'] = dcUK._QUERY
-            infoQueryOpen(dcUK)
+            dcUK.doc['0_Exception'] = ex
+            dcUK.doc['1_Traceback'] = tr
+            dcUK.doc['2_URL'] = url
+            infoQueryOpen(request)
             dcUK.key = 'Exception'
-            dcUK.mode = 'read'
+
             ds = dict(
                 fieldValues=dcUK.doc._KV_,
-                rsMode=dcUK.mode,
-                urlForm=self.getUrl(dcUK),
+                rsMode='read',
+                urlForm=self.getUrl(request),
                 cssJsUrl=[f'/api/jsv?forms/info/info.js'],
                 version=f'{versionString}',
                 fd='1',
                 _view_='1'
             )
 
-        return json.dumps(ds, ensure_ascii=False).replace('</script', '<\/script')
+        return json.dumps(ds, ensure_ascii=False)
 
-    def queryOpen(self, dcUK): pass
+    def page(self, request=None): pass
+
+    def queryOpen(self, request): pass
 
     def querySave(self, dcUK): return True
 
@@ -160,8 +169,8 @@ class Page(object):
 
     def putData(self, dcUK, buf): return HttpResponse(status=400)  # вызывется из PUT-xhr для загрузки каких-либо данных
 
-    def getJsCssUrl(self, mode):
-        if mode in ['read', 'preview']:
+    def getJsCssUrl(self, request):
+        if request.dcUK.mode in ['read', 'preview']:
             return self.jsCssUrlRead
         else:
             return self.jsCssUrlEdit
@@ -170,47 +179,36 @@ class Page(object):
 
     def getUrl(self, request):
         '''
-        возвращает url для загрузки формы формы
+        возвращает url для загрузки формы
         сама форма хранится в глоб. словаре 'form-json', в url ключ для этого словаря
         '''
-        key = '-'.join([
-            request.dcUK.key,
-            request.dcUK.mode,
-            request.dcUK.userAgent,
-            request.dcUK.userRole,
-        ])
+        if request.dcUK.key == 'Exception':
+            if not well('form-json', 'info::Exception'):
+                pg = infoPage('read')
+                jsPage = json.dumps(pg, ensure_ascii=False, sort_keys=True)
+                toWell(jsPage, 'form-json', 'info::Exception')
+            return '/api/get/loadForm?form=info::Exception'
 
-        if (not self.noCaching) and (key in self.urlForms):
-            return self.urlForms[key]
+        if self.urlForms and not self.noCaching:
+            return self.urlForms
 
         try:
-            if request.dcUK.key == 'Exception':
-                pg = infoPage(request)
-                jsPage = json.dumps(pg, ensure_ascii=False, sort_keys=True)
-                jsCss = 'Exception'
-                urlForm = f'/api/get/loadForm?form=info::Exception'
-                toWell(jsPage, 'form-json', 'info::Exception')
-                return urlForm
-            else:
-                pag = self.page(request)
-                jsCss = str(self.getJsCssUrl(request.dcUK.mode))  # чтобы изменение js-css сбрасывали кэш
+            pag = self.page(request)
+            jsCss = str(self.getJsCssUrl(request))  # чтобы изменение js-css сбрасывали кэш
 
-                pg = deepcopy(pag)
-                pg = self.parseCell(pg)
-                jsPage = json.dumps(pg, ensure_ascii=False, sort_keys=True)
-                crc = crc32((jsPage + jsCss).encode(), 0)
-                if self.noCaching:
-                    urlForm = f'/api/get/loadForm?form={self.form}::{crc}'
-                else:
-                    urlForm = f'/api/getc/loadForm?form={self.form}::{crc}'
-        except Exception as ex:
+            pg = deepcopy(pag)
+            pg = self.parseCell(pg)
+            jsPage = json.dumps(pg, ensure_ascii=False, sort_keys=True)
+            crc = crc32((jsPage + jsCss).encode(), 0)
+            if self.noCaching:
+                self.urlForm = f'/api/get/loadForm?form={self.form}::{crc}'
+            else:
+                self.urlForm = f'/api/getc/loadForm?form={self.form}::{crc}'
+            toWell(jsPage, 'form-json', f'{self.form}::{crc}')
+            return self.urlForm
+        except:
             err(f'{self.form}\n{traceback.format_exc()}', cat='classPage.getUrl')
             return f'error-{self.form}-classPage.getUrl'
-
-        self.urlForms[key] = urlForm
-        toWell(jsPage, 'form-json', f'{self.form}::{crc}')
-
-        return urlForm
 
     # *** *** ***
 
@@ -231,35 +229,6 @@ class Page(object):
             cell['children'] = ls
 
         return cell
-
-    # *** *** ***
-
-
-    def navigator(self, dcVP, maxHeight=500):
-        if dcVP.userAgent == 'mobile':
-            width = 85
-        else:
-            width = 170
-    
-        if dcVP.fieldName:
-            key = f'view={dcVP.fieldName}-{dcVP.dbAlias}-{dcVP.viewKey}'  # api/get/loadSubCats?... передается в classReview
-        else:
-            key = f'form={dcVP.form}'  # api/get/loadSubCats?... передается в classPage
-    
-    
-        cat = _field('cat', 'list', list(dcVP.cats.keys()), alias=1, className='navBtn', listItemClassName='rsvTop')
-    
-        # при вызове doc.changeDropList('subCat') в url подставится значение поля "CAT" вместо {FIELD}
-        # при вызове doc.changeDropList('subCat', 'ss') в url подставится строка "ss" вместо {FIELD}
-        subCat = _field('subCat', 'list', f'CAT|||/api/get/loadSubCats?{key}&cat={{FIELD}}',
-            **style(maxHeight=maxHeight, overflow='hidden auto', width='90%', margin='auto', display='block'),
-            saveAlias=1, evenColor='#f4f8ff', default=-1)
-
-        return _div(**style(paddingTop=7,verticalAlign='top', width=width, position='relative'),
-            children=[
-                cat,
-                subCat,
-        ])
 
     # *** *** ***
 
@@ -285,7 +254,8 @@ class Page(object):
 
         if self.leftList:
             self.leftList['attributes'] = self.leftList.get('attributes', {})
-            self.leftList['attributes']['style'] = dict(overflow='hidden auto', height='100%', width=self.leftWidth)
+            self.leftList['attributes']['style'] = dict(overflow='hidden auto', height='100%',
+                background='#fff', width=self.leftWidth,)
             self.leftList['attributes']['name'] = 'shamrock1'
             if 'field' in self.leftList:
                 self.leftList['fieldProps'] = self.leftList.get('fieldProps', {})
@@ -334,15 +304,14 @@ class Page(object):
 
     # ***
 
-    def materials(self, tmpl=None, gr=None, st=None):
+    def materials(self, tmpl=None):
         return _div(**style(margin='0 5px', paddingTop=5, height='100%', overflow='auto',
                     display='grid', gridTemplateRows='auto 1fr'), children=[
             _div(children=[
+                labell('Краткое описание', skip=not tmpl, name='mtxLabel'),
+                _field('mtx', 'tx', fd=not tmpl, name='mtx', **style(margin=10, fontSize=20, textAlign='center')),
                 _fileShow('fm', label='файлы', fd=not tmpl),
-                _div('По теме', className='labl'),
-                labell('Текст', skip=not tmpl),
-                _field('mtx', 'tx', fd=not tmpl, name='mtx'),
-                labell('Ссылка', skip=not tmpl),
+                labell('Ссылки', name='href'),
                 _field('href', 'links', **style(width='100%'), fd=not tmpl, name='href'),
             ]),
 
@@ -350,8 +319,32 @@ class Page(object):
                 **style(position='relative', width='100%', height='calc(100% - 10px)', marginTop=5,
                     border='2px solid #888', background='#fff')
             ),
-            _field('COLORSTYLEMAP', 'fd', skip=tmpl, **style(display='none'))
+            _field('COLORSTYLEMAP', 'fd', skip=tmpl, **style(display='none'))  # fd - not save!
         ])
+
+    def jobs(self, tmpl=None, gr=None, st=None):
+        jobs = []
+        for i in range(1, 6):
+            jobs.append(
+                _div(name=f'job{i}', children=[
+                    labell(f'Задание {i}'),
+                    _field(f'job{i}', 'tx', name='student', fd=st),
+                    _teg('fieldset', skip=not st, **style(background='#ffc'), children=[
+                        _teg('legend', f' Результат {i} ', **style(margin='auto', textAlign='center')),
+
+                        _fileShow(f'fo{i}', label='файлы'),
+                        labell('Текст'),
+                        _field(f'txo{i}', 'tx'),
+                        labell('Ссылка'),
+                        _field(f'hrefo{i}', 'links', **style(width='100%')),
+                    ]),
+                    labell(f'Оценка', skip=not st),
+                    _field(f'estimate{i}', 'tx', skip=not st, name='student'),
+                    _div(**style(margin=10, height=2, background='#036')),
+                ])
+            )
+        return _div(**style(margin='0 5px', paddingTop=5, height='100%', overflow='auto',),
+                    children=jobs)
 
     def common(self, tmpl=None, gr=None, st=None):
         '''
@@ -361,14 +354,14 @@ class Page(object):
         return _div(**style(margin='0 5px', paddingTop=5, height='100%', overflow='auto'), children=[
 
             _field('nvEvent', 'lbsd', '/api/well?clues=events', alias=1, fd=not tmpl,
-                **style(color='#048', fontWeight=700, margin='0 auto 10px', width=230, textAlign='center')
+                **style(color='#03', fontWeight=700, margin='0 auto 10px', width=230, textAlign='center')
             ),
 
             _field('openTmpl', 'btn', fd=1, skip=not gr, className='toolbar-button', **style(display='block', margin='auto', width='90%')),
 
             label('Заголовок', skip=not tmpl),
             _field('title', 'tx', name='title', className='h2', skip=not tmpl, **style(background='#fff', border='1px solid #0000ff80')),
-            _field('title', 'tx', className='h2', skip=not st, fd=1),
+            _field('title', 'tx', className='h2', skip=not st, fd=1, **style(textAlign='center')),
 
             _field('fullName', 'fd', className='h3', skip=not st),
 
@@ -415,7 +408,7 @@ class Page(object):
                 fd=st,
                 skip=tmpl  # убрать в шаблоне, только чтение у студента
             ),
-            _field('duration', 'lbse', '/api/well?clues=duration', **style(width=110, margin='auto', paddingTop=5),
+            _field('duration', 'lbse', '/api/well?clues=duration', **style(width=130, margin='auto', paddingTop=5),
                 placeholder='время',fd=st,skip=tmpl),  # убрать в шаблоне, только чтение у студента
 
             _div(children=[
@@ -442,18 +435,21 @@ class Page(object):
 
     def noteStatus(self, st=None):
         return _div(**style(textAlign='right', skip=st), children=[
-            _div(**style(margin=5, border='1px solid #048')),
+            _div(**style(margin=5, border='1px solid #036')),
             labell('Комментарий', name='adminOnly'),
             _field('notes', 'tx', **style(margin='0 5px', display='block'), name='adminOnly'),
             label('Статус', **style(margin='5px 0', display='inline-block')),
             _field('status', 'lbsd', self.status, name='student', placeholder='выбирай', alias=1, **style(margin=5, display='inline-block'))
         ])
 
-    btnSaveClose = _div(**style(textAlign='center',paddingTop=4),children=[toolbar.saveClose,toolbar.close_])
-
     def docPage(self, fields, tool=None, focus='no', **kv):
+        if not tool:
+            if self.mode in ['new', 'edit']:
+                tool = [toolbar.saveClose, toolbar.close_]
+            else:
+                tool = [toolbar.close_]
         return _div(className='bg52', focus=focus, **kv,
             children=[
-                _div(className='toolbar', children=tool or [toolbar.saveClose, toolbar.close_]),
+                _div(className='toolbar', children=tool),
                 _div(className='page', children=fields),
             ])

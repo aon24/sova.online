@@ -8,7 +8,6 @@ window.sovaActions.v_profiles = {
 				rsMode: `new`,
 				newForm: `Payment&profile=${pk}`,
 				dbAlias: 'nv_Payment',
-				unid: 'new',
 				title: 'Новый платеж',
 			};
 			doc.previewNew(page);
@@ -18,7 +17,6 @@ window.sovaActions.v_profiles = {
 				rsMode: 'new',
 				newForm: `Profile`,
 				dbAlias: 'nv_Profile',
-				unid: 'new',
 				title: 'Новый пользователь',
 			};
 			doc.previewNew(page);

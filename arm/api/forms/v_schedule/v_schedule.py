@@ -6,12 +6,12 @@ Created on 2023
 '''
 
 from arm.tools.first import err
-from arm.tools.DC import well
+from arm.tools.DC import well, swell
 from ..formTools import _span, style, _div, _btnEdit, _field, _br, gridStyle, _btnDel
 from ..classPage import Page
 from arm.api.forms.toolbars import toolbar
-from arm.api.forms.lk_tools import showC, showCC
-from arm.api.forms.lk_curator.lk_curator import lk_curator
+from arm.api.forms.lk_tools import showC, showCC, rightBtnLK
+from arm.api.forms.v_lk_curator.v_lk_curator import v_lk_curator
 
 import json
 from datetime import datetime, timedelta
@@ -34,10 +34,13 @@ class v_schedule(Page):
     # *** *** ***
 
     def getData(self, dcUK):
+        if not dcUK._staff:
+            return '{}'
+
         data = []
         if dcUK.cmd == 'getSelected':
             if dcUK.uplist == '2':
-                data = lk_curator.getView(self, dcUK)
+                data = v_lk_curator.getView(self, dcUK)
             elif dcUK.view == '3' or dcUK.upList == '1':
                 data = self.getView(dcUK)
             else:
@@ -48,14 +51,14 @@ class v_schedule(Page):
 
         elif dcUK.cmd == 'changeLL':
             if dcUK.filter == '0':
-                data = list(well('events'))
+                data = list(swell('events'))
                 data.insert(0, 'Все')
             elif dcUK.filter == '1':
-                data = well('куратор2')
+                data = swell('куратор2')
             elif dcUK.filter == '2':
-                data = well('преподаватель2')
+                data = swell('преподаватель2')
         elif dcUK.cmd == 'changeLLCP':
-            data = well('sessionsGr_GrId_band', dcUK.group) or []
+            data = swell('sessionsGr_GrId_band', dcUK.group) or []
             if dcUK.status == '0':
                 data = [s for s in data if s.endswith('|active')]
             else:
@@ -65,16 +68,16 @@ class v_schedule(Page):
         elif dcUK.cmd == 'changeUp':
             if dcUK.uplist == '1':
                 if dcUK.filter == '0':
-                    data = list(well('events'))
+                    data = list(swell('events'))
                     data.insert(0, 'Все')
                 elif dcUK.filter == '1':
-                    data = well('куратор2')
+                    data = swell('куратор2')
                 elif dcUK.filter == '2':
-                    data = well('преподаватель2')
+                    data = swell('преподаватель2')
 
             else:
                 ag = []
-                for s in well('groups'):
+                for s in swell('groups'):
                     ls = s.split('|')  # 🌆🌃🌝🌚🌛🌖🌠
                     if ls[2] == 'active':
                         title = ls[0].replace('/День', '🌞').replace('/Дн', '🌞').replace('/Веч', '🌚')
@@ -91,7 +94,10 @@ class v_schedule(Page):
     # *** *** ***
 
     def page(self, request):
-        ls = ['Расписание в группах', 'События / ФИО', 'Куратор+ (платежи пр.)']
+        if not self._staff:
+            return _div('denied')
+
+        ls = ['Расписание', 'События / ФИО', 'Куратор+']
         self.upField = _div(children=[
             _div(className='toolbar', children=[toolbar.close_]),
             _field('upList', 'band', ls, **style(margin='auto', width='auto')),
@@ -99,28 +105,21 @@ class v_schedule(Page):
         ])
 
         self.viewbar = self.makeViewbar(
-            leftBtn=[_field('status', 'band', ['актив', 'архив'], className='radioBand')],
             rightBtn=[
+                _div(name='viewbar2', **style(flex=1)),
                 _field('filter', 'band', ['События', 'Куратор', 'Преподаватель'],
                     name='viewbar2',
+                    **style(display='block', margin='auto'),
                     className='radioBand'),
-                _field('changeView', 'band', ['K1', 'K2', 'эскиз', 'спис'],
-                    name='viewbar1',
-                    className='radioBand',
-                    title='календарь/список/эскизы',
-                    **style(position='absolute', top=3, right=2)),
-                _field('event', 'band', well('shortEvents'), recalcText=1,
-                    className='radioBand',
-                    title='выберите событие',
-                    name='event'),
-                _field('plan', 'band', ['Планируемые', 'все'],
-                    className='radioBand',
-                    name='plan'),
+
+                *rightBtnLK('', self._userAgent, na='viewbar1'),
+
                 _div(name='cPlus',
-                    children=lk_curator.setButtons,
-                    **style(display='flex', placeItems='center start', position='absolute', top=0, left=107)
+                    children=v_lk_curator.setButtons,  # video+, video-... etc
+                    ** style(display='flex', placeItems='center start', position='absolute', top=0, left=107)
                 ),
-            ], **style(placeItems='center center'))
+            ],
+            **gridStyle('1px 1fr', borderWidth='0 0 2px 0', background='transparent'))
 
         # слева экрана список групп для курса '/api/well?clues=allGroups'
         self.leftList = _field('leftList', 'band', [], name='viewbar1')  # , className='list3str')
@@ -150,11 +149,8 @@ class v_schedule(Page):
 
         if dcUK.upList == '1':  # upList: 'Расписание в группах', 'События / ФИО|1', 'Куратор+ (платежи пр.)'
             for sgr in well('sessionsGr_All'):
-                if dcUK.status == '0':  # кнопка работе
-                    if sgr.status != 'active':
-                        continue
-                elif sgr.status == 'active':
-                        continue
+                if dcUK.status == '0' and sgr.status != 'active':  # кнопка работе
+                    continue
 
                 if dcUK.selected != 'Все':
                     sLeft, _, sRight = dcUK.selected.partition('|')
@@ -190,11 +186,8 @@ class v_schedule(Page):
         last = yesterday.strftime("%Y-%m-%d")
 
         for sgr in ls:
-            if dcUK.status == '0':  # кнопка работе
-                if sgr.status != 'active':
-                    continue
-            elif sgr.status == 'active':
-                    continue
+            if dcUK.status == '0' and sgr.status != 'active':
+                continue
 
             dateEnd = sgr.date_end or sgr.date_begin
             if dateEnd < last:
@@ -229,8 +222,8 @@ class v_schedule(Page):
             _span(f'{vid}: {sgr.title}',**style(color='#555')),
         ], className='rCell')
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = 1
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = 1
 
 # *** *** ***
 

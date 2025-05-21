@@ -1,14 +1,7 @@
-# -*- coding: utf-8 -*-
-
-from arm.tools.first import err
-
 import time
 import zlib, base64, json
 
 # *** *** ***
-
-config = None  # from sova.ini: setting.py->urls.py->DCC()
-
 
 class DC(object):
 
@@ -25,7 +18,7 @@ class DC(object):
             self.__dict__['_f_'][k.upper()] = str(v or '')
 
     def A(self, fieldName):
-        s = self._f_.get(fieldName.upper(), '')
+        s = self._f_.get(fieldName.upper())
         return s.split('\n') if s else []
 
     def D(self, fieldName):
@@ -53,18 +46,19 @@ class DC(object):
         else:
             return Book.docFromDB(self)
 
-    def save(self, oldDoc=None):
-        from arm.tools.dbToolkit import DJ
-        from arm.tools.dbToolkit import Book
-        if self.dbAlias.startswith('nv_'):
-            return DJ.docSaveDB(self, oldDoc)
-        else:
-            return Book.docSaveDB(self, oldDoc)
+    def save(self):
+        if not config.DEMO_MODE or self._superUser:
+            from arm.tools.dbToolkit import DJ
+            from arm.tools.dbToolkit import Book
+            if self.dbAlias.startswith('nv_'):
+                return DJ.docSaveDB(self)
+            else:
+                return Book.docSaveDB(self)
 
     def __str__(self):
         return 'DC: -----------\n' + '\n'.join(x for x in [f'{k} = {self._f_[k][:200]}' for k in sorted(self._f_)])
 
-    def __getattr__(self, fieldName):
+    def __getattr__(self, fieldName):  # dbg = dc.dateBegin
         if fieldName == 'doc':
             return self._d_
         elif fieldName == '_KV_':
@@ -77,7 +71,7 @@ class DC(object):
         else:
             self._f_[fieldName.upper()] = str(fieldValue or '')
 
-    def __getitem__(self, fieldName):
+    def __getitem__(self, fieldName):  # dbg = dc['dateBegin']
         return str(self._f_.get(fieldName.upper()) or '')
 
     def __setitem__(self, key, value):
@@ -90,6 +84,12 @@ class DC(object):
         return self._f_.keys()
 
 # *** *** ***
+
+
+config = DC()  # from sova.ini: setting.py -> urls.py -> yandex-disk
+
+# *** *** ***
+
 
 class DCC(object):
     '''
@@ -132,29 +132,34 @@ class DCC(object):
 # *** *** ***
 
 
-CLS = {}
+CLS = {}  # защищенные справочники
+SCLS = {}  # справочники, к которым есть дуступ через апи
 
 # *** *** ***
 
 
-def userRole(user):  # User-model object
-    return well('fullName').get(user.fullName, '')
+class DCDump(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, DC):
+            return obj.__dict__
+        return super().default(obj)
+
+
+def wellSize(s=None):
+    import math
+    l = len(json.dumps(CLS if s else SCLS, cls=DCDump))
+    return f"{'CLS' if s else 'SCLS'}: {math.trunc((l+1023)/1024)}k"
 
 
 def well(*keys):
     cls = CLS
-
-    if not keys:
-        return cls
-
     for k in keys[:-1]:
         cls = cls.get(k)
         if not cls:
             return ''
-    if type(cls) is dict:
-        return cls.get(keys[-1], '')
-    else:
-        return cls
+
+    return cls.get(keys[-1], '') if type(cls) is dict else cls
 
 
 def clearWell(k):
@@ -171,16 +176,32 @@ def toWell(d, *keys):
         cls = CLS[k]
     cls[keys[-1]] = d
 
+# *** *** ***
 
-def appendWell(x, *keys):
-    cls = CLS
+
+def swell(*keys):
+    cls = SCLS
     for k in keys[:-1]:
-        CLS[k] = cls.get(k, {})
-        cls = CLS[k]
-    if not cls.get(keys[-1]):
-        cls[keys[-1]] = []
-    cls[keys[-1]].append(x)
+        cls = cls.get(k)
+        if not cls:
+            return ''
 
+    return cls.get(keys[-1], '') if type(cls) is dict else cls
+
+
+def clearSwell(k):
+    if swell(k):
+        swell(k).clear()
+    else:
+        toSwell({}, k)
+
+
+def toSwell(d, *keys):
+    cls = SCLS
+    for k in keys[:-1]:
+        SCLS[k] = cls.get(k, {})
+        cls = SCLS[k]
+    cls[keys[-1]] = d
 
 # *** *** ***
 
@@ -193,6 +214,7 @@ def getRoot(dc, v):
         for kb, vb in v.items():
             dc[kb] = vb
     except Exception as ex:
+        from arm.tools.first import err
         s = f'Error in body: {ex}'
         dc.err = s
         err(s, cat='getBody')

@@ -1,11 +1,8 @@
-# -*- coding: utf-8 -*-
-
 from arm.tools.common import now, sndErr
 from arm.tools.first import err, snd
-from arm.tools.DC import DC, well, toWell  # , profiles
+from arm.tools.DC import DC, well
 from arm.settings import DB_DIR
 
-# from appSchedule.models import Hours
 
 import json
 import zlib, base64
@@ -15,6 +12,7 @@ import sqlite3 as sqldb
 import time
 from contextlib import suppress
 import threading
+import uuid
 
 # *** *** ***
 
@@ -23,9 +21,6 @@ import threading
 def createDB(dba, *addPath):
     cat = 'createDB'
     dbAlias = tableName(dba)
-    # if dbAlias not in profiles:
-        # err(f'''Invalid dbAlias: "{dbAlias or '-empty-'}"''', cat=cat)
-        # return
 
     path = os.path.join(DB_DIR, *addPath)
     os.makedirs(path, exist_ok=True)
@@ -71,9 +66,6 @@ def sqlite_collation_casei(x, y):
 
 
 def sqlite_function_sqLike(s, patt):
-    # TODO: process wildcards
-    # return fnmatch.fnmatch(s, patt.replace('%', '*').replace('_', '?'))
-
     _patt = patt.lower().replace('%', '')
     _s = s.lower()
     if patt[0] == '%' and patt[-1] == '%':
@@ -97,10 +89,6 @@ def hasDB(dbAlias):
 
 def connectToSrv(dba):
     dbAlias = tableName(dba)
-    # if dbAlias not in profiles:
-        # err(f'''Invalid dbAlias: "{dbAlias or '-empty-'}"''', cat='connectToSrv')
-        # return
-
     dbFile = os.path.join(DB_DIR, f'{dbAlias}.rsf')
 
     if os.path.isfile(dbFile) and os.stat(dbFile).st_size:
@@ -162,23 +150,13 @@ def docFromDB(dcUK):
     """
 
     if not dcUK.unid:
-        keys = {k.partition('_')[2]: v for k, v in dcUK.items() if k.startswith('KEY_')}
-        if keys:
-            for doc in allFromDB(dcUK.dbAlias):
-                if dcUK.viewKey and dcUK.viewKey != doc.key:
-                    continue
-                if all(doc[k] == v for k, v in keys.items()):
-                    dcUK.doc = DC(doc)
-                    return True
-        return
+        dcUK.doc = well('landingByPage', dcUK.page.lower())
+        return dcUK.doc
 
     # ***
 
     try:
         unid = dcUK.unid.replace('-', '')
-        con = connectToSrv(dcUK.dbAlias)
-        if not con:
-            return
 
         if dcUK.xmdf:
             xmdf = f"xmdf='{dcUK.xmdf}'"  # get history
@@ -187,11 +165,15 @@ def docFromDB(dcUK):
 
         sql = f"SELECT xfld FROM LIFE WHERE (unid='{unid}') AND ({xmdf});"
 
+        con = connectToSrv(dcUK.dbAlias)
+        if not con:
+            return
+
         cur = con.cursor()
         cursor = cur and cur.execute(sql)
         if not cursor:
             cur and cur.close()
-            con and unlockCon(con, dcUK.dbAlias)
+            unlockCon(con, dcUK.dbAlias)
             return
 
         xfld = None
@@ -223,19 +205,19 @@ def docFromDB(dcUK):
 # *** *** ***
 
 
-def docSaveDB(dcUK, oldDoc=None):
+def docSaveDB(dcUK):
     '''
     dcUK.doc - документ, который нужно записать
     oldDoc - запись в базе с существующим документом, котрую нужно перевести в истоию.
     '''
 
-    unid = dcUK.unid.replace('-', '')
-    if not oldDoc:
+    unid = dcUK.unid
+    if unid:
         old = DC({'dbAlias': dcUK.dbAlias, 'unid': unid})
         oldDoc = docFromDB(old)
-        con = connectToSrv(dcUK.dbAlias)
-        if not con:
-            return
+    else:  # new doc
+        oldDoc = None
+        unid = dcUK.doc.unid = uuid.uuid4().hex
 
     if oldDoc:  # есть такой, - переводим в историю
         dcUK.doc.MODIFIED = now('-')
@@ -269,7 +251,7 @@ def docSaveDB(dcUK, oldDoc=None):
     fi = {k:v for k, v in dcUK.doc.items() if v and k != 'UNID'}
     xfi = json.dumps(fi, ensure_ascii=False)
 
-    if dcUK.update or not dcUK.dbAlias.endswith('DRAFT'):  # делаем историю только для *DRAFT.sqlite
+    if dcUK.update or not dcUK.dbAlias.lower().endswith('draft'):  # делаем историю только для *DRAFT.sqlite
         if oldDoc:
             sql = [f"UPDATE LIFE SET xfld='{xfi}' WHERE (unid='{unid}') AND (xmdf IS NULL);"]
         else:
@@ -280,8 +262,11 @@ def docSaveDB(dcUK, oldDoc=None):
             f"INSERT INTO LIFE (unid, xfld, xmdf) VALUES ('{unid}', '{xfi}', NULL);",
         ]
 
-    cur = con.cursor()
+    con = connectToSrv(dcUK.dbAlias)
+    if not con:
+        return
 
+    cur = con.cursor()
     for s in sql:
         try:
             cur.execute(s)
@@ -419,7 +404,6 @@ def histFromDB(dcUK):
     unid = dcUK.unid.replace('-', '')
 
     sql = f"SELECT xmdf, xfld FROM LIFE WHERE (unid == '{unid}') AND (xmdf IS NOT NULL);"
-#    sql = f"SELECT xmdf, xfld, unid FROM LIFE WHERE (xmdf IS NOT NULL);"
 
     cur = con.cursor()
     cursor = cur.execute(sql) or []
@@ -442,78 +426,8 @@ def histFromDB(dcUK):
     hist = sorted(hist)
     for i, h in enumerate(hist):
         hist[i] = f'{i+1:03}__{h}'
-        print(i, hist[i])
 
     return json.dumps(hist)
-
-"""
-def docsByCats(key, dcUK, param):
-    '''
-    param - dict
-    cat: {},
-
-    '''
-    docs = well('docsByCats', key) or {}
-    if docs:
-        return docs
-
-    ls = allFromDB(dcUK.dbAlias, dcUK.dir_) or []
-
-
-    self.subCats = {}
-    for d in ls:
-        self.DBC['Все|'].append(d)
-        for cat, fName in self.dcVP.cats.items():
-            if fName and type(fName) == str:
-                if fName[0] == '=': # formula
-                    fi = eval(fName[1:])
-                    print('*******', fi)
-                else:
-                    fi = d.F(fName)
-                if fi:
-                    if fi == True:
-                        fi = ''
-                    k = f'{cat}|{fi}'
-                    if k in self.DBC:
-                        self.DBC[k].append(d)
-                    else:
-                        self.DBC[k] = [d]
-                    if cat not in self.subCats:
-                        self.subCats[cat] = []
-                    if fi and fi not in self.subCats[cat]:
-                        self.subCats[cat].append(fi)
-
-    for c in self.DBC:
-        if sort == 'docNo':
-            self.DBC[c] = sorted(self.DBC[c], key=lambda d: d.F(sort).rjust(6), reverse=reverse)
-        else:
-            self.DBC[c] = sorted(self.DBC[c], key=lambda d: d.F(sort), reverse=reverse)
-    toWell(True, keyWell)
-
-    return self.DBC.get(c_s, [])
-
-"""
-
-'''
-dbLocks = {} # { dbAlias: [threading.Lock(), threading.get_ident()] }
-
-
-
-def dbWait(dba):
-    iniTime = time()
-    while dba in dbLocks and dbLocks[dba][1] and dbLocks[dba][1] != threading.get_ident():
-        sleep(0.1 + 0.05 * random())
-#         print('dbWait %r, thread_id = %r, time = %r' % (dba, dbLocks[dba][1], time() - iniTime))
-        if time() - iniTime > 60:
-            return False
-    return True
-
-
-
-def dbIsLocked(dba):
-    return dbLocks.get(dba, [0, 0])[1]
-
-'''
 
 if __name__ == '__main__':
     createDB('rf.qq/ogg')

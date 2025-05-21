@@ -1,9 +1,9 @@
 {
     "name": "Sova.online",
-    "description": "online training",
+    "description": "educational technology",
     "short_name": "Sova",
     "lang": "en-US",
-    "start_url": "https://sova-online.ru",
+    "start_url": "https://{% site %}",
     "theme_color": "#ffffff",
     "background_color": "#ddeeff",
     "display": "fullscreen",

@@ -10,7 +10,6 @@ window.sovaActions.v_classifiers = {
 				rsMode: 'new',
 				newForm: 'Classifier',
 				dbAlias: 'nv_Classifier',
-				unid: 'new',
 				title: 'Новый справочник',
 			};
 			doc.previewNew(page);

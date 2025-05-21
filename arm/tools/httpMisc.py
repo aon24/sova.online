@@ -28,10 +28,9 @@ def nvResponse(body, content_type='text/html; charset=UTF-8', status=200, reques
         except:
             return HttpResponse(b'nvResponsee: encode-error', content_type=None, status=500)
 
-    # nginx compressed
-    # if len(body) > 100 and any(c in content_type for c in ['/json', '/html', '/javascript', '/css']):
-    #     body = gzip.compress(body)
-    #     headers.append(('Content-Encoding', 'gzip'))
+    if len(body) > 100 and any(c in content_type for c in ['/json', '/html', '/javascript', '/css']):
+        body = gzip.compress(body)
+        headers.append(('Content-Encoding', 'gzip'))
 
     if request and request.dcUK._path in ['image', 'jsv']:
         days = 30

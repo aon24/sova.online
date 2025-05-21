@@ -18,7 +18,7 @@ import os
 
 class img(Page):
 
-    def __init__(self, form):
+    def __init__(self, request):
         self.title = 'Pictures'
         self.noCaching = True
         self.dbAlias = 'arm'
@@ -26,7 +26,7 @@ class img(Page):
         self.jsCssUrl = '/api/jsv?forms/img/img.js'
         self.pictures = self.pic = os.path.join('static', 'pictures')
         self.formDir = ''
-        super().__init__(form)
+        super().__init__(request)
 
     # *** *** ***
 
@@ -116,7 +116,8 @@ class img(Page):
 
     # *** *** ***
 
-    def queryOpen(self, dcUK):
+    def queryOpen(self, r):
+        dcUK = r.dcUK
         dcUK.doc.vl = dcUK.vl  # index of videoList
         dcUK.doc.subDir = dcUK.subDir
         dcUK.doc.btnlist = 1 if dcUK.list == '1' else ''

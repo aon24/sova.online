@@ -4,13 +4,12 @@ Created on 2023
 
 @author: aon24
 '''
-from arm.tools.DC import well, DC
+from arm.tools.DC import well, swell
 from arm.tools.loadWell import loadWell
 from arm.api.forms.classPage import Page
-from arm.tools.dbToolkit.DJ import docFromDB
-from arm.api.forms.formTools import style,_div,_tab,_field
-
-import json
+from arm.api.forms.formTools import style, _div, _field, _tabNew
+from arm.api.forms.SessionTmpl.SessionTmpl import queryOpenForGrSt
+from arm.api.forms.toolbars import toolbar
 
 # *** *** ***
 
@@ -24,107 +23,84 @@ class SessionSt(Page):
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js', ]
         self.title = 'Сессия студента'
         self.dbAlias = 'nv_SessionSt'
-
         super().__init__(request)
 
     # ***
 
     def page(self, request):
         main = _div(**style(height='100%', overflow='auto'), children=[
-            _div('Видеоматериалы', className='h2'),
+            _div('Видеоматериалы', className='h2', name='video'),
             _field('videoGrid', 'grid'),
+            self.materials(),
         ])
 
         # ***
 
         # ***
-        con = _div()
 
         fields = []
-        for i, s in enumerate(well('ratings') or []):
+        for i, s in enumerate(swell('ratings') or []):
             fields += [_div(s, className='h4') , _field(f'assLec{i+1}', 'rating', **style(margin='auto'))]
 
+        tass = [toolbar.saveClose, toolbar.close_] if self.mode == 'edit' else [toolbar.close_]
         ass = _div(**style(padding=10, height='100%', overflowY='auto'),
                 name='ass',
                 children=[
                     _div('Оцените', className='h2'),
                     *fields,
-                    self.btnSaveClose
+                    _div(**style(textAlign='center', paddingTop=4), children=tass)
                 ]
             )
+        if self.noicons:
+            table = [
+                ('1️⃣', self.common(st=True), 45, 'информация'),  # 🦉📓
+                ('Материалы', main, 100, 'учебные материалы'),
+                ('Задания', self.jobs(st=True), 80, 'задания'),
+                ('Обр. связь', ass, 100, 'Обратная связь'),
+            ]
+        else:
+            table = [
+                ('/image/i.png', self.common(st=True), 50, 'информация'),
+                ('/image/s_ummv.png', main, 50, 'учебные материалы'),
+                ('/image/s_dz.png', self.jobs(st=True), 50, 'задания'),
+                ('/image/s_feedback.png', ass, 50, 'Обратная связь'),
+            ]
 
-        table = [
-            ('1️⃣', self.common(st=True), 45),  # 🦉📓
-            ('Видео', main, 70),
-            ('Материалы', self.materials(st=True), 100),
-            ('Практика', con, 90),
-            ('Оценить', ass, 90, 'ass'),
-        ]
-
-        return self.docPage([_tab(width=110, tabs=table, ah=6)])
+        tool = [toolbar.saveClose, toolbar.close_] if self._role == 'куратор' or self._staff else [toolbar.close_]
+        return self.docPage([_tabNew('sst_Table_FD', tabs=table)], tool)
 
     # ***
 
-    def queryOpen(self, dcUK):
+    def queryOpen(self, r):
+        dcUK = r.dcUK
         doc = dcUK.doc
         full_name = well('profiles', doc.pref).full_name
+        doc.fullName = full_name
 
-        if not (full_name == dcUK.fullName or dcUK.q_superUser):
+        if not (full_name == dcUK.fullName or dcUK._superUser):
             doc.noAss_fd = 1
             for k in list(doc.keys()):
                 if k.startswith('ASSLEC'):
                     del doc._KV_[k]
 
-        dc = DC(dbAlias='nv_SessionGr', unid=doc.sessionGr)
-        docFromDB(dc)
-        docGR = dc.doc
-
-        dc.dbAlias = 'nv_SessionTmpl'
-        dc.unid = docGR.sessionTmpl
-        docFromDB(dc)
-        docTm = dc.doc
-
         if 'куратор' not in dcUK._role and not dcUK._staff:
             doc.student_FD = 1
             dcUK.fd = 'STATUS'
 
-        doc.duration = docGR.duration
-        doc.fullName = full_name
 
-        doc.date_begin = docGR.date_begin
-        doc.date_end = docGR.date_end
-        doc.curator = docGR.curator
-        doc.lector = docGR.lector
-        doc.status = docGR.status
-        # doc.semester = docGR.semester
-
-        doc.group_fd = well('groups_groupId', docGR.nvgroup).title
-        doc.nvgroup_fd = f'{doc.group_fd}|{docGR.nvgroup}'
         other = well('groups_groupId', doc.other_group)
         doc.other_group_fd = other and other.title
 
         # ***
 
-        doc.title = docTm.title
-        doc.nvEvent = docTm.nvEvent
-        doc.partLabel = docTm.partLabel
-        doc.description = docTm.description
-
-        doc.videoList = docTm.videoList
-        if doc.videoList and doc.videoList[0] != '[':
-            doc.videoList = json.dumps([{'url': it} for it in doc.videoList.split('\n') if it], ensure_ascii=False)
-
-        doc.fm = docTm.fm
-        doc.mtx = docTm.mtx
-        doc.ref = docTm.ref
-        doc.rtf = docTm.rtf
-        doc.colorStyleMap = docTm.colorStyleMap
-
         if doc.owner:
             doc.other_fd = doc.group_fd
             doc.owner_fd = well('groups_groupId', doc.owner).title
 
+        queryOpenForGrSt(doc, student=True)
+
         # *** *** ***
+
     def querySave(self, dcUK):
         pref = dcUK.doc.pref
         sgr = well('sessionGr_Id', dcUK.doc.sessionGr_Id)

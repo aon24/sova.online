@@ -76,16 +76,26 @@ def blankScreens(key):
             boxIndex=0,
             tuning={'margin': 'auto', 'contur': 1, 'screen': 100},  # screen - номер экрана по умолчанию (100: рут=100 первый блок=1000
             boxes=[
-                smartPhone(100, 480, 960, key),  # rootIndex = 100
-                smartPhone(200, 600, 400, key),  # rootIndex = 200
-                smartPhone(300, 1200, 960, key) ]  # + [smartPhone(i, 600, 400, 3) for i in range(400, 1000, 100)]
+                {   'rect': dict(top=0, left=0, height=1000, width=1000),
+                    'tuning': dict(bgStyle='color', backgroundColor='#00000060'),
+                    'boxIndex': 100,
+                    'boxes': [
+                        {   'rect': dict(top=0, left=500, height=1000, width=1000),
+                            'tuning': dict(marginAuto=1, bgStyle='color', backgroundColor='#00000060'),
+                            'boxIndex': 1000,
+                        },
+                    ]  # smartPhone(100, 480, 960, key),  # rootIndex = 100
+
+                },
+                # smartPhone(100, 480, 960, key),  # rootIndex = 100
+                # smartPhone(200, 600, 400, key),  # rootIndex = 200
+                # smartPhone(300, 1200, 960, key)  # + [smartPhone(i, 600, 400, 3) for i in range(400, 1000, 100)]
+            ]
         )
 
     # *** *** ***
     # *** *** ***
     # *** *** ***
-
-    # print(_blank3d['boxes'][0]['boxes'][0]['boxes'][0])
 
     # tuning.screen задает, какой режим выбрать. screen=0 - выбрать smartPhone(100,..) screen=1 - выбрать smartPhone(200,
     # boxIndex == 0 - служебный блок. Может содержать несколько страниц. Выбранная страница в переменной tuning.screen

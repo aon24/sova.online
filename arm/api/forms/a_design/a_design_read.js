@@ -3,7 +3,7 @@
 //
 // *** *** ***
 
-let startScript = doc => {
+let startScript2 = doc => {
 	if (doc.stopScript) {
 		window.playScript && clearInterval(window.playScript);
 		return;		
@@ -14,7 +14,7 @@ let startScript = doc => {
 		if (doc.stopScript || interval !== doc.rootBox.tuning.interval) {
 			setTimeout( () => {
 				window.playScript && clearInterval(window.playScript);
-				!doc.stopScript && startScript(doc);
+				!doc.stopScript && startScript2(doc);
 				}, 1);
 			return;
 		}
@@ -30,6 +30,19 @@ let startScript = doc => {
 	}, interval === 5000 ? 4000 : interval);
 };
 
+let rotate = p3d => {
+	if (p3d.tuning.mmm === 'rooms') {
+		p3d.tuning.rotate3Z += 2;
+		p3d.tuning.rotate3Z %= 360;
+	}
+	else {
+		p3d.tuning.rotate3Y += 2;
+		p3d.tuning.rotate3Y %= 360;
+	}
+	p3d.rebuild = 'rotate';
+	p3d.forceUpdate();
+};
+
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.a_design = {
 	init2: doc => {
@@ -39,20 +52,7 @@ window.sovaActions.a_design = {
 				p3d.tempRotate3Z = p3d.tuning.rotate3Z;
 				p3d.tempRotate3Y = p3d.tuning.rotate3Y;
 		
-				p3d.intervalHandle = setInterval(() => {
-					if (p3d.tuning.mmm === 'rooms') {
-						p3d.tuning.rotate3Z += 2;
-						if (p3d.tuning.rotate3Z >= 360000)
-							p3d.tuning.rotate3Z = 0;
-					}
-					else {
-						p3d.tuning.rotate3Y += 2;
-						if (p3d.tuning.rotate3Y >= 360000)
-							p3d.tuning.rotate3Y = 0;
-					}
-					p3d.rebuild = 'rotate';
-					p3d.forceUpdate();
-				}, 150);
+				setTimeout( () => {p3d.intervalHandle = setInterval(() => rotate(p3d), 150);}, 300);
 			}
 			
 			for (let it of p3d.floatBoxes)
@@ -65,12 +65,43 @@ window.sovaActions.a_design = {
 		if (doc.rootBox.clip.histArr.length) {
 			doc.rootBox.clip.peak = 0;
 			doc.pageBox.tuning.playScript = 1;
-			startScript(doc);
+			startScript2(doc);
 		}
 	},
 	
 	recalc: {},
 	cmd: {
+		close2d: doc => doc.cmdClose(),
+		more: (doc, param, ctrlKey, shiftKey) => {
+			let page = {
+				dbAlias: 'draft',
+				title: 'О системе',
+				addUrl: `&page=${param}`,
+				rsMode: 'read',
+				pageName: `more-${param}`,
+			};
+
+			doc.previewNew(page, ctrlKey, shiftKey);
+		},
+		iframe: (doc, url, ctrlKey, shiftKey) => {
+			let page = {
+				iframeUrl: url,
+				min: true, max: true, pont: true, smallCls: true,
+				resize: true,
+				form: 'filine',
+				pageName: url,
+				title: url.split('/').at(-1),
+				fieldValues: {Q: 'q'}, // чтобы документ не пытался полезть за данными на сервер
+				children: [
+					{_teg: 'iframe',
+						attributes: {
+							src: url,
+							width: '100%', style: {height: '100%'}
+					}}],
+
+			};
+			doc.previewNew(page, ctrlKey, shiftKey);
+		},
 		addFurniture: (doc, boxIndex) => {
 			const errExit = s => {
 				alert(s);

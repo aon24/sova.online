@@ -75,7 +75,7 @@ class v_groups(Page):
         mainDocs = [ [m[0], m[1]] for m in sorted(mainDocs, key=lambda x: x[2], reverse=True)]
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = 1
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = 1
 
 # *** *** ***

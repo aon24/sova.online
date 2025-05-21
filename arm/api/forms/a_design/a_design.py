@@ -7,7 +7,7 @@ Created on 2020.
     <defs>
         <path id="myTextPath2" d="M40, 200 a 30,30 0 0 1 300,0"/>
      </defs>
-    <text x="10" y="10" style={{stroke: '#048', font: 'normal 30px Times'}}>
+    <text x="10" y="10" style={{stroke: '#036', font: 'normal 30px Times'}}>
         <textPath xlinkHref="#myTextPath2">
             look into the future
         </textPath>
@@ -15,6 +15,7 @@ Created on 2020.
 </svg>
 '''
 from .a_screens import blankScreens
+from .fields import getField
 from arm.tools.first import err
 from arm.tools.dbToolkit.Book import histFromDB
 from arm.tools.loadWell import loadLanding
@@ -34,14 +35,17 @@ import zlib
 
 class a_design(Page):
 
-    def __init__(self, form):
+    def __init__(self, request):
         self.title = 'html-edit'
         self.form = 'a_design'
         s = f'/api/jsv?forms/{self.form}'
         self.jsCssUrlEdit = [f'{s}/{self.form}.js', f'{s}/turnOn.js']
         self.jsCssUrlRead = [f'{s}/a_design_read.js', f'{s}/turnOn.js']
         self.dbAlias = 'draft'
-        super().__init__(form)
+        self.styles = '<link href="/static/fonts/home.css" rel="stylesheet">\n'
+        # self.styles = '<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">\n'
+
+        super().__init__(request)
 
     # *** *** ***
 
@@ -59,9 +63,9 @@ class a_design(Page):
             )
         elif mode == 'read':
             return _div(
-                **style(overflowY='auto', overflowX='hidden', height=hPage),
+                **style(overflowY='auto', overflowX='hidden', minHeight='100%'),
                 children=[
-                    _field('root', 'box', **style(margin='auto', height=hPage))
+                    _field('root', 'box', **style(margin='auto', height='100%'))
             ])
 
         return _div(
@@ -76,35 +80,41 @@ class a_design(Page):
 
     # *** *** ***
 
-    def queryOpen(self, dcUK):
-        self.title = dcUK.doc.title or 'html-edit'
+    def queryOpen(self, request):
+        dcUK = request.dcUK
+        doc = dcUK.doc
+        self.title = doc.title or doc.pageName or 'html-edit'
 
-        # dcUK.doc.root = dcUK.doc.root.replace('http://result-systems.online', 'https://result-systems.ru')
-        # dcUK.doc.webSocketServer_FD = f'{config.ws_server}:{config.ws_port}'
-        dcUK.doc.created_FD = dcUK.doc.DT('created')
-        dcUK.doc.modified_FD = dcUK.doc.DT('modified')
-        dcUK.doc.published_FD = dcUK.doc.published
-        dcUK.doc.creator_FD = dcUK.doc.creator
-        dcUK.doc.modifier_FD = dcUK.doc.modifier
-        dcUK.doc._syles_ = ''
-        dcUK.doc.docNo_FD = f"№ {dcUK.doc.pref}{dcUK.doc.docNo}{dcUK.doc.suff} от {dcUK.doc.D('created')}"
+        # doc.root = doc.root.replace('http://result-systems.online', 'https://result-systems.ru')
+        # doc.webSocketServer_FD = f'{config.ws_server}:{config.ws_port}'
+        doc.created_FD = doc.DT('created')
+        doc.modified_FD = doc.DT('modified')
+        doc.published_FD = doc.published
+        doc.creator_FD = doc.creator
+        doc.modifier_FD = doc.modifier
+        doc._syles_ = ''
+        doc.docNo_FD = f"№ {doc.pref}{doc.docNo}{doc.suff} от {doc.D('created')}"
 
-        dcUK.doc.dir = dcUK.doc.dir or '0'
-        dcUK.doc.root = dcUK.doc.root or blankScreens(dcUK.key)
-        dcUK.doc.rainbow = dcUK.doc.rainbow or '\n'.join(['#ff0000ff', '#ffa500ff', '#ffff00ff', '#008000ff', '#0000ffff', '#4b0082ff', '#ee82eeff'])
-        dcUK.doc.key = dcUK.doc.key or dcUK.key
-        if dcUK.doc.key == 'все':
-            dcUK.doc.key = '2d'
+        doc.dir = doc.dir or '0'
+        doc.root = doc.root or blankScreens(dcUK.key)
+        doc.rainbow = doc.rainbow or '\n'.join(['#ff0000ff', '#ffa500ff', '#ffff00ff', '#008000ff', '#0000ffff', '#4b0082ff', '#ee82eeff'])
+        doc.project = doc.project or dcUK.project
+        doc.key = doc.key or dcUK.key
+        if doc.key == 'все':
+            doc.key = '2d'
 
-        if dcUK.doc.theScript:
+        if doc.theScript:
             path = os.path.join(BASE_DIR, 'DB', 'scripts', dcUK.fullName.partition(' ')[0] or 'guest')
             try:
                 # with open(os.path.join(path, 'f4292d475fa7423196a0ebdb8a225c9d'), 'br') as f:
                 with open(os.path.join(path, dcUK.unid), 'br') as f:
                     s = f.read()
-                    dcUK.doc.theScript = zlib.decompress(s).decode()
+                    doc.theScript = zlib.decompress(s).decode()
             except Exception as ex:
                 err(f'the load script error: {ex}', cat='a_design')
+
+        if doc.pageName == 'login2d':
+            doc.login2d_fd = getField('login2d_fd', request)
 
 # *** *** ***
 

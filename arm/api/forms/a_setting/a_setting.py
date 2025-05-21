@@ -4,9 +4,9 @@ Created on 2020.
 
 @author: aon
 '''
-from arm.api.forms.formTools import _tab, style, _div, _field, label, _btnD, _table, _span, labField, _br, labell, labelc, _teg
+from arm.api.forms.formTools import _tabNew, style, _div, _field, label, _btnD, _table, _span, labField, _br, labell, labelc, _teg
 from arm.api.forms.classPage import Page
-from arm.tools.DC import well
+from arm.tools.DC import swell
 
 # *** *** ***
 
@@ -14,13 +14,13 @@ from arm.tools.DC import well
 class a_setting(Page):
     delay = 1000
 
-    def __init__(self, form):
+    def __init__(self, request):
         self.title = 'Setting'
         self.form = 'a_setting'
         self.jsCssUrl = '/api/jsv?forms/a_setting/a_setting.js'
         self.dbAlias = 'db_pages_2'
         self.noCaching = True
-        super().__init__(form)
+        super().__init__(request)
 
     def page(self, request):
         self.d3 = request.dcUK.key
@@ -29,44 +29,30 @@ class a_setting(Page):
             _div(name='setBox', children=self.settingDiv()),
         ])
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._PAGE_ = 1
+    def queryOpen(self, r):
+        r.dcUK.doc._PAGE_ = 1
 
 # *** *** ***
 
     def settingPage(self):
-        if self.d3 != '2d':
-            screen = _field('screen', 'band', [
-                _div(className='tb-pc', children=[
-                    _div(className='tb-pc-screen'),
-                    _div(className='tb-pc-ground',
-                        children=[
-                            _div(**style(width='35%', borderBottomRightRadius=7)),
-                            _div(**style(width='30%', background='#888')),
-                            _div(**style(width='35%', borderBottomLeftRadius=7))
-                        ]),
-                ]),
-                _div(className='tb-phone'),
-            ], className='screens')
-        else:
-            screen = _field('screen', 'band', [
-                _div(className='tb-phone'),
-                _div(className='tb-tablet'),
-                _div(className='tb-pc', children=[
-                    _div(className='tb-pc-screen'),
-                    _div(className='tb-pc-ground',
-                        children=[
-                            _div(**style(width='35%', borderBottomRightRadius=7)),
-                            _div(**style(width='30%', background='#888')),
-                            _div(**style(width='35%', borderBottomLeftRadius=7))
-                        ]),
-                ]),
-            ], className='screens')
+        screen = _field('screen', 'band', [
+            _div(className='tb-pc', children=[
+                _div(className='tb-pc-screen'),
+                _div(className='tb-pc-ground',
+                    children=[
+                        _div(**style(width='35%', borderBottomRightRadius=7)),
+                        _div(**style(width='30%', background='#888')),
+                        _div(**style(width='35%', borderBottomLeftRadius=7))
+                    ]),
+            ]),
+            _div(className='tb-tablet'),
+            _div(className='tb-phone'),
+        ], className='screens')
 
         body = [
-           screen,
-
+            screen,
             _div(className='setting-line'),
+
             _div(wl=50, **style(width=255), children=_table(
                     labField('проект', 'project'),
                     labField('имя', 'pageName'),
@@ -75,7 +61,7 @@ class a_setting(Page):
                     # labField('js', 'script'),
                     # labField('css', 'css'),
                     labField('notes', 'notes'),
-                    labField('key', 'key', 'lbse', well('3dKeys'), small='2'),
+                    labField('key', 'key', 'lbsd', swell('3dKeys'), small='2'),
                 )
             ),
             _div(className='setting-line'),
@@ -177,7 +163,7 @@ class a_setting(Page):
     def is3d0(self):
         return [
             _field('bb3d', 'band', ['\xa03d \xa0', 'стены', 'мебель', 'эл-ка'],
-                **style(fontSize=14, color='#048', borderSpacing='4px')
+                **style(fontSize=14, color='#036', borderSpacing='4px')
             ),
 
             *_table([
@@ -281,7 +267,7 @@ class a_setting(Page):
                 _div(className='setting-line'),
                 *_table([
                     _div(**style(width='20%', textAlign='center'), children=[
-                        _span('Цвет', **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#048')),
+                        _span('Цвет', **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#036')),
                         _field('shadowColor3', 'input-color', colorList='rainbow')
                     ]),
                     _div(**style(paddingLeft=10, textAlign='center', borderLeftWidth=1, border='0 solid #aaa'), children=[
@@ -578,7 +564,7 @@ class a_setting(Page):
                     children=[
                         _field(f'room{add}', 'band',
                            ['мягкая', 'корпусная', 'техника'],
-                           **style(border='1px solid #aaa', fontSize=14, color='#048', borderSpacing='10px'),
+                           **style(border='1px solid #aaa', fontSize=14, color='#036', borderSpacing='10px'),
                            rowLength=3, recalcText=1,
                            **style('itemStyle', width=70)
                         )
@@ -589,7 +575,7 @@ class a_setting(Page):
                     children=[
                         _field(f'kitchen{add}', 'band',
                            ['напольная', 'навесная', 'техника'],
-                           **style(border='1px solid #aaa', fontSize=14, color='#048', borderSpacing='10px'),
+                           **style(border='1px solid #aaa', fontSize=14, color='#036', borderSpacing='10px'),
                            rowLength=3, recalcText=1,
                            **style('itemStyle', width=70)
                         )
@@ -600,11 +586,11 @@ class a_setting(Page):
 
         return [
 
-            _tab(width=130, tabs=[
+            _tabNew('SET_Table_FD', tabs=[
                 ['Home', _div(**style(overflow='auto'),
-                    className='insideHome', children=buttons('', 'локально'))],
+                    className='insideHome', children=buttons('', 'локально')), 130],
                 ['Sova.online', _div(**style(overflow='auto'),
-                    className='insideSova', children=buttons('S', 'с сервера'))],
+                    className='insideSova', children=buttons('S', 'с сервера')), 130],
             ]),
 
             # Вставить 3d в 3d можно только в режиме "мебель", если clip.boxClipboard() === '3d'
@@ -731,7 +717,7 @@ class a_setting(Page):
     def box2d0(self):
         return [
             _field('bb', 'band', ['\xa0\xa0\xa0', 'бокс', 'бордюр', 'тень', 'html'],
-                **style(fontSize=14, color='#048', borderSpacing='4px')),
+                **style(fontSize=14, color='#036', borderSpacing='4px')),
             _div(name='scale2d', className='setting-line'),
             _field('scale2d', 'slip', [0.05, 3, 0.05, 'масштаб', 10], name='scale2d', digits=2, className='label'),
             _field('cm2d', 'chb3', ['размер в см|cm', 'размер в мм|mm'], name='scale2d', noEmpty=1, **style(margin='10px auto')),
@@ -756,21 +742,16 @@ class a_setting(Page):
             _div(name='boxContent', className='setting-head', children=[
                 _span('Бокс контент', className='setting-title'),
                 _field('boxContent', 'band',
-                    ['\xa0\xa0\xa0\xa0', 'текст', 'редактор', 'кнопка'],  # , 'поле\xa0БД', 'SVG', 'виджет', ''],
+                    ['\xa0\xa0\xa0\xa0', 'текст', 'rtf', 'поле'],  # , 'поле\xa0БД', 'SVG', 'виджет', ''],
                     rowLength=4)
             ]),
 
             _div(name='isField', **style(background='#def'), children=[
                 labell('Имя поля'),
-                _field('fieldName', 'tx'),
+                _field('xName', 'tx'),
                 labell('Тип'),
                 _field('fieldType', 'lbsd', [
-                    'нередактируемый текст|fd',
-                    'текст|tx',
-                    'дата|dt',
-                    'список (один из)|lbsd',
-                    'список (multivalue)|lbmd',
-                    'список + текст|lbme',
+                    'json|json',
                     'файлшоу|fileShow',
                 ], alias=1, small='2'),
                 labell('Выпадающий список', name='dropList'),
@@ -801,7 +782,7 @@ class a_setting(Page):
 
             _div(name='borNE', className='setting-block', children=[
                 _field('borderSide', 'band', ['слева', 'сверху', 'справа', 'снизу'],
-                    **style(fontSize=14, color='#048', borderSpacing='5px')),
+                    **style(fontSize=14, color='#036', borderSpacing='5px')),
 
                 *self.brdStyle('Left'),
                 *self.brdStyle('Top'),
@@ -816,9 +797,9 @@ class a_setting(Page):
         return [
             *_table([
                 _div(name=f'bor{side}', **style(width='22%', textAlign='center'), children=[
-                    _div((side or '\xa0').lower(), **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#048')),
+                    _div((side or '\xa0').lower(), **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#036')),
                     _field(f'border{side}Color', 'input-color', colorList='rainbow'),
-                    _div('Цвет', **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#048')),
+                    _div('Цвет', **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#036')),
                 ]),
 
                 _div(name=f'bor{side}', **style(paddingLeft=10, fontSize=6, textAlign='center', borderLeftWidth=1, border='0 solid #aaa'),
@@ -882,6 +863,8 @@ class a_setting(Page):
                 _field('anchor', 'chb', ['якорь'], title='для перехода при клике мышкой', **style(display='inline')),
                 _field('showAnchor', 'fd', name='showAnchor', **style(padding='10px 0 5px 10px', display='inline')),
             ]),
+            _field('flex', 'chb', ['display: flex'], name='flex', **style(display='block')),
+            _field('clipboard', 'chb', ['clipboard'], name='clipboard', **style(display='block')),
 
             _div(className='setting-line'),
             labell('overflow'),
@@ -905,7 +888,13 @@ class a_setting(Page):
                 self.trans('translate', -10000, 10000, 1),
                 self.trans('rotate', -360, 360, 1),
                 self.trans('skew', -90, 90, 15),
-            ])
+            ]),
+
+            _div(className='setting-line'),
+            labell('maxWidth'),
+            _field('maxWidth'),
+            labell('margin'),
+            _field('margin'),
         ]
 
     def textStyle(self):
@@ -940,14 +929,15 @@ class a_setting(Page):
                 ], name='textAlign', **style(width='80%', margin='auto', borderSpacing='5px')),
 
             labell('Шрифт'),
-            _field('fontFamily', 'lbsd', ['Verdana', 'Arial', 'Courier', 'Futura PT'], small='2'),
+            _field('fontFamily', 'lbsd', ['Verdana', 'Arial', 'Courier', 'Futura PT', 'Pacifico', 'Liberation-Sans-Narrow', 'OtherFont'], small='2'),
             *_table([
                 _field('fontSize', 'slip', [1, 100, 1, 'Размер', 2000], metric='rem|px', className='label', **style(width=170, paddingTop=10, marginLeft=5)),
                 _div(children=[label('Цвет', **style(width=55)), _field('color', 'input-color', **style(marginLeft=20), colorList='rainbow')]),
             ]),
             *_table([
-                _field('fontWeight', 'chb', ['жирный|bold'], className='label'),
-                _field('fontStyle', 'chb', ['курсив|italic'], className='label')
+                _field('fontWeight', 'chb', ['жир|bold'], className='label'),
+                _field('fontStyle', 'chb', ['курс|italic'], className='label'),
+                _field('fontUnderline', 'chb', ['подч|italic'], className='label'),
             ]),
             _div(className='setting-line', **style(marginTop=8)),
             labelc('Интервал'),
@@ -963,13 +953,17 @@ class a_setting(Page):
             ]),
             _div(**style(margin='auto', width='90%'), children=_table(
                 [_field('textIndent', 'slip', [0, 200, 1, 'Параграф', 2000], className='label', metric='em|px')])),
+            labell('Cmd'),
+            _field('cmd', 'tx'),
+            _field('par', 'tx'),
+
         ]
 
     def shadow(self):
         return _div(className='setting-block', name='shadowOn', children=[
             *_table([
                 _div(**style(width='20%', textAlign='center'), children=[
-                    _span('Цвет', **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#048')),
+                    _span('Цвет', **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#036')),
                     _field('shadowColor', 'input-color', colorList='rainbow')
                 ]),
                 _div(**style(paddingLeft=10, textAlign='center', borderLeftWidth=1, border='0 solid #aaa'), children=[

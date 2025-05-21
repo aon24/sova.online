@@ -6,7 +6,7 @@ from arm.tools.httpMisc import nvResponse
 # from arm.tools.checkRights import notEditor
 from arm.tools.DC import well
 from arm.tools.imgHeader import what
-from arm.settings import DB_DIR, BASE_DIR
+from arm.settings import DB_DIR, BASE_DIR, DEMO_MODE
 
 import zlib, uuid, os
 
@@ -20,8 +20,8 @@ def uploadFile(request):
         err(s, cat='error-upload.py')
         return nvResponse(s, None, 400)
 
-    # if notEditor(dcUK.dbAlias, dcUK.fullName):
-        # return _err(f'uploadFile: Access denied for user {dcUK.fullName}')
+    if DEMO_MODE and not request.dcUK._superUser:
+        return _err(f'uploadFile: read only for {request.dcUK.fullName}')
 
     defaultStore = os.path.join(DB_DIR, 'files')
 

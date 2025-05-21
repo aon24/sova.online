@@ -40,7 +40,7 @@ def makeVideoVK(dcUK):
 
     dirInfo = []
     for item in videos:
-        it = dict()
+        it = {}
         it['platform'] = 'VK'
         it['name'] = stempl.alias
         it['url'] = item['title']

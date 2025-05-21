@@ -5,9 +5,10 @@ Created on 2023
 @author: aon24
 '''
 
-from arm.tools.DC import well
-from ..formTools import style, _div, _btnEdit, _field, _btnDel, _btnD, _btnNew, _search
-from ..classPage import Page
+from arm.tools.DC import well, swell
+from arm.tools.first import err
+from arm.api.forms.formTools import style, _div, _search, _field, _btnDel, _btnEdit, _btnNew, _btnView
+from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
 
 import json
@@ -16,97 +17,80 @@ import json
 
 
 class v_more(Page):
+
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
-        self.jsCssUrl = [ f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Дополнительно'
-        self.dbAlias = 'nv_Profile'
-
+        self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
+        self.title = 'Лендинг'
+        self.dbAlias = 'draft'
         self.leftWidth = 105
-        self.viewbar = None
-        
+        self.noCaching = True
+
         super().__init__(request)
 
-    # *** *** ***
-
     def getData(self, dcUK):
-        if dcUK.cmd == 'getSelected':
-            data = self.getView(dcUK)
-        elif dcUK.cmd == 'changeUp':
-            data = self.getLeftList(dcUK)
-        else:
-            data = f'invalid cmd: {dcUK.cmd}'
+        try:
+            if dcUK.cmd == 'getSelected':
+                data = self.getView(dcUK)
+            elif dcUK.cmd == 'getLeftList':
+                project = set()
+                [project.add(dc.project) or '-?-' for dc in well('landing') if dc.key == dcUK.key or dcUK.key == 'все']
+                project = sorted(project)
+                project.append('все')
+                data = project
+            else:
+                data = f'invalid cmd: {dcUK.cmd}'
+        except Exception as ex:
+                err(f'{ex}', cat='arm.getData.getView')
+                data = {'mainDocs': [('123', f'ERROR: {ex}'), ], 'refsDocs': []}
         return json.dumps(data, ensure_ascii=False)
 
     # *** *** ***
 
     def page(self, request):
-        ls = ['Тренинг|training', 'Фест|fest', 'Озн.сем|invite']
         self.upField = _div(children=[
             _div(className='toolbar',children=[toolbar.close_]),
-            _field('upList', 'band', ls, recalcText=1, **style(margin='auto', width='auto'))
+            _field('key', 'band', swell('3dKeys') + ['все'], recalcText=1, **style(margin='auto', display='table', width='auto'))
         ])
 
+        self.leftList = _field('leftList', 'band', [], className='list3str')
+
         self.viewbar = self.makeViewbar(
-            leftBtn=[_btnNew(self.dbAlias)],
+            leftBtn=[_btnNew('a_design'), _btnNew('a_more')],
             rightBtn=_search()
         )
 
-        self.leftList = _field('leftList', 'band', [], name='viewbar1', className='list3str')
-
-        return self.shamrock(addUrl='&upList={upList}')
+        return self.shamrock(addUrl='&key={key}')
 
     # *** *** ***
-
-    def getLeftList(self, dcUK):
-        key = dcUK.upList
-        left = set()
-        for u in well('more'):
-            if u[key]:
-                for k in u[key].split('\n'):
-                    left.add(k.strip())
-        if key == 'fest':
-            return sorted(left, key=lambda x: x[-4:] if x[-4].isdigit() else f'0{100000-ord(x[0])}', reverse=True)
-        elif key == 'invite':
-            return sorted(left, key=lambda x: x if x[0].isdigit() else f'0{100000-ord(x[0])}', reverse=True)
-        else:
-            return sorted(left)
 
     def getView(self, dcUK):
-        top = dcUK.upList.partition('|')[2]  # training|fest|invite
-        left = dcUK.selected
+        project = dcUK.selected
+        key = dcUK.key
         mainDocs = []
 
-        for dc in well('more'):
-            if not dc[top]:
+        for cls in sorted(well('landing'), key=lambda dc: dc.modified or dc.created, reverse=True):
+            pk = cls.unid
+
+            if project != 'все' and project != cls.project:
                 continue
-            if top == 'invite':
-                if left != dc[top].strip():
-                    continue
-            elif left not in dc[top].split('\n'):
+            if key != 'все' and key != cls.key:
                 continue
 
-            # if status != 'Все':
-            #     if status == 'актив' and dc.status != 'active':
-            #         continue
-            #     if status == 'архив' and dc.status != 'closed':
-            #         continue
+            title = _div(f"{cls.key} -- {cls.project} -- {cls.pageName}\n{cls.pageSize} ({cls.modified or cls.created})",
+                className='mCell', s2=1, br=1, **style(width='100%', paddingLeft=2, letterSpacing=1))
 
-            title = _div(f'{dc.FULL_NAME}\n{dc.phone}',
-                className='mCell', s2=1, br=1, **style(width='100%', letterSpacing=1))
-
-            btnPay = _btnD('Р', 'cmdNewPay', dc.pk, className=f'btnIcon mBtn fv2 fv2yes', title='оплачено')
-            btnE = _btnEdit('cmdEdit', dc.pk)
-            btnD = _btnDel('cmdDel', f'mainList|{dc.pk}|nv_Profile')
+            btnV = _btnView('cmdView', pk)
+            btnE = _btnEdit('cmdEdit', pk)
+            btnD = _btnDel('cmdDel', f'mainList|{pk}|draft')
 
             row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto auto'),
-                children=[title, btnPay, btnE, btnD])
-            mainDocs.append([dc.pk, row, dc.FULL_NAME])
+                children=[title, btnV, btnE, btnD])
+            mainDocs.append([pk, row])
 
-        mainDocs = [ [m[0], m[1]] for m in sorted(mainDocs, key=lambda x: x[2])]
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    # *** *** ***
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = 1
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = 1
 
+# *** *** ***

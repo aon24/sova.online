@@ -7,7 +7,7 @@ Created on 2023
 from arm.tools.common import sndErr
 from arm.tools.first import err
 from arm.tools.DC import well, config, DC
-from arm.api.forms.formTools import style, _div, _tab, _field, _btnD, _teg, gridStyle
+from arm.api.forms.formTools import style, _div, _field, _btnD, _teg, _tabNew
 from arm.api.forms.classPage import Page
 from arm.api.forms.YandexDisk.YandexTools import makeVideoY, getVideoUrlY, testYDFolder, getYDisk, y_makeFolder
 from arm.api.forms.YandexDisk.VKTools import makeVideoVK, getVideoUrlVK
@@ -65,7 +65,7 @@ class SessionTmpl(Page):
             data = f'invalid cmd: {dcUK.cmd}'
             err(f'invalid cmd: {dcUK.cmd}', cat='SessionTmpl.getData')
 
-        if data != None:
+        if data is None:
             return json.dumps(data, ensure_ascii=False)
         else:
             return f'Server error. cmd: {dcUK.cmd}'
@@ -74,10 +74,6 @@ class SessionTmpl(Page):
 
     def page(self, request):
         main = _div(**style(height='100%', overflow='auto'), children=[
-            # _div(**gridStyle('auto auto'), children=[
-            #     _div('Видеоматериалы', className='h2'),
-            #     _field('restrict', 'band', ['сессии', 'лекции|1', 'только сотрудники|2']),
-            # ]),
             _div('Видеоматериалы', className='h2'),
             _teg('fieldset', className='videoMaterial', name='videoMaterial', children=[
                 _teg('legend', ' Защищенное видео ', **style(margin='auto', textAlign='center')),
@@ -94,16 +90,6 @@ class SessionTmpl(Page):
                     _btnD('1. Загрузить на Яндекс-диск', 'openYD', className='toolbar-button'),
                     _btnD('2. Засекретить и обновить', 'makeVideoY', className='toolbar-button'),
                 ]),
-                #
-                # _div(name='openVK', **style(textAlign='center'), children=[
-                #     _field('openVK', 'btn', fd=1, className='toolbar-button', **style()),
-                #     _btnD('2. Обновить', 'makeVideoVK', className='toolbar-button'),
-                # ]),
-                #
-                # _div(name='openDisk', **style(textAlign='center'), children=[
-                #     _field('openDisk', 'btn', fd=1, className='toolbar-button', **style()),
-                #     _btnD('2. Обновить', 'makeVideoDisk', className='toolbar-button'),
-                # ]),
             ]),
             _field('videoGrid', 'grid'),
 
@@ -115,34 +101,55 @@ class SessionTmpl(Page):
 
         # ***
 
-        table = [
-            ('1️⃣', self.common(tmpl=True), 50),  # 🦉📓
-            ('Видео', main, 80),
-            ('Материалы', self.materials(tmpl=True), 90),
-        ]
+        mind = _div(**style(height='100%', display='grid', gridTemplateRows='auto 1fr'), children=[
+            _div('Учебно-методические материалы', className='h2', **style(margin=5, color='#480')),
+            _tabNew(xName='UM_Table_FD', tabs=[
+                ('Видео', main, 70),
+                ('Материалы', self.materials(tmpl=True), 100),
+                ('Задания', self.jobs(tmpl=True), 80),
+            ], center=True)
+        ])
+        if self.noicons:
+            table = [
+                ('1️⃣', self.common(tmpl=True), 45, 'информация'),  # 🦉📓
+                ('УММ', mind, 60, 'учебные материалы')
+            ]
+        else:
+            table = [
+                ('/image/i.png', self.common(tmpl=True), 50, 'информация'),
+                ('/image/s_ummv.png', mind, 50, 'учебные материалы'),
+            ]
 
-        # vkAut = _btnD('vkAut', 'vkAut', '/api/runCmd?cmd=openPage&file=vk_auth.html', title='', className='toolbar-button')
-
-        # tool = [toolbar.saveClose, toolbar.close_]
-        return  self.docPage([_tab(width=110, tabs=table, ah=6)], focus='title')  # , tool=tool)
+        return  self.docPage([_tabNew('SST_Table_FD', tabs=table)], focus='title')
 
     # ***
 
-    def queryOpen(self, dcUK):
+    def queryOpen(self, r):
+        dcUK = r.dcUK
         doc = dcUK.doc
         doc.status = doc.status or 'active'
         doc.title = doc.title.strip()
 
-        if dcUK.mode == 'new':
-            if dcUK.sourceDoc:
-                sourceDoc = well('sessionTmpl_id', dcUK.sourceDoc)
-                for k in ['nvEvent', 'sticker', 'title', 'lector', 'DESCRIPTION', 'notes']:
-                    if sourceDoc[k]:
-                        doc[k] = sourceDoc[k]
-            else:
-                doc.nvEvent = dcUK.nvEvent
-                doc.sticker = f'/static/pictures/Программа/owl-{dcUK.nvEvent}.jpg'
+        if dcUK.mode in ['new', 'edit']:
+            if dcUK.mode == 'new':
+                if dcUK.sourceDoc:
+                    sourceDoc = well('sessionTmpl_id', dcUK.sourceDoc)
+                    for k in ['nvEvent', 'sticker', 'title', 'lector', 'DESCRIPTION', 'notes']:
+                        if sourceDoc[k]:
+                            doc[k] = sourceDoc[k]
+                else:
+                    doc.nvEvent = dcUK.nvEvent
+            if 'преподаватель' in dcUK._role:
+                if doc.lector and dcUK.fullName not in doc.lector:
+                    doc.lector += f'\n{dcUK.fullName}|{dcUK._profilePK}'
+                else:
+                    doc.lector = f'{dcUK.fullName}|{dcUK._profilePK}'
 
+                for l in doc.lector.split('\n'):
+                    fio = l.partition('|')[0]
+                    fio = '.'.join([x[:1] for x in fio.split()]) + '.'  # A.A.A.
+
+        doc.sticker = doc.sticker or well('stickerByCode', dcUK.nvEvent)
         if doc.sticker:
             doc.stickerImg = json.dumps([_div(**style(width=260, height=160, backgroundSize='100% 100%', backgroundImage=f"url('{doc.sticker}')"))], ensure_ascii=False)
 
@@ -156,16 +163,64 @@ class SessionTmpl(Page):
                 path = f"{config.serviceName}/{well('eventsByCode', doc.nvEvent)}/{doc.id}_{alias}"
                 doc.openYDurl = f'https://disk.yandex.ru/client/disk/{path}'
 
-        # if config.vk_group_id:
-        #     url = f'https://vk.com/video/playlist/-{config.vk_group_id}_{doc.vk_album_id}'
-        #     doc.openVK = f'1. Загрузить в плейлист VK|openVK|{url}'
-        #
-        # nveText = well('eventsByCode', doc.nvEvent)
-        # doc.openDisk = f'1. Загрузить на сервер|openDisk|/api/openDisk?{nveText}/{doc.alias}'
-
-        # print(type(doc.videoList), doc.videoList)
         if doc.videoList and doc.videoList[0] != '[':
             doc.videoList = json.dumps([{'url': it} for it in doc.videoList.split('\n') if it], ensure_ascii=False)
 
     def querySave(self, dcUK):
         return True
+
+# *** *** ***
+
+
+def queryOpenForGrSt(doc, student=None):
+    '''
+    вызываается из queryOpen форм SessionSt, SessionGr
+    заполняет поля для формы SessionSt (if student=True) or for SessionGr (if student=None)
+    '''
+    if student:
+        docGr = well('sessionGr_Id', doc.sessionGr)
+        docTm = well('sessionTmpl_id', docGr.sessionTmpl)
+
+        doc.duration = docGr.duration
+        doc.date_begin = docGr.date_begin
+        doc.date_end = docGr.date_end
+        doc.curator = docGr.curator
+        doc.lector = docGr.lector
+        doc.status = docGr.status
+        # doc.semester = docGR.semester
+
+        doc.group_fd = well('groups_groupId', docGr.nvgroup).title
+        doc.nvgroup_fd = f'{doc.group_fd}|{docGr.nvgroup}'
+
+        for i in range(1, 6):
+            doc[f'job{i}'] = docGr[f'job{i}'] or docTm[f'job{i}']
+
+        doc.title = docTm.title
+    else:  # SessionGr
+        docTm = well('sessionTmpl_id', doc.sessionTmpl)
+
+        for i in range(1, 6):
+            doc[f'job{i}'] = docTm[f'job{i}']
+
+        doc.lector = doc.lector or docTm.lector
+        doc.openTmpl = f"{docTm.title}|previewNew|title={docTm.title}&form=SessionTmpl&unid={docTm.id}&dbAlias=nv_SessionTmpl&rsMode=edit"
+
+    doc.nvEvent = docTm.nvEvent
+    doc.partLabel = docTm.partLabel
+    doc.description = docTm.description
+
+    if docTm.videoList and docTm.videoList != '[]':
+        if docTm.videoList[0] != '[':
+            doc.videoList_FD = json.dumps([{'url': it} for it in docTm.videoList.split('\n') if it], ensure_ascii=False)
+        else:
+            doc.videoList_FD = docTm.videoList
+
+    doc.fm = docTm.fm
+    doc.mtx = docTm.mtx
+    doc.href = docTm.href
+    doc.rtf = docTm.rtf
+    doc.colorStyleMap = docTm.colorStyleMap
+
+
+# *** *** ***
+

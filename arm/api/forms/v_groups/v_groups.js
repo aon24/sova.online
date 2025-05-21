@@ -6,7 +6,6 @@ window.sovaActions.v_groups = {
 				rsMode: 'new',
 				newForm: `NVGroup`,
 				dbAlias: 'nv_NVGroup',
-				unid: 'new',
 				title: 'Новая группа',
 			};
 			doc.previewNew(page);

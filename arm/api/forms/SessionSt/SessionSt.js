@@ -1,27 +1,24 @@
-
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.SessionSt = {
 	init: doc => {
-		doc.videoList = JSON.parse(doc.fieldValues.VIDEOLIST || '[]');
+		doc.videoList = JSON.parse(doc.getField('VIDEOLIST_FD') || '[]');
 		doc.videoList.sort((a, b) => (a.name || '') > (b.name || '') ? 1 : -1);
-		doc.fieldValues.VIDEOLIST = null;
+		for (let i=0; i < 10; i++) {
+			doc.sova.hide[`UM_Table_FD_${i}`] = doc => i !== doc.getField('UM_Table_FD');
+			doc.sova.hide[`sst_Table_FD_${i}`] = doc => i !== doc.getField('sst_Table_FD');
+		}
 	},
 	
 	cmd: {
 		newPay: (doc, par, ctrl, shiftKey) => {
 			let page = {
 				addUrl: [
-					`&sstId=${doc.fieldValues['ID']}`,
-					`t1=${doc.getField('DATE_BEGIN')}`,
-					`nvEvent=${doc.fieldValues['NVEVENT']}`,
-					`purpose=${doc.getField('title')}`,
-					`group=${doc.getField('nvgroup_fd')}`,
+					`&sgrId=${doc.getField('SESSIONGR_ID')}`,
 					`profile=${doc.getField('PREF')}`,
 				].join('&'),
 				rsMode: 'new',
 				newForm: 'Payment',
 				dbAlias: 'nv_Payment',
-				unid: 'new',
 				title: 'Новый платеж',
 			};
 			doc.previewNew(page, ctrl, shiftKey);
@@ -39,7 +36,7 @@ window.sovaActions.SessionSt = {
 				doc.previewNew(page, ctrl, shiftKey);
 			}
 			else
-				doc.util.xopen(`/api/new?form=v_payments&dbAlias=nv_Payment&unid=1&mode=read&profile=${doc.getField('pref')}`);
+				doc.util.xopen(`/api/new?form=v_payments&dbAlias=nv_Payment&mode=read&profile=${doc.getField('pref')}`);
 		},
 		
 		saved: doc => {
@@ -80,16 +77,23 @@ window.sovaActions.SessionSt = {
 		forceUpdate: doc => doc.forceUpdate(),
 	},
 	recalc: {
+		SST_TABLE_FD: doc => doc.forceUpdate(),
 	},
 	readOnly: {
-		student: doc => doc.fieldValues['STUDENT_FD'],
+		student: doc => doc.getField('STUDENT_FD'),
 	},
 	hide: {
+		job1: doc => !doc.getField('job1'),
+		job2: doc => !doc.getField('job2'),
+		job3: doc => !doc.getField('job3'),
+		job4: doc => !doc.getField('job4'),
+		job5: doc => !doc.getField('job5'),
+		video: doc => !doc.getField('videoList_FD'),
 		ass: doc => doc.getField('noAss_fd'),
-		delGr: doc => !doc.getField('other_group_FD') || doc.fieldValues['STUDENT_FD'],
-		chGr: doc =>   doc.getField('other_group_FD') || doc.fieldValues['STUDENT_FD'],
-		chGrTx: doc =>  !doc.fieldValues['STUDENT_FD'],
-		adminOnly: doc =>  doc.fieldValues['STUDENT_FD'],
+		delGr: doc => !doc.getField('other_group_FD') || doc.getField('STUDENT_FD'),
+		chGr: doc =>   doc.getField('other_group_FD') || doc.getField('STUDENT_FD'),
+		chGrTx: doc =>  !doc.getField('STUDENT_FD'),
+		adminOnly: doc =>  doc.getField('STUDENT_FD'),
 		href: doc => !doc.getControl('href') || (!doc.getField('href') && doc.getControl('href').props.readOnly),
 		mtx: doc => !doc.getControl('mtx') || (!doc.getField('mtx') && doc.getControl('mtx').props.readOnly),
 		other: doc => !doc.getField('owner'),

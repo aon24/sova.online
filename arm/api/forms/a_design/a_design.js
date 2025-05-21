@@ -42,10 +42,11 @@ var bricksM3t = [ // наклон блока, поворот, лев/прав, �
 	'm3t_translateX|0', 'm3t_translateY|0', 'm3t_translateZ|0',
 	'm3t_metric|0', 'm3t_fixed', 'm3t_fixedSize'
 ];
-var bricks = [ // наклон блока, поворот, лев/прав, туда/сюда 'brick_turnOn', 
+var bricks = [ // наклон блока, поворот, лев/прав, туда/сюда 
 	'brick_fixed', 'brick_hide35|0', 'brick_insideOnly', 'brick2_insideOnly',
 	'brick_rotate3X|0', 'brick_rotate3Y|0', 'brick_rotate3Z|0',
 	'brick_translateZ|0',
+	'brick_turnOn', 
 ];
 
 var mmmM3T = [ // общее для блоков, кирпичей и таблиц
@@ -64,6 +65,7 @@ var textFeatures = [
  'lineHeight|1.0', 'fontSize|40',
  'paddingLR|10', 'paddingTD|1', 'fontSizeMetric', 'letterSpacingMetric', 'paddingLRMetric', 'paddingTDMetric',
  'textIndent|10', 'textIndentMetric', 'overflow',
+ 'cmd', 'par', 'maxWidth', 'fontUnderline', 'margin',
 ];
 
 var recalcWithRedraw = [
@@ -73,13 +75,13 @@ var recalcWithRedraw = [
 ];
 
 var recalcOnly = [
-	'dropList', 'fieldName', 'buttonUrl', 'buttonCmd', 'buttonLabel',
+	'dropList', 'xName', 'buttonUrl', 'buttonCmd', 'buttonLabel',
 	'shadowX', 'shadowY', 'shadowR', 'shadowW', 'shadowColor',
 	'insideOnly', 'fixed',
 	'skewX', 'skewY',
 	'rotateX', 'rotateY', 'rotateZ',
 	'translateX', 'translateY', 'translateZ',
-	'noIcons',
+	'noIcons', 'flex', 'clipboard',
 ];
 var m3empty = [
 	'border', 'shadow', 'borderSide',
@@ -193,11 +195,9 @@ window.sovaActions.a_design = {
 	
 	querySave: doc => { // заполнить нужные поля перед сохранением
 		let setPageDoc = doc.sovaPagesByName['setting'].doc;
-console.log('11111111111111', doc.getField('key'));
 		for (let it of ['project', 'pageName', 'pageUrl', 'title', 'pageCat', 'notes', 'key',
 						'closed', 'preview', 'table', 'tableSize', 'saveScript'])
 			doc.setField(it, setPageDoc.getField(it));
-console.log('222222222222222', doc.getField('key'));
 		
 		if (setPageDoc.getField('saveScript')) {
 			let s = JSON.stringify(doc.rootBox.clip.histArr);

@@ -1,7 +1,7 @@
 '''
-Created on 14 февр. 2025 г.
+Created on 2025
 
-@author: aon24
+@author: ai(deepseek.com)
 '''
 from arm.settings import BASE_DIR
 from arm.tools.DC import DC

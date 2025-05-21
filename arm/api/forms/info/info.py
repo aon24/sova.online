@@ -25,8 +25,8 @@ class info(Page):
 
 # *** *** ***
 
-    def queryOpen(self, dcUK):
-        infoQueryOpen(dcUK)
+    def queryOpen(self, r):
+        infoQueryOpen(r)
 
 # *** *** ***
 

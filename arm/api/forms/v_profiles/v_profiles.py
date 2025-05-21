@@ -4,7 +4,7 @@ Created on 2023
 
 @author: aon24
 '''
-from arm.tools.DC import well
+from arm.tools.DC import well, swell
 from arm.api.forms.formTools import _search,style,_div,_btnD,_field,_btnDel,_btnEdit,_btnNew
 from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
@@ -22,14 +22,16 @@ class v_profiles(Page):
         self.title = 'Профайлы'
         self.dbAlias = 'nv_Profile'
         self.leftWidth = 105
-        self.roles = well('role')
-        self.roles.insert(0, 'ВСЕ')
+        self.roles = swell('role')
 
         super().__init__(request)
 
     # *** *** ***
 
     def getData(self, dcUK):
+        if not dcUK._staff:
+            return '{}'
+
         if dcUK.cmd == 'getSelected':
             data = self.getView(dcUK)
         else:
@@ -49,7 +51,7 @@ class v_profiles(Page):
             rightBtn=_search()
         )
 
-        self.leftList = _field('leftList', 'band', self.roles)
+        self.leftList = _field('leftList', 'band', ['ВСЕ'] + self.roles)
 
         return self.shamrock(addUrl='&status={status}')
 
@@ -59,7 +61,8 @@ class v_profiles(Page):
         topStatus = dcUK.status
         mainDocs = []
 
-        for the in well(dcUK.selected.replace('ВСЕ', 'alls')):
+        role = dcUK.selected.replace('ВСЕ', 'alls')
+        for the in well(role):
             fio, pk, phone, email, status = the.split('|')
             if topStatus != 'Все':
                 if topStatus == 'актив' and status != 'active':
@@ -80,8 +83,8 @@ class v_profiles(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = 1
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = 1
 
     # *** *** ***
 

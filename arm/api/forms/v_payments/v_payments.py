@@ -51,8 +51,16 @@ class v_payments(Page):
         mainDocs = []
 
         if dcUK.profile:
+            if dcUK._staff or dcUK._PROFILEPK == dcUK.profile:
+                pass
+            elif 'куратор' in self._role:
+                pass  # todo: access only for own groups, for other disable
+            else:
+                return '{}'
             payArr = well('payments_profile', dcUK.profile)  # при вызове из форм Profile/SessionSt
         else:
+            if not dcUK._staff:
+                return '{}'
             payArr = well('payments')  # при вызове по кнопке "Платежи"
 
         for pay in payArr:
@@ -66,7 +74,7 @@ class v_payments(Page):
             group = well('groups_groupId',pay.nvgroup).title
             ch = pay.cash[:1].upper()
             date = _div(f"{pay.D('pay_date')}\n{ch}: {pay.summa}",
-                className='mCell', s2=1, br=1, **style(color='#048'))
+                className='mCell', s2=1, br=1, **style(color='#036'))
             if pay.t1:
                 t12 = f'\n{pay.D("t1")}'
                 if pay.t2:
@@ -81,7 +89,7 @@ class v_payments(Page):
                 btnD = _btnDel('cmdDel', f'mainList|{pk}|nv_Payment')  # удалить док из вида mainList
 
                 row = _div(**style(display='grid',placeItems='center start',gridTemplateColumns='90px 1fr 33px 33px'),
-                    children=[date,title,btnE,btnD])
+                    children=[date, title, btnE, btnD])
                 mainDocs.append([pk, row])
 
             else:
@@ -91,9 +99,9 @@ class v_payments(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = 1
-        dcUK.doc.profile = dcUK.profile
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = 1
+        r.dcUK.doc.profile = r.dcUK.profile
 
     # *** *** ***
 

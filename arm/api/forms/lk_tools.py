@@ -3,8 +3,8 @@ Created on 2024
 
 @author: aon24
 '''
-from arm.api.forms.formTools import style, _div, _h2, _btnD, _tab, labField, _span, gridStyle, _field
-from arm.tools.DC import DC, well
+from arm.api.forms.formTools import style, _div, _btnD, _tabNew, labField, _span, gridStyle, _field
+from arm.tools.DC import DC, well, swell
 
 # from nv.models import SessionTmpl, SessionGr
 
@@ -25,20 +25,14 @@ def sstButtons(sst, sgr):
         if sst.form == 'SessionGr':
             return _div('информация', **style(width=120), className=f'btnIcon mBtn fv2 fv2yes', title='общая группа'),
 
-        begin = sgr.DATE_BEGIN[:7]  # only year-mounth
+        begin = sgr.DATE_BEGIN  # only year-mounth
         for pay in well('payments_profile', sst.pref):
             if pay.sstId == sst.id and pay.SUMMA:
                 pay_s = ' fv2yes'
                 break
-            elif pay.t1:
-                if pay.t2:
-                    if pay.t1[:7] <= begin <= pay.t2[:7] and pay.SUMMA:
-                        pay_s = ' fv2yes'
-                        break
-                else:
-                    if pay.t1[:7] == begin and pay.SUMMA:
-                        pay_s = ' fv2yes'
-                        break
+            elif pay.t1 == begin and pay.SUMMA:
+                pay_s = ' fv2yes'
+                break
 
     return [
         _div('Д', className=f'btnIcon mBtn fv2{sst.allow_s and " fv2yes"}', title='допущен'),
@@ -92,7 +86,7 @@ def makeSketch(btnCmd, btnPar, sticker, title, d2=None, ls=None, bg=None, contex
                             height='100%', padding=15, overflow='hidden')
                         ),
                 ]),
-                d2 and _div(d2, **style(background='#fff', textAlign='center', color='#888', margin='auto', width=150)),
+                d2 and _div(d2, **style(background='#fff', textAlign='center', color='#888', margin='auto', width=170)),
                 ls and _div(**style(padding='3px 0', display='flex', justifyContent='center'), children=ls),
                 bg and _div(**style(height='100%', borderRadius=15,
                                     display='block', position='absolute', inset=0,
@@ -106,8 +100,8 @@ def makeSketch(btnCmd, btnPar, sticker, title, d2=None, ls=None, bg=None, contex
 # *** *** ***
 
 
-def getSticker(sesTmpl, sticker=None):
-    sticker = sticker or sesTmpl['sticker'] or well('stickerByCode', sesTmpl.nvEvent)
+def getSticker(sesTmpl):
+    sticker = sesTmpl['sticker'] or well('stickerByCode', sesTmpl.nvEvent) or '/image/owl-xx.jpg'
     return f"url('{sticker}')"
 
 # *** *** ***
@@ -200,7 +194,10 @@ def showCC(dcUK):  # календарь
                                 contextMenuCmdList = [
                                     f'Редактировать|editSessionGr|{sgr.id}|{grt[0]}',
                                     f'Удалить|{s}',
+                                    '',
                                 ]
+                                for s in swell('contextMenuCmdListSgr'):
+                                    contextMenuCmdList.append(s % (lsgr[0], dts))
                             elif lector:
                                 cmd, par = 'cmdOpenSess', f'rsMode=read&unid={sgr.id}&dbAlias=nv_SessionGr&form=SessionGr&title={grt[0]}'
                             else:  # student
@@ -219,7 +216,7 @@ def showCC(dcUK):  # календарь
                         if curator:
                             if len(lsgr) == 1:
                                 contextMenuCmdList = []
-                                for s in well('contextMenuCmdListSgr'):
+                                for s in swell('contextMenuCmdListSgr'):
                                     contextMenuCmdList.append(s % (lsgr[0], dts))
                             else:
                                 contextMenuCmdList = ['Выберите группу||']
@@ -248,7 +245,7 @@ def showCC(dcUK):  # календарь
         ])
     # *
     if dcUK.view == '1':
-        dv = _div(**style(background='#048', margin=3, width=1))
+        dv = _div(**style(background='#036', margin=3, width=1))
 
         return _div(className='calendar-1m', children=[
                 _div(**style(display='grid', gridTemplateColumns='1fr 7px 1fr', height='100%'), children=[getM(0), dv, getM(1)]),
@@ -332,7 +329,7 @@ def showC(dcUK):  # эскизы
             byEvent[event].append(dict(form=form, pk=sgr.id, d2=sgr.d2, title=sgr.title, sticker=sgr.sticker, ls=sstButtons(sgr, sgr2)))
         else:
             stmpl = well('sessionTmpl_id', sgr.sessionTmpl_id)
-            sticker = getSticker(stmpl, sgr.sticker)
+            sticker = getSticker(stmpl)
             byEvent[event].append(dict(pk=sgr.id, nvgroup=sgr.nvgroup_id, d2=sgr.d2, title=sgr.title, sticker=sticker))
 
     smArr = []
@@ -376,39 +373,41 @@ def showC(dcUK):  # эскизы
 
         if theArr:
             sm = _div(k, className='h3', **style(background='#44ff8810', padding=10,), children=[
-                _div(children=theArr, **style(font='700 14px Verdana,Arial', color='#048', textAlign='center'))
+                _div(children=theArr, **style(font='700 14px Verdana,Arial', color='#036', textAlign='center'))
             ])
 
             smArr.append(sm)
 
-    smArr.insert(0, _div(well('programm')[0], className='h2', **style(color='#00f', textDecoration='none')))
+    smArr.insert(0, _div(swell('programm')[0], className='h2', **style(color='#00f', textDecoration='none')))
 
     return _div(**style(width='auto', background='#ff000010', height='100%', overflowY='auto'), children=smArr)
 
 # *** *** ***
 
 
-def showLK(table, fullName, width=None, ah=0, noProf='', fioCLS=None):
+btnLogout = _btnD('🔚', 'logout', className='propBtn', **style(left=0))
+btnSetting = _btnD('🛠️', 'previewArm', 'newForm=etc&title=Настройки&dbAlias=etc', className='propBtn', **style(right=0))
+btnProfile = _field('openProfile', 'btn', fd=1)
+
+
+def showLK(table, fioCLS=None):
     if fioCLS:  # for office-mode
         fio, _, pk = fioCLS.partition('|')
-        fioCLS = _btnD(fio, 'openProfile2', pk, **style(font='bold 12px Arial', color='#048'))
+        fioCLS = _btnD(fio, 'openProfile2', pk, **style(font='bold 12px Arial', color='#036'))
+
     return _div(
         className='page51',
         children=[
-            _btnD('🔚', 'logout',
-                **style(zIndex=100, fontSize=18, position='absolute', top=0, left=0, width=20, height=20, background='transparent')),
-            _btnD('🛠️',
-                'previewArm', 'newForm=etc&title=Настройки&unid=1&dbAlias=etc',
-                **style(zIndex=100, fontSize=18, position='absolute', top=0, right=0, width=20, height=20, background='transparent')),
-
+            btnLogout,
+            btnSetting,
             _div(**style(maxWidth=WIDTH, margin='auto'),
                 children=[
                     _div(className='propfile', children=[
-                        _btnD(fullName, 'openProfile', noProf),
+                        btnProfile,
                         fioCLS
                     ]),
                     _div(**style(overflow='hidden', height='calc(100vh - 32px)'),
-                        children=[_tab(width=width, tabs=table, ah=6)]
+                        children=[_tabNew('LK_Table_FD', tabs=table)]
                     )
             ])
     ])
@@ -419,12 +418,12 @@ def showLK(table, fullName, width=None, ah=0, noProf='', fioCLS=None):
 armButtom = [
     _btnD('Пользователи', 'previewArm', 'newForm=v_profiles&title=Профайлы'),
     _btnD('Программа', 'previewArm', 'newForm=v_content&title=Программа'),
-    _btnD('Список групп', 'previewArm', 'newForm=v_groups&title=Список групп'),
     _btnD('Расписание', 'previewArm', 'newForm=v_schedule&title=Расписание'),
+    _btnD('Список групп', 'previewArm', 'newForm=v_groups&title=Список групп'),
     _btnD('Студенты по гр.', 'previewArm', 'newForm=v_students&title=Студенты'),
     _btnD('Платежи', 'previewArm', 'newForm=v_payments&title=Платежи'),
-    _btnD('Тр-Фест-Озн.сем', 'previewArm', 'newForm=v_more&title=Тренинг Фест Озн.сем.'),
-    _btnD('Справочники', 'previewArm', 'newForm=v_classifiers&title=Справочники', **style(margin='10px 20px')),
+    _btnD('Тр-Фест-Озн.сем', 'previewArm', 'newForm=v_invite&title=Тренинг Фест Озн.сем.'),
+    _btnD('О Т Ч Е Т Ы', 'previewArm', 'newForm=v_reports&title=Отчеты и аналитика&rsMode=edit', **style(margin='10px 20px')),
 
 ]
 
@@ -444,7 +443,7 @@ def office():
                 children=[
                     *labField('Ознакомительный семинар', 'invite', 'lbsd', '/api/well?clues=invite', placeholder='Список'),
             ]),
-            _div(**style(width=150, display='inline-block', margin=10, textAlign='left', verticalAlign='top'),
+            _div(**style(width=220, display='inline-block', margin=10, textAlign='left', verticalAlign='top'),
                 children=[
                     *labField('Источник информации', 'info', 'lbsd', '/api/well?clues=info', placeholder='Список'),
             ]),
@@ -453,9 +452,10 @@ def office():
                     *labField('Роль', 'role', 'lbsd', '/api/well?clues=role', placeholder='Список'),
             ]),
 
-            _div(**style(marginTop=15, border='0 solid #048', borderTopWidth=1)),
+            _div(**style(marginTop=15, border='0 solid #036', borderTopWidth=1)),
 
             # ***
+
             _div('Проверить личный кабинет пользователя', **style(marginTop=15), className='h3'),
             _div(
                 **style(margin=10, width=300, display='inline-block', textAlign='left'),
@@ -470,30 +470,26 @@ def office():
         ])
 
 
-def showLKpc(table, fullName, width=None, ah=0, noProf='', fioCLS=None):
+def showLKpc(table, fioCLS=None):
     if fioCLS:
         fio, _, pk = fioCLS.partition('|')
-        fioCLS = _btnD(fio, 'openProfile2', pk, **style(font='bold 12px Arial', color='#048'))
+        fioCLS = _btnD(fio, 'openProfile2', pk, **style(font='bold 14px Arial', color='#036'))
     return _div(
         className='page51',
         children=[
-            _btnD('🔚', 'logout',
-                **style(zIndex=100, fontSize=18, position='absolute', top=0, left=0, width=20, height=20, background='transparent')),
-            _btnD('🛠️',
-                'previewArm', 'newForm=etc&title=Настройки&unid=1&dbAlias=etc',
-                **style(zIndex=100, fontSize=18, position='absolute', top=0, right=0, width=20, height=20, background='transparent')),
-
+            btnLogout,
+            btnSetting,
             _div(**style(maxWidth=WIDTH + 250, margin='auto'), children=[
                 _div(className='propfile', children=[
-                    _btnD(fullName, 'openProfile', noProf),
+                    btnProfile,
                     _span('  '),
                     fioCLS
                 ]),
                 _div(**gridStyle('170px 1fr', overflow='hidden', height='calc(100vh - 30px'),
                     children=[
                         _div(className='armPcBtn', **style(background='#FFD78040'), children=armButtom),
-                        _div(**style(height='inherit', background='#0000ff30', padding=1),
-                            children=[_tab(width=width, tabs=table, ah=6)]
+                        _div(**style(height='inherit', padding=1),
+                            children=[_tabNew('LK_Table_FD', tabs=table)]
                     )
                 ]),
             ]),
@@ -523,7 +519,7 @@ def getSessStByProfId(dcUK):
 
         d = DC(sst)
         d.title = stmpl['title']
-        d.sticker = getSticker(stmpl, sgr.sticker)
+        d.sticker = getSticker(stmpl)
         for k in ['d2', 'date_begin', 'date_end', 'nvgroup_id', 'duration', 'nvEvent']:
             d[k] = sgr[k]
 
@@ -533,16 +529,26 @@ def getSessStByProfId(dcUK):
 
 
 # *** *** ***
-def rightBtnLK(n): return [
-        _field(f'status{n}', 'band', ['актив', 'все'], className='radioBand'),
-        _div(**style(flex=1)),
-        _field(f'event{n}', 'band', well('shortEvents'), recalcText=1,
+def rightBtnLK(n, userAgent, na=None):
+    if userAgent == 'mobile':
+        event = _field(f'event{n}', 'lbsd', list(['Все|'] + swell('events')), recalcText=1, edit=1, xValue='Все',
+            title='выберите событие',
+            name=f'event{n}')
+    else:
+        event = _field(f'event{n}', 'band', swell('shortEvents'), recalcText=1,
             className='radioBand',
             title='выберите событие',
-            name=f'event{n}'),
+            name=f'event{n}')
+
+    return [
+        _field(f'changeView{n}', 'band', ['к1', 'к2', 'эскиз', 'спис'], className='radioBand',
+            title='календарь/эскизы/список', name=na),
+        _div(**style(flex=1)),
+
+        event,
+
         _field(f'plan{n}', 'band', ['Планируемые', 'все'], className='radioBand', name=f'plan{n}'),
         _div(**style(flex=1)),
-        _field(f'changeView{n}', 'band', ['к1', 'к2', 'эскиз', 'спис'], className='radioBand',
-            title='календарь/эскизы/список',)
+        _field(f'status{n}', 'band', ['актив', 'все'], className='radioBand'),
     ]
 

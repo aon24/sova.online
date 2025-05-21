@@ -73,7 +73,7 @@ def makeVideoY(dcUK):
 
     dirInfo = []
     for item in y.listdir(pathDest):
-        it = dict()
+        it = {}
         it['platform'] = 'yandex-disk'
         it['url'] = item['name']
         it['name'] = stm.title

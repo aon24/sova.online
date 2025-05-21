@@ -5,7 +5,7 @@ Created on 2023
 @author: aon24
 '''
 
-from arm.tools.DC import well
+from arm.tools.DC import well, swell
 
 from ..formTools import labField,style,_div,_h2,_field
 from ..classPage import Page
@@ -27,11 +27,11 @@ class Classifier(Page):
 
     def page(self, request):
         cat = set()
-        [cat.add(dc.category) for dc in well('classifiers') if dc.category]
+        [cat.add(dc.category) for dc in swell('classifiers') if dc.category]
 
         status = _div(**style(marginTop=10, display='grid', gridTemplateColumns=f'1fr 60px 120px'), children=[
                     _div(), _div('Статус', className='label'),
-                    _field('status', 'lbsd', well('status'), placeholder='выбирай', alias=1)
+                    _field('status', 'lbsd', self.status, placeholder='выбирай', alias=1)
         ])
 
         fields = [
@@ -53,8 +53,8 @@ class Classifier(Page):
 
     # ***
 
-    def queryOpen(self, dcUK):
-        dcUK.doc.status = dcUK.doc.status or 'active'
+    def queryOpen(self, r):
+        r.dcUK.doc.status = r.dcUK.doc.status or 'active'
 
     def querySave(self, dcUK):
         return True

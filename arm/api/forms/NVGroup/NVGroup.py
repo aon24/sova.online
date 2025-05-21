@@ -5,7 +5,7 @@ Created on 2023
 @author: aon24
 '''
 
-from arm.tools.DC import DC,well
+from arm.tools.DC import DC, swell
 from arm.tools.first import err
 
 from ..formTools import _fileShow, labField, gridStyle, style, _div, _h2, _field, labeldc, labell
@@ -30,7 +30,7 @@ class NVGroup(Page):
     def page(self, request):
         fields = [
             labeldc('ПРОГРАММА'),
-            _div(**style(textAlign='center',font='bold 15px Arial',color='#048'),children=[
+            _div(**style(textAlign='center',font='bold 15px Arial',color='#036'),children=[
                 _field('programm','fd')
             ]),
             _h2('Группа',**style(textAlign='center',margin=0,letterSpacing=2)),
@@ -63,9 +63,10 @@ class NVGroup(Page):
 
     # ***
 
-    def queryOpen(self, dcUK):
-        dcUK.doc.status = dcUK.doc.status or 'active'
-        dcUK.doc.programm = dcUK.doc.programm or well('programm')[0]
+    def queryOpen(self, r):
+        doc = r.dcUK.doc
+        doc.status = doc.status or 'active'
+        doc.programm = doc.programm or swell('programm')[0]
 
     def afterSave(self, dcUK, pk):  # by created new doc dcUK.doc.pk is None
         if dcUK.doc.curator and dcUK.doc.title and pk:

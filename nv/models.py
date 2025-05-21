@@ -145,6 +145,18 @@ class Payment(models.Model):
 
 from django.contrib import admin
 from django.contrib.sessions.models import Session
-admin.site.register(SessionTmpl)
 admin.site.register(Session)
+
+# admin.site.register(SessionTmpl)
+# admin.site.register(SessionGr)
+
+
+@admin.register(SessionTmpl)
+class SessionTmplAdmin(admin.ModelAdmin):
+    list_display = ['id', 'status']
+
+
+@admin.register(SessionGr)
+class SessionGrAdmin(admin.ModelAdmin):
+    list_display = ['id', 'status']
 

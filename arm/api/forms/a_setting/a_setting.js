@@ -131,16 +131,12 @@ const furniture = (doc, prj, mType, host) => {
 };
 
 const startScript = doc => {
-				//console.log('startScript', doc.rootBox.tuning.interval, doc.stopScript);
-
 	let undo = 0;
 
 	let interval = doc.rootBox.tuning.interval;
 	window.playScript = setInterval( () => {
-		//console.log(i++);
 		if (interval !== doc.rootBox.tuning.interval) {
 			setTimeout( () => {
-				//console.log('interval !== doc.rootBox.tuning.interval', interval, doc.rootBox.tuning.interval)
 				window.playScript && clearInterval(window.playScript);
 				!doc.stopScript && startScript(doc);
 				}, 1);
@@ -149,10 +145,8 @@ const startScript = doc => {
 		
 		
 		if (doc.box.clip.peak >= doc.box.clip.histArr.length-1) {
-			//console.log('doc.box.clip.peak >= doc.box.clip.histArr.length-1', interval, doc.rootBox.tuning.interval, doc.getField('playScript') === 'play')
 			if (doc.getField('playScript') === 'play') {
 				setTimeout( () => {
-					//console.log('doc.box.clip.peak >= doc.box.clip.histArr.length-1', interval, doc.rootBox.tuning.interval)
 					window.playScript && clearInterval(window.playScript);
 					doc.pageBox.tuning.playScript = '';
 					doc.setField('playScript', 0);
@@ -174,6 +168,10 @@ const startScript = doc => {
 
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.a_setting = {
+	init: doc => {
+		for (let i=0; i < 10; i++)
+			doc.sova.hide[`SET_Table_FD_${i}`] = doc => i !== doc.getField('SET_Table_FD');
+	},
 	init2: doc => {
 		let mainDoc = doc.page.props.owner;
 		doc.setField('_page_', '1'); // _page_ === 1, означает, что это страница, а не документ и сохранять ее не надо // blocking Esc
@@ -216,16 +214,11 @@ window.sovaActions.a_setting = {
 
 		// контент boxContent 1,2,3,4 - tx,jsDraft, button, field
 		boxContent: doc => !doc.box || doc.box.tuning.bb !== 4,
-		textStyle: doc =>  !doc.box || doc.box.tuning.bb !== 4
-			|| ![1,2,3,4].includes(doc.box.tuning.boxContent)
-			|| (doc.box.tuning.boxContent === 4 && doc.box.tuning.fieldStyle === '0'),
-		textAlign: doc => !doc.box || 
-			![1,3,4].includes(doc.box.tuning.boxContent)
-			|| (doc.box.tuning.boxContent === 4 && doc.box.tuning.fieldType !== 'fd'),
-		isButton: doc => !doc.box || doc.box.tuning.boxContent !== 3,
+		textStyle: doc =>  !doc.box || doc.box.tuning.bb !== 4,
+		isButton: doc => !doc.box || doc.box.tuning.boxContent !== 4,
 		buttonUrl: doc => !doc.box || !doc.box.tuning.buttonAction || doc.box.tuning.buttonAction !== 'url',
 		buttonCmd: doc => !doc.box || !doc.box.tuning.buttonAction || doc.box.tuning.buttonAction !== 'javascript',
-		isField: doc => !doc.box || doc.box.tuning.bb !== 4 || doc.box.tuning.boxContent !== 4,
+		isField: doc => !doc.box || doc.box.tuning.bb !== 4 || doc.box.tuning.boxContent !== 3,
 		dropList: doc => !doc.box || !(doc.box.tuning.fieldType || '').startsWith('lb'),
 
 		// бокс
@@ -347,17 +340,16 @@ window.sovaActions.a_setting = {
 	//*** *** ***
 
 	recalc: {
+		SET_TABLE_FD: doc => doc.forceUpdate(),
 		SCRIPTDELAY: (doc, val) => {
 			let arr = [10, 500, 1000, 2000, 5000, 10000];
 			doc.rootBox.clip.toHist(doc.rootBox, 'old:tuning', 'interval');
 			doc.rootBox.tuning.interval = arr[val || 0];
 			doc.rootBox.clip.toHist(doc.rootBox, 'new:tuning', 'interval');
-console.log(doc.pageBox.tuning.playScript, !!doc.pageBox.tuning.playScript, val);
 			window.playScript && clearInterval(window.playScript);
 			doc.pageBox.tuning.playScript && startScript(doc);
 		},
 		PLAYSCRIPT: (doc, val) => {
-			console.log('val', val);
 			doc.pageBox.tuning.playScript = val;
 			if (val) {
 				doc.stopScript = null;

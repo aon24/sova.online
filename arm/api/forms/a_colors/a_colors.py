@@ -10,11 +10,11 @@ from arm.api.forms.classPage import Page
 # *** *** ***
 
 class a_colors(Page):
-    def __init__(self, form):
+    def __init__(self, request):
         self.title = 'colors'
         self.form = 'a_colors'
         self.jsCssUrlEdit = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        super().__init__(form)
+        super().__init__(request)
 
     def page(self, request):
         return _div(className='color-head', children=[
@@ -71,11 +71,11 @@ class a_colors(Page):
         return [
             *_table([
                 _div(**style(width='20%', textAlign='center'), children=[
-                    _span('Цвет', **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#048')),
+                    _span('Цвет', **style(textAlign='center', font='bold 9pt Verdana, Arial', color='#036')),
                     _field(f'backgroundColor{adf}', 'input-color', colorList='rainbow')
                 ]),
                 _div(**style(padding='0 10px', textAlign='center', borderLeftWidth=1, border='0 solid #aaa'), children=[
-                    _field(f'gradient{adf}', 'chb', ['градиент'], **style(marginTop=10, float='left', font='bold 9pt Verdana, Arial', color='#048')),
+                    _field(f'gradient{adf}', 'chb', ['градиент'], **style(marginTop=10, float='left', font='bold 9pt Verdana, Arial', color='#036')),
                     _field(f'gradientColor{adf}', 'input-color', name=f'gradient{adf}', colorList='rainbow'),
                     _br(),
                     _field(f'gradientDeg{adf}', 'slip', [0, 360, 15, 'Наклон'], name=f'gradient{adf}', className='label', **style(width=160)),

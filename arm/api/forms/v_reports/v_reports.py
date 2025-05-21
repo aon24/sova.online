@@ -4,7 +4,7 @@ AON 9 mar 2018
 
 '''
 from arm.api.forms.formTools import _btnNew, _btnEdit, style, gridStyle, _btnD, _field, labField, labell, labeldc, _div, _btnDel, _btnView
-from arm.tools.DC import DC, DCC, well
+from arm.tools.DC import DC, DCC, well, swell
 from arm.tools.first import err
 from arm.tools.common import today
 from arm.api.forms.classPage import Page
@@ -20,23 +20,16 @@ import json
 # *** *** ***
 
 class v_reports(Page):
+    domain = 'rf_nv'
+    title = 'Отчеты'
+    leftWidth = 350
+    noCaching = True
 
     def __init__(self, request):
-        try:
-            from arm.settings import NV_REPORTS
-            self.dbAlias = NV_REPORTS['dbAlias']
-            self.domain = NV_REPORTS['domain']
-        except:
-            self.dbAlias = 'REPORTS'
-            self.domain = 'rf_nv'
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js',
                          f'/api/jsv?forms/{self.form}/{self.form}.css'
                         ]
-        self.title = 'Отчеты'
-        self.leftWidth = 350
-        self.noCaching = True
-        self.viewbar = None
 
         self.upField = _div(className='toolbar', children=[toolbar.close_])
         self.viewbar = self.makeViewbar(
@@ -49,11 +42,11 @@ class v_reports(Page):
             rightBtn=[
                 _div('собранные отчеты', className='bandItem bandItem-sel',
                    name='db0',
-                   **style(font='normal 14px Verdana, Arial', height=28, color='#048')
+                   **style(font='normal 14px Verdana, Arial', height=28, color='#036')
                 ),
                 _div('отчеты по расписанию', className='bandItem bandItem-sel',
                    name='db1',
-                   **style(font='normal 14px Verdana, Arial', height=28, color='#048')
+                   **style(font='normal 14px Verdana, Arial', height=28, color='#036')
                 ),
                 _field('agentView', 'band', ['агенты', 'результаты агентов'], name='db2', **style(margin='auto', width='auto')),
             ],
@@ -65,7 +58,7 @@ class v_reports(Page):
 
     def putData(self, dcUK, buf):
         try:
-            dc = DC(report_domain=self.domain)
+            dc = DC(domain=self.domain)
             for kv in buf.split('&'):
                 k, _, v = kv.partition('=')
                 dc[k] = v
@@ -76,7 +69,7 @@ class v_reports(Page):
 
             elif dcUK.cmd == 'scheduleReport':
                 dc.report = 1
-                dc.form = 'lm'
+                dc.form = 'Module'
                 dc.turn_on = 1
                 dc.status = 'active'
                 dcUK = DC(dbAlias='nv_reports_Report')
@@ -118,7 +111,7 @@ class v_reports(Page):
                 comment='\nДля сбора нового отчета выберите нужную категорию'
         )]
 
-        mmm = reload(import_module(f'nv_reports.{self.domain}.description'))
+        mmm = reload(import_module(f'nv_reports.rf_nv.description'))
         for r in mmm.reportList(*oldQuar(0)):  # oldQuar(0) - от начала текущего квартала до today
             repList.append(DCC(r))
         repListKeys = [r.title for r in repList]
@@ -133,7 +126,7 @@ class v_reports(Page):
             _div(children=[self.setReport(i, x) for i, x in enumerate(repList)]),
 
             _div(name='shedule', children=[
-                *labField('Расписание', 'SCHEDULED', 'lbsd', well('scheduled'), xValue='now', alias=1, **style(marginRight=15)),
+                *labField('Расписание', 'SCHEDULED', 'lbsd', swell('scheduled'), xValue='now', alias=1, **style(marginRight=15)),
                 _div(**gridStyle('1fr 10px 1fr'), name='dayTime', children=[
                     labeldc('Время'),
                     _div(),
@@ -165,7 +158,7 @@ class v_reports(Page):
             dbAlias = 'nv_lm_Module'
 
         for m in well(dba):
-            if m.form != 'report':
+            if m.form.lower() != 'report':
                 continue
 
             pk = m.pk
@@ -177,7 +170,7 @@ class v_reports(Page):
             title = _div(f"{m.docNo}. {m.title}\n{m.starting_time} => {m.end_time}",
                 className='mCell', s2=1, br=1, **style(width='100%', paddingLeft=2, letterSpacing=1))
 
-            btnV = _btnEdit('cmdEdit', f'unid={pk}&dbAlias={dbAlias}&form=report')
+            btnV = _btnEdit('cmdEdit', f'unid={pk}&dbAlias={dbAlias}&form=Report')
             btnD = _btnDel('cmdDel', f'mainList|{pk}|{dbAlias}')
 
             row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto'),
@@ -194,8 +187,8 @@ class v_reports(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': refsDocs}
 
-    def queryOpen(self, dcUK):
-        dcUK.doc._view_ = '1'
+    def queryOpen(self, r):
+        r.dcUK.doc._view_ = '1'
 
 # *** *** ***
 
@@ -272,7 +265,7 @@ class v_reports(Page):
             dbAlias = 'nv_lm_Module'
 
         for m in well(dba):
-            if m.form != 'lm':
+            if m.form != 'Module':
                 continue
 
             pk = m.pk
@@ -292,7 +285,7 @@ class v_reports(Page):
             title = _div(f"{tit}\n{m.starting_time} => {m.end_time}",
                 className='mCell', s2=1, br=1, **style(width='100%', color=color, paddingLeft=2, letterSpacing=1))
 
-            btnV = _btnEdit('cmdEdit', f'unid={pk}&dbAlias={dbAlias}&form=lm')
+            btnV = _btnEdit('cmdEdit', f'unid={pk}&dbAlias={dbAlias}&form=Module')
             btnD = _btnDel('cmdDel', f'mainList|{pk}|{dbAlias}')
 
             row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto'),

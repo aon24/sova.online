@@ -8,7 +8,7 @@ from arm.tools.loadWell import loadWell
 from arm.tools.first import err
 
 from arm.tools.imgHeader import what
-from arm.tools.DC import DC, well
+from arm.tools.DC import DC, well, swell
 from arm.api.forms.classPage import getPageObj
 from arm.tools.dbToolkit import DJ, Book
 
@@ -27,12 +27,6 @@ from mimetypes import guess_type
 # @login_required(login_url='login/')
 @ensure_csrf_cookie
 def apiDoGet(request):
-
-    # for k in dir(request.session):
-    #     a = getattr(request.session, k)
-    #     if type(a) == str:
-    #         print(k, getattr(request.session, k))  # .get('csrf_token', '***************'))
-
     if request.method != 'GET':
         return nvResponse('Error', None, 500)
 
@@ -60,8 +54,7 @@ def apiDoGet(request):
 
         return redirect(f'/api/login/')
 
-    err(f'api-path "{request.dcUK._path or "-?-"}" not found', cat='apiDoGet')
-    return notFound(request)
+    return notFound(f'api-path "{request.dcUK._path or "-?-"}" not found', request.dcUK.fullName)
 
 # *** *** ***
 
@@ -78,7 +71,7 @@ def _openDoc(request):
         request.dcUK.doc = DC()
     else:
         if dcUK.dbAlias == 'nv_Profile':
-            if not (dcUK._staff or 'куратор' in dcUK._role or dcUK._superUser):
+            if not (dcUK._staff or 'куратор' in dcUK._role):
                 dcUK.unid = dcUK._profilePK
             dcUK.unid = dcUK.unid or dcUK._profilePK
 
@@ -103,7 +96,7 @@ def _openDoc(request):
             dcUK.form = 'info'
             dcUK.mode = 'read'
             dcUK.doc = DC({'FORM':'info', 'ERROR': s})
-    return returnPageOrDoc(request, dcUK.KEY_KEY == 'homePage')
+    return returnPageOrDoc(request, dcUK.manifest)
 
 
 # *** *** ***
@@ -125,24 +118,21 @@ pwa = '''
 <link rel="apple-touch-icon" sizes="256x256"
     href="/static/home/owl256x256.png">
 
-<link rel="manifest" href="/static/home/manifest.json">
+<link rel="manifest" type="application/json" href="/manifest.json">
 '''
 
 
-def returnPageOrDoc(request, homePage=None):
+def returnPageOrDoc(request, manifest=None):
     opg = getPageObj(request)
     if not opg:
-        return notFound(f'doGet.returnPageOrDoc: form "{request.dcUK.form}"')
+        return notFound(f'doGet.returnPageOrDoc: form "{request.dcUK.form}"', request.dcUK.fullName)
 
     jsDoc = opg.getJsDoc(request)
 
-    html = well('groundForms', 'index')
-    if opg.styles:
-        html = html.replace('</head>', f'<style>{opg.styles}</style>\n</head>', 1)
-
+    html = well('index.html')
     html = html.replace('<title></title>', f'<title>{opg.title}</title>')
-    html = html.replace('</head>', f'<script>window.jsDoc={jsDoc};</script>\n</head>', 1)
-    if homePage:
+    html = html.replace('</head>', f'{opg.styles}<script>window.jsDoc={jsDoc};</script>\n</head>', 1)
+    if manifest:
         html = html.replace('</title>', f'</title>{pwa}', 1)
 
     return nvResponse(html)
@@ -176,11 +166,8 @@ def callback(request):
 
 def _newForm(request):  # возможно для отладки React-form
     '''
-    url: /api/get/newForm?form=myform & dbAlias=draft & unid=94ec-2580-...
+    url: /api/get/newForm?form=myform & dbAlias=draft
     '''
-
-    # dcUK = request.dcUK
-    # dcUK.doc = DC({'dbAlias': dcUK.dbAlias, 'unid': dcUK.unid, 'form': dcUK.form, 'formKey': dcUK.formKey})
     opg = getPageObj(request)
     if not opg:
         return jsonNotFound(request)
@@ -193,8 +180,9 @@ def _new(request):
     '''
     url: /new?form=myform&dbAlias=dba
     '''
+    if request.dcUK.form in ['v_profiles', 'v_students', 'v_schedule'] and not request.dcUK._staff:
+        return accessDenied(request.dcUK.fullName)
     request.dcUK.mode = 'new'
-    request.dcUK.doc = DC({'form': request.dcUK.form})
     return returnPageOrDoc(request)
 
 # *** *** ***
@@ -202,27 +190,29 @@ def _new(request):
 
 def _login(request):
     request.dcUK.mode = 'new'
-    request.dcUK.form = 'login'
+    request.dcUK.form = 'arm' if request.user.is_authenticated else 'login'
     return returnPageOrDoc(request, True)
 
 # *** *** ***
 
 
 def jsv(request):
-    fn = os.path.join(API_DIR, request.dcUK._query).partition('::')[0].replace('..', '')
+    fn = os.path.join(API_DIR, request.dcUK._query).partition('::')[0]
+    fn = os.path.normpath(fn)  # Удаляет ../ и ./
     try:
         with open(fn, 'rb') as f:
             mimeType = f'{guess_type(fn, False)[0]}; charset=utf-8'
             return nvResponse('' or f.read(), mimeType, request=request)
     except:
-        fn = os.path.join(REPORT_DIR, request.dcUK._query).partition('::')[0].replace('..', '')
+        fn = os.path.join(REPORT_DIR, request.dcUK._query).partition('::')[0]
+        fn = os.path.normpath(fn)
         try:
             with open(fn, 'rb') as f:
                 mimeType = f'{guess_type(fn, False)[0]}; charset=utf-8'
                 return nvResponse('' or f.read(), mimeType, request=request)
         except Exception as ex:
             err(f'jsv-path: {request.dcUK._path}\n{ex}', cat='doGet.py')
-            return notFound(fn)
+            return notFound(fn, request.dcUK.fullName)
 
 # *** *** ***
 
@@ -238,7 +228,7 @@ def xImage(request):
             if what(path):
                 return nvResponse(f.read(), content_type=mimeType, request=request)
             else:
-                return notFound(f'not image: {path}')
+                return notFound(f'not image: {path}', request.dcUK.fullName)
 
     except Exception as ex:
         err(f'{path}: {ex}', cat='xImage')
@@ -249,11 +239,16 @@ def xImage(request):
 
 def _well(request):
     listName = request.dcUK.clues.partition('::')[0]
-    ls = listName and well(*listName.split('|'))
-    if type(ls) is dict:
-        ls = list(ls.keys())
+    if listName:
+        k = listName.split('|')
+        if not k[0].endswith('2') or request.dcUK._staff:  # студент2, etc
+            ls = swell(*k)
+            if type(ls) is dict:
+                ls = list(ls.keys())
 
-    return nvResponse(json.dumps(ls or [], ensure_ascii=False), 'application/json')
+            return nvResponse(json.dumps(ls, ensure_ascii=False), 'application/json')
+
+    return nvResponse('[]', 'application/json')
 
 # *** *** ***
 
@@ -264,8 +259,8 @@ def _loadDoc(request):
     '''
     dcUK = request.dcUK
     if dcUK.dbAlias == 'nv_Profile':
-        if not (dcUK._staff or 'куратор' in dcUK._role or dcUK._superUser):
-            dcUK.unid = dcUK._profilePK
+        if not (dcUK._staff or 'куратор' in dcUK._role):
+            dcUK.unid = dcUK._profilePK  # cmd: openProfile withuot pk
         dcUK.unid = dcUK.unid or dcUK._profilePK
 
     if dcUK.dbAlias.startswith('nv_'):
@@ -310,29 +305,18 @@ def _getData(request):
 
 
 # *** *** ***
-from DB.workers import loadNV, exportEmail
-
 
 @ensure_csrf_cookie
 def apiRunCmd(request):
     dcUK = request.dcUK
-    if dcUK.cmd == 'openPage':
-        try:
-            with open(os.path.join(BASE_DIR, 'arm', 'html', dcUK.file), 'rb') as f:
-                return nvResponse(f.read())
-        except Exception as ex:
-            err(f'{dcUK.file}\n{ex}', cat='openPage')
-            return nvResponse(f'{ex} status=400')
 
     if dcUK.cmd == 'logout':
         logout(request)
         redirect('/')
-    elif dcUK.cmd == 'loadNV':
-        loadNV()
-    elif dcUK.cmd == 'loadWell':
-        loadWell('all')
-    elif dcUK.cmd == 'exportEmail':
-        exportEmail()
+
+    elif request.dcUK._staff:
+        if dcUK.cmd == 'loadWell':
+            loadWell('all')
 
     return nvResponse('"ok"', 'application/json')
 

@@ -61,9 +61,8 @@ window.sovaActions.v_reports = {
 		cmdNew: doc => {
 			let page = {
 				rsMode: 'new',
-				newForm: 'lm',
+				newForm: 'Module',
 				dbAlias: 'nv_lm_Module',
-				unid: 'new',
 				title: 'Новый модуль',
 			};
 			doc.previewNew(page);
@@ -99,10 +98,10 @@ window.sovaActions.v_reports = {
 			let i = doc.util.partition(doc.getField('show'), '_')[1];
             let act = `title=${doc.getField('title')}`;
 
-			for(it of ['scheduled', 'schedTime', 'schedDay'])
+			for(let it of ['scheduled', 'schedTime', 'schedDay'])
 				act += `&${it}=${doc.getField(it)}`;
 
-			for(it of ['module', 'reportName', 'addList', 'dt1', 'dt2', 'dt3', 'dt4']) {
+			for(let it of ['module', 'reportName', 'addList', 'dt1', 'dt2', 'dt3', 'dt4']) {
 				let fi = `${it}_${i}`;
 				act += `&report_${it}=${doc.getField(fi)}`;
 			}
@@ -121,10 +120,10 @@ window.sovaActions.v_reports = {
 			let i = doc.util.partition(doc.getField('show'), '_')[1];
             let act = `title=${doc.getField('title')}`;
 
-			for(it of ['scheduled', 'schedTime', 'schedDay'])
+			for(let it of ['scheduled', 'schedTime', 'schedDay'])
 				act += `&${it}=${doc.getField(it)}`;
 
-			for(it of ['module', 'reportName', 'addList', 'dt1', 'dt2', 'dt3', 'dt4']) {
+			for(let it of ['module', 'reportName', 'addList', 'dt1', 'dt2', 'dt3', 'dt4']) {
 				let fi = `${it}_${i}`;
 				act += `&report_${it}=${doc.getField(fi)}`;
 			}

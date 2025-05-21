@@ -22,7 +22,7 @@ def docFromDB(dcUK):
     """
 
     cat = 'docFromDB'
-    if not dcUK.unid or dcUK.unid == 'new':
+    if not dcUK.unid:
         return err(f'empty unid', cat=cat)
 
     mmm, mmmName = getModel(dcUK, cat)
@@ -67,7 +67,7 @@ def docFromDB(dcUK):
 # *** *** ***
 
 
-def docSaveDB(dcUK, dbDoc=None):
+def docSaveDB(dcUK):
     '''
     dcUK.doc - документ, который нужно записать
     oldDoc - запись в базе с существующим документом, котрую нужно перевести в истоию.
@@ -78,17 +78,16 @@ def docSaveDB(dcUK, dbDoc=None):
         err(f'doc not saved. Invalid model: {dcUK.dbAlias}', cat=cat)
         return
 
-    if not dbDoc:
-        if dcUK.unid and dcUK.unid != 'new':
-            try:
-                dbDoc = mmm.docs.get(pk=int(dcUK.unid))  # есть такой, - переводим в историю
-                created = None
-            except Exception as ex:
-                err(f'doc not found: {dcUK.dbAlias}:{dcUK.unid}:{ex}', cat=cat)
-                return
-        else:
-            dbDoc = mmm()
-            created = True
+    if dcUK.unid:
+        try:
+            dbDoc = mmm.docs.get(pk=int(dcUK.unid))  # есть такой, - переводим в историю
+            created = None
+        except Exception as ex:
+            err(f'doc not found: {dcUK.dbAlias}:{dcUK.unid}:{ex}', cat=cat)
+            return
+    else:
+        dbDoc = mmm()
+        created = True
 
     # сохраняем новый док(или новую версию)
     body = {}
@@ -142,6 +141,5 @@ def docSaveDB(dcUK, dbDoc=None):
 
     except Exception as ex:
         err(f'doc not saved: {ex} (UN={dcUK.fullName})', cat=cat)
-        # print(dcUK.doc)
 
 # *** *** ***

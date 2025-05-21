@@ -12,4 +12,7 @@ window.sovaActions.login = {
 			doc.previewNew(page);
 		},
 	},
+	hide: {
+		err: doc => !doc.getField('err_fd')
+	},
 };

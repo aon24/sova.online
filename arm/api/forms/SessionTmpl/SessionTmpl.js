@@ -5,7 +5,7 @@ let refreshVideoList = (doc, save) => {
 			if (save && doc.getField(`vl${i}_forDel`)) // mark for del
 				continue;
 				
-			item = {platform: doc.platforms[`VL${i}`] || ''};
+			let item = {platform: doc.platforms[`VL${i}`] || ''};
 			for (let it of ['url', 'hrefs', 'image', 'notes', 'name', 'slip', 'video_id']) {
 				let value = doc.getField(`vl${i}_${it}`);
 				if (value)
@@ -20,13 +20,30 @@ let refreshVideoList = (doc, save) => {
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.SessionTmpl = {
 	init: doc => {
-		doc.videoList = JSON.parse(doc.fieldValues.VIDEOLIST || '[]');
+		doc.videoList = JSON.parse(doc.getField('VIDEOLIST') || '[]');
 		doc.videoList.sort((a, b) => (a.name || '') > (b.name || '') ? 1 : -1);
+		
+		for (let i=0; i < 10; i++) {
+			doc.sova.hide[`UM_Table_FD_${i}`] = doc => i !== doc.getField('UM_Table_FD');
+			doc.sova.hide[`SST_Table_FD_${i}`] = doc => i !== doc.getField('SST_Table_FD');
+		}
+		
+		for (let i=0; i < 20; i++) {
+			doc.sova.recalc[`VL${i}_FORDEL`] = doc => doc.getControl('videoGrid').forceUpdate();
+			doc.sova.cmd[`clrUrl${i}`] = doc => doc.setField(`VL${i}_URL`, '');
+			doc.sova.cmd[`insUrl${i}`] = doc => {
+				navigator.clipboard.readText()
+					.then( clipText => doc.setField(`VL${i}_URL`, clipText) || refreshVideoList(doc) )
+					.catch( err => console.error(err));
+			};
+		}	
+			
+		
 	},
 	
 	cmd: {
 		createYD: doc => {
-			let url=`/api/getData?form=${doc.form}&cmd=createYD&id=${doc.fieldValues['ID']}`;
+			let url=`/api/getData?form=${doc.form}&cmd=createYD&id=${doc.getField('ID')}`;
 			fetch(url, {method: 'get', credentials: 'include'})
 				.then( response => !response.ok ? 
 					response.text().then( tx => doc.msg.error(tx, 'getFormDir-error:'))
@@ -34,7 +51,7 @@ window.sovaActions.SessionTmpl = {
 					response.text().then( tx => {
 						doc.setField('YDcreated', 1);
 						doc.forceUpdate();
-						console.log(tx);
+						// console.log(tx);
 					})
 				)
 				.catch( err => doc.msg.error(err.message, 'getFormDir-error:'));			
@@ -45,7 +62,6 @@ window.sovaActions.SessionTmpl = {
 				i = i || '';
 			let img = {
 				dbAlias: 'dba',
-				unid: 'new',
 				pageName: 'Pictures',
 				title: 'Pictures',
 				rsMode: 'preview',
@@ -91,7 +107,7 @@ window.sovaActions.SessionTmpl = {
 		openVK: (doc, url) => doc.util.xopen(url),
 		
 		makeVideoY: doc => {
-			let id = doc.fieldValues['ID'];
+			let id = doc.getField('ID');
 			if (!id)
 				return doc.msg.ok('Сохраните документ перед обновлением.','Обновление видео|Документ не сохранен.');
     		
@@ -113,7 +129,7 @@ window.sovaActions.SessionTmpl = {
     			.catch( e => doc.msg.error(e) );			
 		},
 		makeVideoVK: doc => {
-			let id = doc.fieldValues['ID'];
+			let id = doc.getField('ID');
 			if (!id)
 				return doc.msg.ok('Сохраните документ перед обновлением.','Обновление видео|Документ не сохранен.');
     		
@@ -136,10 +152,10 @@ window.sovaActions.SessionTmpl = {
 		},
 		
 		test: (doc, url) => {
-    		fetch(url, {method: 'get', credentials: 'include'})
+			fetch(url, {method: 'get', credentials: 'include'})
 				.then( response => response.text() )
 				.then( t => console.log(t) )
-    			.catch( e => console.log(e.message));
+				.catch( e => console.log(e.message) );
 		},
 		
 		refreshVideo: doc => refreshVideoList(doc) || doc.getControl('videoGrid').forceUpdate(),
@@ -147,8 +163,14 @@ window.sovaActions.SessionTmpl = {
 	// *** *** ***
 	
 	recalc: {
+		UM_TABLE_FD: doc => doc.forceUpdate(),
+		SST_TABLE_FD: doc => doc.forceUpdate(),
 	},	
 	hide: {
+		jobs2: doc => !doc.getField('job1'),
+		jobs3: doc => !doc.getField('job2'),
+		jobs4: doc => !doc.getField('job3'),
+		jobs5: doc => !doc.getField('job4'),		
 /*
         tm2: doc => !doc.getField('mtx1'),
         tm3: doc => !doc.getField('mtx2'),
@@ -173,15 +195,6 @@ window.sovaActions.SessionTmpl = {
 	},
 };
 
-for (let i=0; i < 20; i++) { 
-	window.sovaActions.SessionTmpl.recalc[`VL${i}_FORDEL`] = doc => doc.getControl('videoGrid').forceUpdate();
-	window.sovaActions.SessionTmpl.cmd[`clrUrl${i}`] = doc => doc.setField(`VL${i}_URL`, '');
-	
-	window.sovaActions.SessionTmpl.cmd[`insUrl${i}`] = doc => {
-		navigator.clipboard.readText()
-			.then( clipText => doc.setField(`VL${i}_URL`, clipText) || refreshVideoList(doc) )
-			.catch( err => console.error(err));
-	};
-}	
-	
+
+
 	

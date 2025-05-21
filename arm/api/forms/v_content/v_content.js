@@ -32,7 +32,6 @@ window.sovaActions.v_content = {
 				rsMode: 'new',
 				newForm: `SessionTmpl&sourceDoc=${sourceDoc}`,
 				dbAlias: 'nv_SessionTmpl',
-				unid: 'new',
 				title: 'Создание шаблона',
 			};
 			doc.previewNew(page, ctrlKey);
@@ -40,9 +39,8 @@ window.sovaActions.v_content = {
 		cmdNew: (doc, nve, ctrlKey) => {
 			let page = {
 				rsMode: 'new',
-				newForm: `SessionTmpl&nvEvent=${nve}`,
+				newForm: `SessionTmpl&nvEvent=${nve.partition('|')[1]}`,
 				dbAlias: 'nv_SessionTmpl',
-				unid: 'new',
 				title: 'Создание шаблона',
 			};
 			doc.previewNew(page, ctrlKey);			

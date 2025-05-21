@@ -19,13 +19,11 @@ window._turnOn = (doc, val, box) => {
 			if (box.tuning.turnOn) {
 				if (box.tuning.mmm === 'rooms') {
 					box.tuning.rotate3Z += d;
-					if (box.tuning.rotate3Z >= 360000)
-						box.tuning.rotate3Z = 0;
+					box.tuning.rotate3Z %= 360;
 				}
 				else {
 					box.tuning.rotate3Y += d;
-					if (box.tuning.rotate3Y >= 360000)
-						box.tuning.rotate3Y = 0;
+					box.tuning.rotate3Y %= 360;
 				}
 				box.rebuild = 'rotate';
 				box.forceUpdate();

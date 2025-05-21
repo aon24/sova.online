@@ -4,24 +4,23 @@ Created on 2024
 @author: aon24
 '''
 from arm.api.forms.classPage import Page
-from arm.api.forms.formTools import _div, _field
+from arm.api.forms.formTools import _field
 from arm.api.forms.toolbars import toolbar
 from arm.tools.common import setVersionFiles
 
 from arm.settings import REPORT_DIR
 
-import json
 
 # *** *** ***
 
 
 class html(Page):
 
-    def __init__(self, form):
+    def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
         self.title = 'html'
-        super().__init__(form)
+        super().__init__(request)
 
 # *** *** ***
 
@@ -30,13 +29,13 @@ class html(Page):
 
 # *** *** ***
 
-    def getJsCssUrl(self, mode):
+    def getJsCssUrl(self):
         return self.jsCssUrlRead + setVersionFiles(self.jsCssAdd, REPORT_DIR)
 
 # *** *** ***
 
-    def queryOpen(self, dcUK):
-        doc = dcUK.doc
+    def queryOpen(self, r):
+        doc = r.dcUK.doc
 
         self.jsCssAdd = []
         doc.js and self.jsCssAdd.append(f'/api/jsv?{doc.js}')

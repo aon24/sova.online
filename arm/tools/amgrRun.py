@@ -38,7 +38,7 @@ def runAgent(m):
             if htmlList:  # если агент возвращает список, создается гл.док(отчет с номером) и подчиненные(refs) из списка
                 report = DC(dbAlias='nv_lm_Module', fullName='makeReport')
                 report.doc = DC(
-                    form='report',
+                    form='Module',
                     title=m.title,
                     status='active',
                     docNo=snoDB(report),
@@ -58,6 +58,8 @@ def runAgent(m):
 
         m.end_time = now('-')
         m._run = ''
+        if m.SCHEDULED == 'now':
+            m.TURN_ON = ''  # 1 раз и нефиг
         dc = DC(dbAlias='nv_lm_Module', unid=m.pk, fullName=cat)
         dc.doc = m
         dc.save()

@@ -85,7 +85,7 @@ window.sovaActions.v_schedule = {
 						}
 					}
 					if (buf)
-                        doc.util.serverAction(doc, `putData?form=lk_curator&cmd=setField&field=${fi}`, buf)
+                        doc.util.serverAction(doc, `putData?form=v_lk_curator&cmd=setField&field=${fi}`, buf)
 							.then( res => {
 								if (res !== 'OK')
 									console.error(`http-status: ${res}`)
@@ -99,7 +99,7 @@ window.sovaActions.v_schedule = {
 			let [pkPref, pkSst] = pk.partition('|');
 			let view = doc.getControl('mainList');
 			view.rowClick(pkSst);
-			let page = {form: 'Profile', dbAlias: 'nv_c_Profile', rsMode: 'edit', unid: pkPref};
+			let page = {form: 'Profile', dbAlias: 'nv_Profile', rsMode: 'edit', unid: pkPref};
 			page.title = 'Редактирование профайла студента';
 			doc.previewNew(page, ctrlKey, shiftKey);
 		},
@@ -115,12 +115,7 @@ window.sovaActions.v_schedule = {
 		addSessionGr: (doc, p, ctrlKey) => doc.mainDoc.sova.cmd.addSessionGr(doc, p, ctrlKey),
 		deleteSessionGr: (doc, p) => doc.mainDoc.sova.cmd.deleteSessionGr(doc, p),
 		editSessionGr: (doc, p, ctrl) => doc.mainDoc.sova.cmd.editSessionGr(doc, p, ctrl),
-		dayX: (doc, url, ctrlKey) => {
-			ctrlKey ?
-				doc.util.xopen(`/api/new?form=lk_curator2&${url}`)
-                :
-                doc.previewNew(`newForm=lk_curator2&${url}`);
-		},
+		dayX: (doc, url, ctrlKey) => doc.previewNew(`newForm=v_lk_curator2&${url}`, ctrlKey),
 		selectGr: doc => doc.msg.ok('Выберите группу'),
 		
 		cmdEdit:(doc, pk, ctrlKey, shiftKey) => {
@@ -147,6 +142,11 @@ window.sovaActions.v_schedule = {
 		// *** *** ***
 	},
 	recalc: {
+		CHANGEVIEW: doc => showCalendar(doc),
+		PLAN: doc => showCalendar(doc),
+		EVENT: doc => showCalendar(doc),
+		LEFTLIST: doc => showCalendar(doc),
+
 		SELECTALL: (doc, val) => {
 			let checked = false;
 			for (let k in doc.register) {
@@ -158,7 +158,6 @@ window.sovaActions.v_schedule = {
 			doc.checked = checked;
 			doc.forceUpdate();
 		},
-		CHANGEVIEW: doc => showCalendar(doc),
 		STATUS: (doc, value) => {
 			if (doc.getField('upList') === 2) {
 				doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeLLCP&group=${doc.getField('cPlus').partition('|')[1]}&status=${value}`)
@@ -168,8 +167,6 @@ window.sovaActions.v_schedule = {
 			else
 				showCalendar(doc);
 		},
-		PLAN: doc => showCalendar(doc),
-		EVENT: doc => showCalendar(doc),
 		FILTER: (doc, value) => {
 			doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeLL&filter=${value}`)
 				.then( newList => doc.changeDropList('leftList', newList, 0))
@@ -190,17 +187,6 @@ window.sovaActions.v_schedule = {
 					}
 				})
 				.catch( e => doc.msg.error(e.message) );
-		},
-		LEFTLIST: doc => {
-			/* слишком сложно: в igr надо добавить фильтр и статус, cPlus
-			let igr = doc.getControl('leftList').sel; // getField return string: item[sel]
-			let upList = doc.getField('upList');
-			if (upList === 1);
-			else if (upList === 2);
-			else;
-			doc.mainDoc[`igr_${upList}`] = igr;
-			*/
-			showCalendar(doc);
 		},
 		CPLUS: (doc, value) => {
 			doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeLLCP&group=${doc.getField('cPlus').partition('|')[1]}&status=${doc.getField('status')}`)

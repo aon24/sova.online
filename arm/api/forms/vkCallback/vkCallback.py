@@ -34,13 +34,13 @@ class vkCallback(Page):
     vkCallback return PageOrDoc(mode=new, form=vkCallback)
     '''
 
-    def __init__(self, form):
+    def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = f'/api/jsv?forms/{self.form}/{self.form}.js'
         self.title = 'VK-api'
         self.noCaching = True
 
-        super().__init__(form)
+        super().__init__(request)
 
     # ***
 
@@ -174,14 +174,14 @@ class vkCallback(Page):
 
     # *** *** ***
 
-    def queryOpen(self, dcUK):
+    def queryOpen(self, r):
 
-        if dcUK.device_id:
+        if r.dcUK.device_id:
 #            dcUK.doc.token = getAccesToken(dcUK)
             # dcUK.doc.log = getAccesToken(dcUK)
-            dcUK.doc.log = str(dcUK)
+            r.dcUK.doc.log = str(dcUK)
         else:
-            dcUK.doc.err = f'not dcUK.device_id'
+            r.dcUK.doc.err = f'not dcUK.device_id'
 
 # *** *** ***
 

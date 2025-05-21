@@ -14,13 +14,14 @@ class Toolbar(object):
         if tx:
             self.addButton(tx, cmd, par, attr)
 
-    def addButton(self, tx, cmd, par='', attr={}):
+    def addButton(self, tx, cmd, par='', attr=None):
         a = {}
-        for k, v in attr.items():
-            if k == 'width':
-                a['style'] = {'width': v}
-            else:
-                a[k] = v
+        if attr:
+            for k, v in attr.items():
+                if k == 'width':
+                    a['style'] = {'width': v}
+                else:
+                    a[k] = v
         a['className'] = a.get('className', 'toolbar-button')
         self.buttons.append(_btnD(tx.replace(' ', '\xa0'), cmd, par, **a))
         self.toolbar = _div(className='toolbar', children=self.buttons)
@@ -31,7 +32,6 @@ class Toolbar(object):
     close_ = _btnD('ЗАКРЫТЬ', 'close', title='[Esc] - закрыть окно', className='toolbar-button')
 
     close = _btnD('ЗАКРЫТЬ','close',title='[Esc] - закрыть окно',className='toolbar-button',**style(width='67mm'))
-    closeNV = _btnD('ЗАКРЫТЬ','close',title='[Esc] - закрыть окно',noPreview=1,className='toolbar-button',**style(width='67mm'))
     close2 = _btnD('CLOSE','close',title='Esc',className='toolbar-button')
     saveClose = _btnD('СОХРАНИТЬ  И  ЗАКРЫТЬ','saveClose',
         title='[Shift+Esc] - сохранить и закрыть, [Ctrl-S] - только сохранить',className='toolbar-button')
@@ -148,13 +148,6 @@ class Toolbar(object):
         return _div(className='toolbar', children=[self.saveClose, self.red, self.green, self.blue, self.black, self.commentR, self.commentB, self.close])
 
     # *** *** ***
-
-    def small(self, mode):
-        if mode == 'read':
-            first = Toolbar.edit
-        else:
-            first = self.saveClose
-        return _div(className='toolbar', children=[first, self.closeNV])
 
 # *** *** ***
 

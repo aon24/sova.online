@@ -20,9 +20,10 @@ def refresh(prof, **kv):
             prof[k] = v
             f = True
     if f:
-        dc = DC(dbAlias='nv_Profile', unid=prof.id)
+        dc = DC(dbAlias='nv_Profile', unid=prof.id, _superUser=1)
         dc.doc = prof
-        dc.save()
+        if not dc.save():
+            err('Save "user" to profile error', cat='afterLogin')
 
 
 @receiver(user_logged_in)
@@ -42,7 +43,13 @@ def afterLogin(sender, request, user, **kwargs):
         ls = (path + '//').split('/')
         provider = ls[2] or ls[1]
 
-        if provider == 'signup':
+        if provider in ['login', 'signup']:
+            prof = well('profByUserId', str(user.id))
+            if prof:
+                return snd(f'DJ:{prof.FULL_NAME} ({ip})', cat=provider)
+            if user.is_staff:
+                return snd(f'DJ+:{user.username} ({ip})', cat=provider)
+
             if user.first_name:
                 phone = cleanPhone(user.last_name)
                 prof = well('profilesByPhone', phone)
@@ -53,19 +60,9 @@ def afterLogin(sender, request, user, **kwargs):
                     else:
                         prof.email = user.email
                     refresh(prof, user=user.id)
-                    return snd(f'{prof.full_name} (phone:{phone}) {ip}', cat='signup')
+                    return snd(f'{prof.full_name} (phone:{phone}) {ip}', cat=provider)
 
-            err(f'"{user.username}" not in profiles ({ip})', cat='signup')
-            return
-
-        if provider == 'login':
-            prof = well('profByUserId', str(user.id))
-            if prof:
-                snd(f'DJ:{prof.FULL_NAME} ({ip})', cat='login')
-            elif user.is_staff:
-                snd(f'DJ+:{user.username} ({ip})', cat='login')
-            else:
-                err(f'provider: {path}', cat='login')
+            err(f'provider: {path}', cat=provider)
             return
 
         # ***
@@ -184,9 +181,10 @@ def afterLogin(sender, request, user, **kwargs):
 
 @receiver(user_logged_out)
 def user_logged_out(sender, request, user, **kwargs):
-    prof = well('profByUserId', str(user.id))
-    fullName = prof and prof.FULL_NAME
-    snd(fullName or user.username, cat='logoff')
+    if user:
+        prof = well('profByUserId', str(user.id))
+        fullName = prof and prof.FULL_NAME
+        snd(fullName or user.username, cat='logoff')
 
 # *** *** ***
 
@@ -196,6 +194,9 @@ class MobileMW(object):
         self.get_response = get_response
 
     def __call__(self, request):
+        # print(f"MobileMW: **************PATH_INFO={request.META['PATH_INFO']}")
+        # print(f"MobileMW: ************** QUERY_STRING={unquote(request.META['QUERY_STRING'])}")
+
         path = request.META.get('PATH_INFO').strip()
         if path.endswith('/'):  # м.б "api/key?param" , а м.б. "api/key/?param"
             path = path[:-1]
@@ -229,7 +230,14 @@ class MobileMW(object):
         prof = well('profByUserId', str(user.id))
 
         if prof:
-            dcUK._role = prof.role
+            dcUK._role = ''  # отсекаем лишнии роли
+            if 'куратор' in prof.role:
+                dcUK._role = 'куратор'
+            if 'преподаватель' in prof.role:
+                dcUK._role += 'преподаватель'
+
+            dcUK._role = dcUK._role or ('студент' in prof.role and 'студент')
+
             dcUK._profilePK = prof.id
             dcUK.fullName = prof.full_name
         elif dcUK._staff:
@@ -237,11 +245,6 @@ class MobileMW(object):
         else:
             logout(request)
             return redirect('/')
-
-        # print(f'MobileMW: ************** path="{path}" query="{query}"')
-        # print(f'MobileMW: **************PATH_INFO="{request.META.get("PATH_INFO")}"')
-        # print(f"MobileMW: **************PATH_INFO={request.META['PATH_INFO']}")
-        # print(f"MobileMW: ************** QUERY_STRING={unquote(request.META['QUERY_STRING'])}")
 
         return self.get_response(request)
 

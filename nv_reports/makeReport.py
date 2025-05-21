@@ -20,13 +20,12 @@ import json
 def makeReport(agent):
     '''
     создает в базе отчетов заготовку отчета
-    вызывается из amgr по расписанию(agent - dc object-Module, form=lm)
-    или из v_reports, если выбрано "сейчас 1 раз"(agent - dc-obj from v_reports)
+    вызывается из v_reports, если выбрано "сейчас 1 раз"(agent - dc-obj from v_reports)
     заготовка аналогична агенту с расписанием "выполнить сейчас 1 раз"
-    agent - dc object, form=lm
+    agent - dc object, form=Module
     '''
-    report = DC(dbAlias='nv_reports_Report', fullName='makeReport')
-    report.doc = DC(form='report')
+    report = DC(dbAlias='nv_reports_Report', fullName='makeReport', domain=agent.domain)
+    report.doc = DC(form='Report')
     for k in agent.keys():
         l, _, r = k.partition('_')
         if l == 'REPORT':
@@ -37,10 +36,13 @@ def makeReport(agent):
     report.doc.turn_on = 1
     report.doc.status = 'active'
     report.doc.lmRef = agent.id
+    report.doc.domain = agent.domain  # rf_nv
     report.doc.docNo = snoDB(report)
 
     if report.save():
         snd(agent.report_title, cat='Report created')
+    else:
+        err('Report-save-error', cat='Report NOT created')
 
 # *** *** ***
 
@@ -52,7 +54,7 @@ def startReport(report):
     """
     cat = 'Report run'
     path = f'nv_reports.{report.domain}.{report.module}'
-    snd(f'Start: {path}\n{report.title}', cat=cat)
+    snd(f'Start(import_module): "{path}"\nReport.title: "{report.title}"', cat=cat)
 
     report.starting_time = now('-')
     Report.objects.filter(pk=report.pk).update(starting_time=report.starting_time)

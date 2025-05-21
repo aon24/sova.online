@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 from arm.tools.first import snd, err
-from arm.tools.DC import toWell, well, clearWell, DC, getBody
+from arm.tools.DC import toWell, well, swell, toSwell, clearSwell, clearWell, DC, getBody, config
 from arm.tools.common import setVersionJS, cleanPhone
-from arm.settings import API_DIR
+from arm.settings import API_DIR, STATIC_DIR
 
 from time import time
 import traceback
 import os
-import re
 
 groupsNoByTitle = {}
 groupsTitleByNo = {}
@@ -25,14 +23,17 @@ def loadWell(key, param=None):
             tm = time()
             clearWell('forms')
 
-            for s in ['index', 'open']:
-                try:
-                    fn = os.path.join(os.path.join(API_DIR, 'react'), f'{s}.html')
-                    with open(fn, 'r', encoding='utf-8') as f:
-                        _fo = setVersionJS(f.read(), API_DIR)[0]
-                        toWell(_fo, 'groundForms', s)
-                except:
-                    err(f'file "{fn}" not loaded', cat='loadWell')
+            try:
+                fn = os.path.join(API_DIR, 'react', 'index.html')
+                with open(fn, 'r', encoding='utf-8') as f:
+                    buf = setVersionJS(f.read(), API_DIR)[0]
+                    toWell(buf, 'index.html')
+                fn = os.path.join(STATIC_DIR, 'home', 'manifest.json')
+                with open(fn, 'r', encoding='utf-8') as f:
+                    buf = f.read().replace('{% site %}', config.host)
+                    toWell(buf, 'manifest.json')
+            except:
+                err(f'file "{fn}" not loaded', cat='loadWell')
 
             if not loadCls():
                 err('Cls (and all...) not loaded', cat='loadWell')
@@ -49,7 +50,7 @@ def loadWell(key, param=None):
             YandexDisk()
             loadLanding()
 
-            toWell(['3d+', '3d', '2d'], '3dKeys')
+            toSwell(['2d', '3d', '3d+'], '3dKeys')
 
             snd(f'Runtime: {int((time()-tm)*1000)} ms', cat='loadWell')
             return
@@ -111,18 +112,18 @@ def loadCls():
                         toWell(tx, 'eventsByCode', code)
                         toWell(sticker, 'stickerByCode', code)
 
-                    toWell(evs, 'events')
+                    toSwell(evs, 'events')
                     esh.insert(0, 'Все|')
-                    toWell(esh, 'shortEvents')
+                    toSwell(esh, 'shortEvents')
                 else:
-                    toWell(arr, title)
+                    toSwell(arr, title)
             elif dc.formula:
                 try:
-                    toWell(eval(dc.formula), title)
+                    toSwell(eval(dc.formula), title)
                 except Exception as ex:
                     err(f'{title} => {ex}', cat='loadCls')
 
-    toWell(classifiers, 'classifiers')  # for view "Справочники"
+    toSwell(classifiers, 'classifiers')  # for view "Справочники"
     return True
 
 
@@ -134,7 +135,7 @@ def loadModule():
     for m in Module.docs.all().order_by('-id').values():
         dc = getBody(m)
         modules.append(dc)
-        if dc.turn_on and dc.scheduled:
+        if dc.turn_on:
             turnOnList.append(dc)
 
     toWell(modules, 'modules')
@@ -195,14 +196,14 @@ def loadSessionGr():
 
         toWell(dc, 'sessionGr_Id', dc.pk)
 
-    clearWell('sessionsGr_GrId_band')  # for field 'leftList' type 'band'
+    clearSwell('sessionsGr_GrId_band')  # for field 'leftList' type 'band'
     clearWell('sessionsGr_GrId')  # in lk_cur + stickers
 
     for gr, te in sessionsGr_GrId.items():
         toWell(te, 'sessionsGr_GrId', gr)
     for gr, te in sessionsGr_GrId_band.items():
         ls = [x.partition('|')[2] for x in sorted(te)]
-        toWell(ls, 'sessionsGr_GrId_band', gr)
+        toSwell(ls, 'sessionsGr_GrId_band', gr)
     toWell(sorted(sessionsGr_All, key=lambda dc: dc.date_begin), 'sessionsGr_All')
     toWell(sorted(sessionsGrCommon, key=lambda dc: dc.title, reverse=True), 'sessionsGrCommon')
 
@@ -344,9 +345,9 @@ def loadGroups():
         toWell(dc, 'groups_groupId', dc.pk)  # use in schedule and sgr
         groups.append(f'{dc.title}|{dc.pk}|{dc.status}')  # for views
 
-    toWell(sorted(allGroups, reverse=True), 'allGroups')
-    toWell(sorted(groups,reverse=True),'groups')
-    toWell(sorted(commonGroups, reverse=True), 'commonGroups')
+    toSwell(sorted(allGroups, reverse=True), 'allGroups')
+    toSwell(sorted(groups, reverse=True), 'groups')
+    toSwell(sorted(commonGroups, reverse=True), 'commonGroups')
 
 # *** *** ***
 
@@ -354,8 +355,9 @@ def loadGroups():
 def loadSessionTmpl():
     from nv.models import SessionTmpl
 
+    clearSwell('sessionTmpl_nve_band')  # msgBox добавить сесс
+
     clearWell('sessionTmpl_nve')  # стикеры + форма v_content
-    clearWell('sessionTmpl_nve_band')  # msgBox добавить сесс
     clearWell('sessionTmpl_id')  # стикеры
     sessionTmpl_nve = {'all': []}  # all
     sessionTmpl_nve_band = {}  # msgBox добавить сесс
@@ -380,7 +382,7 @@ def loadSessionTmpl():
         toWell(sorted(te, key=lambda x: x.title), 'sessionTmpl_nve', cu)
 
     for cu,te in sessionTmpl_nve_band.items():
-        toWell(sorted(te),'sessionTmpl_nve_band',cu)
+        toSwell(sorted(te), 'sessionTmpl_nve_band', cu)
 
 # *** *** ***
 
@@ -389,7 +391,7 @@ def loadProfiles():
     from nv_c.models import Profile
 
     dpr = {}
-    for k in well('role'):
+    for k in swell('role'):
         dpr[k] = set()
 
     curators2 = set()
@@ -457,20 +459,28 @@ def loadProfiles():
         if 'студент' in role:
             if dc.status == 'active':
                 student2.add(f'{full_name}|{pk}')
-            groups = (dc.student_groups or '\xa0- без группы').split('\n')
-            for titleGr in groups:
+
+        groups = dc.student_groups
+        if groups:
+            for titleGr in groups.split('\n'):
                 grId = titleGr.partition('|')[2]
                 if grId:
+                    students_grId[grId] = students_grId.get(grId, [])
+                    students_grId[grId].append(dc)
+        else:
+            for gr in swell('allGroups'):  # f'{dc.title}|{dc.pk}'
+                grT, _, grId = gr.partition('|')
+                if grT == '_без группы':
                     students_grId[grId] = students_grId.get(grId, [])
                     students_grId[grId].append(dc)
 
     for k, v in dpr.items():
         toWell(sorted(v), k)
 
-    toWell(sorted(curators2), 'куратор2')
-    toWell(sorted(lectors2), 'преподаватель2')
-    toWell(sorted(student2), 'студент2')
-    toWell(sorted(tutors2), 'tutors2')
+    toSwell(sorted(curators2), 'куратор2')
+    toSwell(sorted(lectors2), 'преподаватель2')
+    toSwell(sorted(student2), 'студент2')
+    toSwell(sorted(tutors2), 'tutors2')
 
     toWell(sorted(alls), 'alls')
     toWell(profiles, 'profiles')
@@ -484,8 +494,8 @@ def loadProfiles():
     for gr,stud in students_grId.items():
         toWell(sorted(stud,key=lambda dc: dc.full_name),'students_grId',gr)
 
-    clearWell('more')
-    toWell(more, 'more')
+    clearSwell('more')
+    toSwell(more, 'more')
 
     snd(f'users: {i}', cat='all_users')
 
@@ -493,31 +503,6 @@ def loadProfiles():
 
 def loadPayments():
     from nv.models import Payment
-
-    ''' test BD vs dict => 1000:1
-    from nv_c.models import Profile
-    lsDC = {}
-
-    tm = time()
-    for r in Profile.docs.values().all():
-        # lsDC[r['id']] = DC(r)
-        toWell(DC(r),'test',r['id'])
-    snd(f'test: {int((time()-tm)*1000)} ms {len(lsDC)}',cat='loadWell')
-
-    tm = time()
-    ls = []
-    for i in range(2000):
-        r = Profile.docs.values().get(pk=i + 1)
-        ls.append(r)
-    snd(f'test Q: {int((time()-tm)*1000)} ms {len(lsDC)}',cat='loadWell')
-
-    tm = time()
-    for i in range(2000):
-        r = well('test',i + 1)
-        ls.append(r)
-    snd(f'test DC: {int((time()-tm)*1000)} ms {len(lsDC)}',cat='loadWell')
-    '''
-
 
     payments_profile = {}
     payments = []
@@ -547,6 +532,20 @@ def YandexDisk():
 
 def loadLanding():
     from arm.tools.dbToolkit.Book import allFromDB
-    draft = [dc for dc in allFromDB('draft') if dc.status != 'deleted']
-    toWell(draft, 'landing')
+    landingByPage = {}
+    landingByKey = {}
+    landing = []
+    for dc in allFromDB('draft'):
+        if dc.status != 'deleted':
+            landing.append(dc)
+            if dc.pageName:
+                landingByPage[dc.pageName.lower()] = dc
+            if dc.key:
+                k = dc.key.lower()
+                landingByKey[k] = landingByKey.get(k, [])
+                landingByKey[k].append(dc)
+
+    toWell(landingByPage, 'landingByPage')
+    toWell(landingByKey, 'landingByKey')
+    toWell(landing, 'landing')
 

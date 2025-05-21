@@ -3,12 +3,12 @@
 AON 2018
 
 '''
-from arm.tools.DC import well, config
+from arm.tools.DC import well, swell, config
 from arm.tools.first import err
 from arm.api.forms.formTools import _btnEdit, _btnDel, _field, style, _div, _btnD
 from arm.api.forms.classPage import Page
 from arm.api.forms.lk_tools import showC, showCC, showLK, showLKpc, office, rightBtnLK
-from arm.api.forms.arm.lk_student import getViewStudent, lk_student
+from arm.api.forms.arm.lk_student import getViewStudent, lk_student, showLKStudent
 from arm.api.forms.tables import paymentsList
 
 import json
@@ -22,117 +22,96 @@ logoff = _div(className='page51', **style(textAlign='center', paddingTop=150), c
 
 
 class arm(Page):
-    def __init__(self, form):
+
+    def __init__(self, request):
         self.form = 'arm'
         self.title = config.orgName
-        self.noCaching = True
+        self.noCaching = request.dcUK._staff
         self.dbAlias = 'arm'
-        self.jsCssUrl = [ f'/api/jsv?forms/arm/events.css']
-        super().__init__(form)
+        self.styles = '<link href="/static/fonts/home.css" rel="stylesheet">\n'
+        # self.styles = '<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">\n'
+        super().__init__(request)
 
 # *** *** ***
 
     def page(self, request):
-        dcUK = request.dcUK
-        studentOr = 'студент'
-
-        fullName = dcUK.fullName
-        if dcUK._staff:
-            fioCLS = dc = None
-            curator = lector = student = None
+        curator = lector = student = None
+        if self._staff:
+            dcUK = request.dcUK
+            fioCLS = None
 
             profile = dcUK.showLK
             dc = profile and well('profiles', profile)
             if dc:
-                curator = 'куратор' in dc.role and self.coratorSheet(getCuratorGroups(dc))
+                curator = 'куратор' in dc.role and self.coratorSheet()
 
-                lector_groups = getLectorGroups(dc.full_name)
-                lector = ('преподаватель' in dc.role or lector_groups) and self.lectorSheet(sorted(list(lector_groups), reverse=True))
+                lector = 'преподаватель' in dc.role and self.lectorSheet()
 
-                sstArr = well('sessionSt_idPr', profile) or well('sessionsGrCommon')
                 dcUK._studentProfilePK = dc.pk  # чтобы показать офису плтежи студента
-                student = sstArr and lk_student(self, dcUK)
 
                 fio = dc.full_name.partition(' ')[0]
                 if dc.role == 'студент':
                     fioCLS = f' <Студ: {fio}>|{dc.pk}'
+                    student = ('студент', lk_student(self), 80)
                 else:
                     fioCLS = f' <Сотр: {fio}>|{dc.pk}'
-                    studentOr = 'сотрудник'
+                    student = ('сотрудник', lk_student(self), 100)
 
-            if dcUK._USERAGENT == 'mobile':
+            if self._userAgent == 'mobile':
                 tabs = [
                     ('🦉', self.armPageAdmin(), 50),
-                    ('офис', office()),
-                    ('куратор', curator),
-                    ('препод', lector),
-                    (studentOr, student),
+                    ('офис', office(), 65),
+                    ('куратор', curator, 80),
+                    ('препод', lector, 80),
+                    student,
                 ]
-                return showLK(tabs, fullName, 100, noProf=not dcUK._profilePK, fioCLS=fioCLS)
+                return showLK(tabs, fioCLS=fioCLS)
             else:
                 tabs = [
-                    ('офис', office()),
-                    ('куратор', curator),
-                    ('препод', lector),
-                    (studentOr, student),
+                    ('офис', office(), 65),
+                    ('куратор', curator, 80),
+                    ('препод', lector, 80),
+                    student,
                 ]
-                return showLKpc(tabs, fullName, 100, noProf=not dcUK._profilePK, fioCLS=fioCLS)
+                return showLKpc(tabs, fioCLS=fioCLS)
 
         # *** *** ***
 
-        elif not dcUK._profilePK:
-            return logoff
+        if self._role == 'студент':
+            return showLKStudent(self)  # для студня отдельная форма
 
-        # *** *** ***
+        student = lk_student(self)
 
-        lector_groups = curator = sstArr = None
-        role = dcUK._role
-        if 'студент' in role:
-            if any(x in role for x in ['куратор', 'преподаватель']):
-                studentOr = 'сотрудник'
-                sstArr = well('sessionSt_idPr', dcUK._profilePK)
-            else:
-                return lk_student(self, dcUK)  # для студня отдельная форма
+        if 'куратор' in self._role:
+            curator = self.coratorSheet()
 
-        if 'куратор' in role:
-            dcc = well('profiles', dcUK._profilePK)
-            curator = dcc and self.coratorSheet(getCuratorGroups(dcc))
-
-        if 'преподаватель' in role:
-            lector_groups = getLectorGroups(fullName)
-
-        lector = 'преподаватель' in role and self.lectorSheet(sorted(list(lector_groups), reverse=True))
-        student = sstArr and lk_student(self, dcUK)
+        if 'преподаватель' in self._role:
+            lector = self.lectorSheet()
 
         tabs = [
-            ('куратор', curator),
-            ('препод', lector),
-            (studentOr, student),
+            ('куратор', curator, 80),
+            ('препод', lector, 80),
+            ('сотрудник', student, 100),
         ]
 
-        return showLK(tabs, fullName, 100, noProf=not dcUK._profilePK)
+        return showLK(tabs)
 
         # *** *** *** '☰'
 
-    def coratorSheet(self, curator_groups):
+    def coratorSheet(self):
         # Curator
         self.leftWidth = 105
         self.upField = None
-        if len(curator_groups) > 1:
-            ls = [s.partition('|')[2] for s in curator_groups]
-            groups = [f"Все группы|{'-'.join(ls)}"] + curator_groups
-        else:
-            groups = curator_groups
 
         self.leftList = _div(children=[
-            _field('leftList', 'band', groups, className='list1str', recalcText=1, rowLength=1),
+            _field('leftList', 'band', [], className='list1str', recalcText=1, rowLength=1),  # список групп
             _div('* * *', **style(margin='10px 0', textAlign='center')),
-            _field('upList', 'band', curator_groups, noRecalc=1, recalcText=1, rowLength=1),  # it is buttons
+            _field('upList', 'band', [], noRecalc=1, recalcText=1, rowLength=1),  # it is buttons
         ])
 
         self.viewbar = self.makeViewbar(
             **style(gridTemplateColumns='1px 1fr', borderWidth='0 0 2px 0', background='transparent'),
-            rightBtn=rightBtnLK(''),
+            rightBtn=rightBtnLK('', self._userAgent),
         )
 
         url = '/api/getData?form=arm&cmd=getSelected&selected={leftList}&status={status}&view={changeView}&plan={plan}'
@@ -151,7 +130,7 @@ class arm(Page):
         # для msgListBox выбрать сессию
         #
         if dcUK.cmd == 'getSessTemplList':
-            data = well('sessionTmpl_nve_band', dcUK.nve)  # для msgListBox выбрать сессию для группы
+            data = swell('sessionTmpl_nve_band', dcUK.nve)  # для msgListBox выбрать сессию для группы
 
         # curator - lector
         #
@@ -209,12 +188,7 @@ class arm(Page):
         elif dcUK.cmd == 'changeStatus':
             dc = well('profiles', dcUK.showLK_id or dcUK._profilePK)
             if dcUK.lk == '':  # curator
-                groups = getCuratorGroups(dc, dcUK.status)
-                if len(groups) > 1:
-                    ls = [s.partition('|')[2] for s in groups]
-                    data = [[f"Все группы|{'-'.join(ls)}"] + groups, groups]
-                else:
-                    data = [groups, groups]
+                data = getCuratorGroups(dc, dcUK.status)
             elif dcUK.lk == '2':  # lector
                 data = getLectorGroups(dc.full_name, dcUK.status)
             else:
@@ -228,13 +202,13 @@ class arm(Page):
 
     def getView(self, dcUK):
         mainDocs = []
-        titleGr, _, ls = dcUK.selected.partition('|')
+        ls = dcUK.selected.partition('|')[2]
 
         sgrLs = []
         for grId in ls.split('-'):
             sgrLs += well('sessionsGr_GrId', grId)
 
-        sgrLs.sort(key=lambda dc: dc.date_begin + dc.title)
+        sgrLs.sort(key=lambda dc: dc.title)
 
         days = 1 if dcUK.plan == '0' else 100000
         yesterday = datetime.now() - timedelta(days=days)
@@ -279,19 +253,18 @@ class arm(Page):
 
     # *** *** ***
 
-    def lectorSheet(self, groups):
+    def lectorSheet(self):
         # lector
         self.leftWidth = 105
         self.upField = _btnD('Программа',
-                'previewArm', 'newForm=v_content&title=Программа&unid=1&dbAlias=nv_SessionTmpl',
+                'previewArm', 'newForm=v_content&title=Программа',
                 className='btnArm', **style(padding=10, fontSize=18, margin='5px auto', display='block', width=200))
 
-        ls = [s.partition('|')[2] for s in well('commonGroups') + groups]
-        self.leftList = _field('leftList2', 'band', groups)
+        self.leftList = _field('leftList2', 'band', [])  # groups)
 
         self.viewbar = self.makeViewbar(
             **style(gridTemplateColumns='1px 1fr', borderWidth='0 0 2px 0', background='transparent'),
-            rightBtn=rightBtnLK('2'),
+            rightBtn=rightBtnLK('2', self._userAgent),
         )
 
         url = '/api/getData?form=arm&cmd=getSelected2&showTutor={showTutor}&selected={leftList2}&status={status2}&view={changeView2}&plan={plan2}'
@@ -309,62 +282,62 @@ class arm(Page):
     # *** *** ***
 
     def armPageAdmin(self):
-        buttonSubj = _btnD('Содержание',
-                'previewArm', 'newForm=v_content&title=Содержание',
-                className='btnArm', **style(width='100%', marginTop=10, padding='10px 5px'))
+        st = dict(width=250, marginTop=10, padding='10px 5px')
 
-        buttonPay = _btnD('Платежи',
-                'previewArm', 'newForm=v_payments&title=Платежи',
-                className='btnArm', **style(width='100%', marginTop=10, padding='10px 5px'))
+        buttonProf = _btnD('Пользователи', 'previewArm', 'newForm=v_profiles&title=Пользователи', className='btnArm', style=st)
 
-        buttonGr = _btnD('Список групп',
-                'previewArm', 'newForm=v_groups&title=Список групп',
-                className='btnArm', **style(width='100%', marginTop=10, padding='10px 5px'))
-        buttonShed = _btnD('Расписание',
-                'previewArm', 'newForm=v_schedule&title=Расписание',
-                className='btnArm', **style(width='100%', marginTop=10, padding='10px 5px'))
-        buttonStByGr = _btnD('Студенты по группам',
-                'previewArm', 'newForm=v_students&title=Студенты',
-                className='btnArm', **style(width='100%', marginTop=10, padding='10px 5px'))
-        buttonProf = _btnD('Пользователи',
-                'previewArm', 'newForm=v_profiles&title=Профайлы',
-                className='btnArm', **style(display='block', width=250, margin='10px auto', padding='10px 5px'))
+        buttonProgramm = _btnD('Программа', 'previewArm', 'newForm=v_content&title=Программа', className='btnArm', style=st)
+        buttonGr = _btnD('Список групп', 'previewArm', 'newForm=v_groups&title=Список групп', className='btnArm', style=st)
+        buttonShed = _btnD('Расписание', 'previewArm', 'newForm=v_schedule&title=Расписание', className='btnArm', style=st)
 
-        buttonMore = _btnD('Тренинг Фест Озн.сем',
-                'previewArm', 'newForm=v_more&title=Тренинг Фест Озн.сем.',
-                className='btnArm', **style(display='block', width=250, margin='10px auto', padding='10px 5px'))
-        buttonCls = _btnD('Справочники',
-                'previewArm', 'newForm=v_classifiers&title=Справочники',
-                className='btnArm', **style(display='block', width=250, margin='10px auto', padding='10px 5px'))
+        buttonStByGr = _btnD('Студенты по группам', 'previewArm', 'newForm=v_students&title=Студенты', className='btnArm', style=st)
+        buttonPay = _btnD('Платежи', 'previewArm', 'newForm=v_payments&title=Платежи', className='btnArm', style=st)
+        buttonMore = _btnD('Тренинг Фест Озн.сем', 'previewArm', 'newForm=v_invite&title=Тренинг Фест Озн.сем.', className='btnArm', style=st)
+
+        buttonReport = _btnD('О Т Ч Е Т Ы', 'previewArm', 'newForm=v_reports&title=Отчеты и аналитика&rsMode=edit', className='btnArm', style=st)
 
         return _div(
             **style(margin='auto', textAlign='center', height='100%', overflow='auto'),
             children=[
-                buttonProf,
+                _div(children=[buttonProf]),
 
                 _div(
                 **style(width=250, display='inline-block', margin=15, textAlign='center', verticalAlign='top'),
                 children=[
+                    buttonProgramm,
                     buttonShed,
-                    buttonSubj,
-                    buttonStByGr,
+                    buttonGr,
                 ]),
 
                 _div(
                 **style(width=250, display='inline-block', margin=15, textAlign='center', verticalAlign='top'),
                 children=[
-                    buttonGr,
+                    buttonStByGr,
                     buttonPay,
                     buttonMore,
                 ]),
-                buttonCls,
+                _div(children=[buttonReport]),
 
         ])
 
     # *** *** ***
 
-    def queryOpen(self, dcUK):
+    def queryOpen(self, r):
+        dcUK = r.dcUK
+        if dcUK._staff:
+            pk = dcUK.showLK or dcUK._profilePK
+        else:
+            pk = dcUK._profilePK
+        prof = well('profiles', pk)
+        if prof:
+            if 'куратор' in prof.role:
+                dcUK.doc.curatorGroups = json.dumps(getCuratorGroups(prof), ensure_ascii=False)
+            if 'преподаватель' in prof.role:
+                dcUK.doc.lectorGroups = json.dumps(getLectorGroups(prof.full_Name), ensure_ascii=False)
+
         dcUK.doc.fullName = dcUK.fullName
+        dcUK.doc.openProfile = f"{dcUK.fullName}|openProfile{'' if dcUK._profilePK else '|1'}"
+
         dcUK.doc._page_ = 1
 
 # *** *** ***
@@ -372,23 +345,29 @@ class arm(Page):
 
 def getCuratorGroups(dc, status='0'):
     if dc and 'куратор' in dc.role and dc.curator_groups:
-        curator_groups = []
+        groups = []
         for g in dc.curator_groups.split('\n'):
             grT, _, grId = g.partition('|')
             grDC = well('groups_groupId', grId)
             if grDC:
                 if status == '0':
                     if grDC.status == 'active':
-                        curator_groups.append(g)
+                        groups.append(g)
                 else:  # all
                     if grDC.status == 'active':
-                        curator_groups.append(g)
+                        groups.append(g)
                     else:
-                        curator_groups.append(f'{grT}(A)|{grId}')
-        if curator_groups:
-            return well('commonGroups') + sorted(curator_groups, reverse=True)
+                        groups.append(f'{grT}(A)|{grId}')
+        if groups:
+            groups.sort(reverse=True)
+            if len(groups) > 1:
+                ls = [s.partition('|')[2] for s in groups]
+                return [[f"Все группы|{'-'.join(ls)}"] + groups, groups]
+            else:
+                return [groups, groups]
 
-    return []
+    return [[], []]
+
 # *** *** ***
 
 
