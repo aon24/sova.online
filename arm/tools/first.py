@@ -6,7 +6,7 @@ from arm.settings import LOG_DIR, DEBUG
 
 # *** *** ***
 
-versionString = f'Sova.online/5.0 Python/{sys.version.split()[0]}'
+versionString = f'Sova.online/1.0 Python/{sys.version.split()[0]}'
 
 # *** *** ***
 
