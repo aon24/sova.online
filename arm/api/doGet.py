@@ -218,10 +218,11 @@ def xImage(request):
 
 
 def _well(request):
+    dcUK = request.dcUK
     listName = request.dcUK.clues.partition('::')[0]
     if listName:
         k = listName.split('|')
-        if not k[0].endswith('2') or request.dcUK._staff:  # студент2, etc
+        if not k[0].endswith('2') or dcUK._staff or 'куратор' in dcUK._role or 'преподаватель' in dcUK._role:  # студент2, etc
             ls = swell(*k)
             if type(ls) is dict:
                 ls = list(ls.keys())
@@ -231,7 +232,6 @@ def _well(request):
     return nvResponse('[]', 'application/json')
 
 # *** *** ***
-
 
 def _loadDoc(request):
     '''

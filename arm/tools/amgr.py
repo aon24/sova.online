@@ -9,7 +9,7 @@ from arm.tools.common import today, now, busyFunc
 from arm.tools.DC import well, toWell
 from arm.tools.loadWell import loadWell
 from arm.tools.amgrRun import runAgent
-from nv_reports.makeReport import startReport
+from arm.tools.makeReport import startReport
 
 import threading
 import time

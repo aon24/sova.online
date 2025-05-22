@@ -8,7 +8,7 @@ from arm.tools.first import snd, err
 from arm.tools.DC import DC
 from arm.tools.dbToolkit.Book import snoDB
 from nv_lm.models import Module
-from nv_reports.makeReport import makeReport
+from arm.tools.makeReport import makeReport
 
 import importlib
 import traceback

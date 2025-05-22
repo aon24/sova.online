@@ -110,11 +110,7 @@ urlpatterns = [
     path('', homePage),
     path('login/', apiDoGet),
 
+    path('admin/login/', apiDoGet),
+    path('admin/', admin.site.urls),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-if not settings.DEMO_MODE:
-    urlpatterns += [
-        path('admin/login/', apiDoGet),
-        path('admin/', admin.site.urls),
-    ]
-

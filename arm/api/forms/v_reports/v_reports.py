@@ -9,7 +9,7 @@ from arm.tools.first import err
 from arm.tools.common import today
 from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
-from nv_reports.makeReport import makeReport
+from arm.tools.makeReport import makeReport
 
 from django.http import HttpResponse
 

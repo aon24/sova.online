@@ -10,18 +10,29 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # *** *** *** loadIniFile
-
-with open(os.path.join(BASE_DIR, 'DB', 'sova.ini'), 'rt') as f:
-    for s in f.readlines():
-        l, _, r = s.partition('=')
-        l, r = l.strip(), r.strip()
-        if r and not l.startswith('#'):
-            config[l] = r
 try:
-    with open(os.path.join(BASE_DIR, 'DB', 'contacts.txt'), 'rt') as f:
+    f = open('/etc/sova.ini')
+except:
+    f = open(os.path.join(BASE_DIR, 'DB', 'sova.ini'))
+
+for s in f.readlines():
+    l, _, r = s.partition('=')
+    l, r = l.strip(), r.strip()
+    if r and not l.startswith('#'):
+        config[l] = r
+
+f.close()
+
+# ***
+
+try:
+    with open(os.path.join(BASE_DIR, 'DB', 'contacts.txt')) as f:
         config.contacts = f.read()
 except:
     pass
+
+LOG_DIR = config.LOG_DIR or BASE_DIR / 'log'
+DB_DIR = config.DB_DIR or BASE_DIR / 'DB'
 
 DEMO_MODE = config.DEMO_MODE
 DEVELOPMENT_MODE = config.DEVELOPMENT_MODE
@@ -67,8 +78,6 @@ MEDIA_ROOT = BASE_DIR / 'static' / 'media'
 
 API_DIR = BASE_DIR / 'arm' / 'api'
 REPORT_DIR = BASE_DIR / 'nv_reports' / 'rf_nv'
-LOG_DIR = BASE_DIR / 'log'
-DB_DIR = BASE_DIR / 'DB'
 
 # *** *** ***
 
