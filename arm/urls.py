@@ -1,6 +1,6 @@
 from arm.api.doGet import apiDoGet
 from arm.api.doPost import doPost
-from arm.api.views import CustomSignupView, CustomLoginView
+from arm.views import CustomSignupView, CustomLoginView
 from arm.tools.dbToolkit.upload import uploadFile
 from arm.tools.dbToolkit.download import downloadFile
 from arm.tools.first import snd, err

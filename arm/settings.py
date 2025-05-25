@@ -52,7 +52,7 @@ if DEVELOPMENT_MODE:  # Письма сохраняются в файлы
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
     EMAIL_FILE_PATH = BASE_DIR / 'test_emails'
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_BACKEND = 'arm.tools.safeSmtp.SafeSMTPEmailBackend'
 
 # *** *** ***
 # Для корректной работы с Nginx

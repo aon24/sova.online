@@ -101,14 +101,14 @@ class login(Page):
             'height': '100vh',
             'overflow': 'auto',
             'paddingTop': 50,
-            'backgroundImage': 'url(/static/images/nvbg.jpeg)',
+            'backgroundImage': 'url("/static/images/nvbg.jpeg")',
             'backgroundSize': '100% 100%'
         }
         return _div(className='bg52', focus='auto', style=st, children=[
             _div(**style(margin='auto', fontSize=40, width='90%', maxWidth=500), children=[
                 _teg('fieldset',
                     **style(
-                            backgroundImage='url(/static/images/nvbgGreen.jpeg)',
+                            backgroundImage='url("/static/images/nvbgGreen.jpeg")',
                             backgroundSize='100% 100%',
                             border='3px solid #fff'),
                     children=[
