@@ -120,7 +120,7 @@ def getViewStudent(dcUK):
 
 
         pk = f"unid={sst.id}&form={sst.form or 'SessionSt'}"
-        row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto auto auto auto'),
+        row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto auto auto auto auto'),
             children=[title, *sstButtons(sst, sgr), _btnEdit('cmdEdit3', pk)])
 
         forSort.append((sgr.title, [pk, row]))

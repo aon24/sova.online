@@ -7,7 +7,7 @@ from arm.tools.DC import well, swell, config
 from arm.tools.first import err
 from arm.api.forms.formTools import _btnEdit, _btnDel, _field, style, _div, _btnD
 from arm.api.forms.classPage import Page
-from arm.api.forms.lk_tools import showC, showCC, showLK, showLKpc, office, rightBtnLK
+from arm.api.forms.lk_tools import showC, showCC, showLKphone, showLKpc, office, rightBtnLK, armButtom
 from arm.api.forms.arm.lk_student import getViewStudent, lk_student, showLKStudent
 from arm.api.forms.tables import paymentsList
 
@@ -28,8 +28,6 @@ class arm(Page):
         self.title = config.orgName
         self.noCaching = request.dcUK._staff
         self.dbAlias = 'arm'
-        self.styles = '<link href="/static/fonts/home.css" rel="stylesheet">\n'
-        # self.styles = '<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">\n'
         super().__init__(request)
 
 # *** *** ***
@@ -50,7 +48,7 @@ class arm(Page):
                 dcUK._studentProfilePK = dc.pk  # чтобы показать офису плтежи студента
 
                 fio = dc.full_name.partition(' ')[0]
-                if dc.role == 'студент':
+                if 'студент' in dc.role:
                     fioCLS = f' <Студ: {fio}>|{dc.pk}'
                     student = ('студент', lk_student(self), 80)
                 else:
@@ -59,13 +57,13 @@ class arm(Page):
 
             if self._userAgent == 'mobile':
                 tabs = [
-                    ('🦉', self.armPageAdmin(), 50),
+                    ('🦉', armButtom(dcUK._superUser), 50),
                     ('офис', office(), 65),
                     ('куратор', curator, 80),
                     ('препод', lector, 80),
                     student,
                 ]
-                return showLK(tabs, fioCLS=fioCLS)
+                return showLKphone(tabs, fioCLS=fioCLS)
             else:
                 tabs = [
                     ('офис', office(), 65),
@@ -73,14 +71,12 @@ class arm(Page):
                     ('препод', lector, 80),
                     student,
                 ]
-                return showLKpc(tabs, fioCLS=fioCLS)
+                return showLKpc(tabs, fioCLS=fioCLS, su=dcUK._superUser)
 
         # *** *** ***
 
-        if self._role == 'студент':
+        if 'студент' in self._role and 'куратор' not in self._role and 'преподаватель' not in self._role:
             return showLKStudent(self)  # для студня отдельная форма
-
-        student = lk_student(self)
 
         if 'куратор' in self._role:
             curator = self.coratorSheet()
@@ -91,10 +87,10 @@ class arm(Page):
         tabs = [
             ('куратор', curator, 80),
             ('препод', lector, 80),
-            ('сотрудник', student, 100),
+            ('сотрудник', lk_student(self), 100),
         ]
 
-        return showLK(tabs)
+        return showLKphone(tabs)
 
         # *** *** *** '☰'
 
@@ -278,47 +274,6 @@ class arm(Page):
         sh = self.sham()
         # sh['attributes']['style']['backgroundColor'] = '#f4fffa'
         return sh
-
-    # *** *** ***
-
-    def armPageAdmin(self):
-        st = dict(width=250, marginTop=10, padding='10px 5px')
-
-        buttonProf = _btnD('Пользователи', 'previewArm', 'newForm=v_profiles&title=Пользователи', className='btnArm', style=st)
-
-        buttonProgramm = _btnD('Программа', 'previewArm', 'newForm=v_content&title=Программа', className='btnArm', style=st)
-        buttonGr = _btnD('Список групп', 'previewArm', 'newForm=v_groups&title=Список групп', className='btnArm', style=st)
-        buttonShed = _btnD('Расписание', 'previewArm', 'newForm=v_schedule&title=Расписание', className='btnArm', style=st)
-
-        buttonStByGr = _btnD('Студенты по группам', 'previewArm', 'newForm=v_students&title=Студенты', className='btnArm', style=st)
-        buttonPay = _btnD('Платежи', 'previewArm', 'newForm=v_payments&title=Платежи', className='btnArm', style=st)
-        buttonMore = _btnD('Тренинг Фест Озн.сем', 'previewArm', 'newForm=v_invite&title=Тренинг Фест Озн.сем.', className='btnArm', style=st)
-
-        buttonReport = _btnD('О Т Ч Е Т Ы', 'previewArm', 'newForm=v_reports&title=Отчеты и аналитика&rsMode=edit', className='btnArm', style=st)
-
-        return _div(
-            **style(margin='auto', textAlign='center', height='100%', overflow='auto'),
-            children=[
-                _div(children=[buttonProf]),
-
-                _div(
-                **style(width=250, display='inline-block', margin=15, textAlign='center', verticalAlign='top'),
-                children=[
-                    buttonProgramm,
-                    buttonShed,
-                    buttonGr,
-                ]),
-
-                _div(
-                **style(width=250, display='inline-block', margin=15, textAlign='center', verticalAlign='top'),
-                children=[
-                    buttonStByGr,
-                    buttonPay,
-                    buttonMore,
-                ]),
-                _div(children=[buttonReport]),
-
-        ])
 
     # *** *** ***
 

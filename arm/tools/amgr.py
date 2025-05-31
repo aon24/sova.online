@@ -38,6 +38,8 @@ def amgrLoop():
                     m.turn_on = m._run = ''
 
         if not busyFunc.get('startReport'):
+            # well("turnOnReport") - список заданий из расписания (form='Module')
+            # и одноразовые отчеты (form='Report' и scheduled=='now' and turn_on = 1)
             m = checkSchedule('turnOnReport')
             if m:
                 try:

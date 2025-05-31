@@ -7,6 +7,7 @@ from arm.tools.first import snd, err
 from arm.tools.amgr import amgrLoop
 from arm.tools.loadWell import loadWell, well
 import arm.tools.DC as dcm
+from arm.tools.httpMisc import notFound
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -28,34 +29,30 @@ snd('Amgr starts as new Thread.', cat='amgr')
 
 
 def homePage(request):
-    if request.user.is_authenticated:
-        return redirect('/api/new')
-
-    if dcm.config.HOME_PAGE:
-        return redirect(dcm.config.HOME_PAGE + '&manifest=1')
-
-    return getFiles('home/home.html')
+    redir = '/api/new' if request.user.is_authenticated else dcm.config.HOME_PAGE or '/login'
+    return redirect(redir)
 
 
 def staticFiles(request):
-    return getFiles(request.META['PATH_INFO'].replace('/static/', ''))
+    return getFiles(request, request.META['PATH_INFO'].replace('/static/', ''))
 
 
 def getImage(request):
     pat = request.META['PATH_INFO'].replace('/image', 'images')
-    return getFiles(pat)
+    return getFiles(request, pat)
 
 
 def getVideo(request):
     pat = request.META['PATH_INFO'].replace('/video', 'media')
-    return getFiles(pat)
+    return getFiles(request, pat)
+
 
 # ***
 def manifest(request):
     return HttpResponse(well('manifest.json'), 'application/json')
 
 
-def getFiles(fileName):
+def getFiles(request, fileName):
     try:
         if 'favicon.ico' in fileName:
             fileName = 'favicon.ico'
@@ -68,7 +65,7 @@ def getFiles(fileName):
     except Exception as ex:
         err(f'"{filePath}"\{ex}', cat='Static page')
 
-    return HttpResponse(f'"{filePath}" not found', status=404)
+    return notFound(request)
 
 # ***
 
@@ -84,13 +81,14 @@ def download_file(request):
 # ***
 
 
+handler404 = 'arm.views.custom_404_view'
+
 urlpatterns = [
     # api
     re_path('^api/post/', doPost),
     re_path('^api/upload', uploadFile),
     re_path('^api/download', downloadFile),
     re_path('^api/signup', CustomSignupView.as_view(), name="account_signup"),
-    re_path('^api/main.', manifest),
 
     re_path('^api/', apiDoGet),
 
@@ -99,18 +97,20 @@ urlpatterns = [
     re_path('^static/', staticFiles),  # in DEBUG-mode работает странно: подключает свои обработчики
     re_path('^download/', download_file),
 
-    re_path('^accounts/login', CustomLoginView.as_view(), name="account_login"),
+    re_path('login/', CustomLoginView.as_view(), name="account_login"),
     re_path('^accounts/yandex', apiDoGet),
-    path('accounts/signup/', CustomSignupView.as_view(), name="account_signup"),
+    re_path('signup/', CustomSignupView.as_view(), name="account_signup"),
     path('accounts/', include('allauth.urls')),
 
     re_path('favicon.ico', staticFiles),
     path('manifest.json', manifest),
 
     path('', homePage),
-    path('login/', apiDoGet),
-
-    path('admin/login/', apiDoGet),
     path('admin/', admin.site.urls),
-
+    # path('admin/', custom_admin.urls),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# ***
+
+# ***
+

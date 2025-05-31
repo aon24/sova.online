@@ -10,8 +10,8 @@ import json
 fieldProps = ['btnD', 'blocking', 'addBtn', 'common', 'onDrop', 'onChange', 'onDrag', 'contextMenuCmdList', 'fd', 'xValue', 'br', 's2', 'classic', 'readOnly', 'edit', 'alias', 'saveAlias', 'sep', 'noPreview']
 
 
-def sent():
-    return _field('_sent', 'fd', **style(font='normal 8pt Courier'), br='br')
+def log():
+    return _field('log', 'fd', **style(font='normal 8pt Courier'), br='br')
 
 
 def docTitle(title, left=None, right=None, field=None):

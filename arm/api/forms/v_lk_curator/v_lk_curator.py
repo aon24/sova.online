@@ -152,7 +152,7 @@ class v_lk_curator(Page):
             btnE = _btnEdit('cmdEdit', pk)
             btnP = _btnPref('cmdPref', f'{sst.pref}|{pk}')
 
-            row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='32px 1fr auto auto auto auto auto auto'),
+            row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='32px 1fr auto auto auto auto auto auto auto'),
                 children=[chb, title, *sstButtons(sst, sgr), btnE, btnP])
 
             mainDocs.append([pk, row, prof and prof.full_name])

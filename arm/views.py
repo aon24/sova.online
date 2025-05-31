@@ -3,18 +3,32 @@ Created on 2025
 
 @author: aon24
 '''
-from allauth.account.views import SignupView, LoginView
-from allauth.account.forms import SignupForm
-from django.forms.fields import CharField
-
-from django.core.exceptions import ValidationError
-from django.shortcuts import redirect
-
 from arm.settings import LOGIN_INVALID_URL
 from arm.tools.DC import well
 from arm.tools.common import cleanPhone
+from arm.api.doGet import _login
+from arm.tools.first import err
 
+from allauth.account.views import SignupView, LoginView
+from allauth.account.forms import SignupForm
+
+from django.core.exceptions import ValidationError
+from django.shortcuts import redirect
 from django import forms
+from django.http import HttpResponse
+
+from urllib.parse import unquote
+
+
+def custom_404_view(request, exception):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    if ip:
+        ip = ip.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+
+    err(f"{request.user.username} ({ip}) {request.path}?{unquote(request.META['QUERY_STRING'])}", cat='Я 404')
+    return HttpResponse(' ', status=404)
 
 
 class CustomSignupForm(SignupForm):
@@ -37,12 +51,19 @@ class CustomSignupForm(SignupForm):
 
         return cleaned_data
 
+
 class CustomSignupView(SignupView):
     form_class = CustomSignupForm
 
+    def get(self, request, *args, **kwargs):
+        return _login(request)
 
 
 class CustomLoginView(LoginView):
 
     def form_invalid(self, form):
         return redirect(LOGIN_INVALID_URL)
+
+    def get(self, request, *args, **kwargs):
+        return _login(request)
+

@@ -32,7 +32,7 @@ def nvResponse(body, content_type='text/html; charset=UTF-8', status=200, reques
         body = gzip.compress(body)
         headers.append(('Content-Encoding', 'gzip'))
 
-    if request and request.dcUK._path in ['image', 'jsv']:
+    if request and request.dcUK._path in ['image', 'jsv', 'loadForm']:
         days = 30
         maxAge = 60 * 60 * 24 * days
         headers.append(('Expires', email.utils.formatdate(time.time() + maxAge, usegmt=True)))
@@ -54,20 +54,19 @@ def badReq(par, fullName='-?-'):
     return accessDenied(fullName)
 
 
-def notFound(s, un=''):
-    err(f'404 (fullName={un})\n{s}', cat='page not found')
-    return nvResponse(f'''<h3>API-404<br/>{s}</h3> not found (un={un or '-?-'})''')
-
-
-def jsonNotFound(request):
-    dcUK = request.dcUK
-    err(f'404. fullName={dcUK.fullName} path?query={dcUK.path}?{dcUK.query}', cat='json-object not found')
-    return nvResponse(f'''404 "{dcUK.path or 'block not found'} ({dcUK.fullName or '-?-'})"''', 'application/json', 200)
+def notFound(request, content_type='text/html; charset=UTF-8'):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    if ip:
+        ip = ip.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    err(f'{request.dcUK.fullName}({request.user.username} {ip}) {request.path}?{request.dcUK._query}', cat='Яя-api  404')
+    return HttpResponse('""', content_type=content_type, status=404)
 
 
 def accessDenied(fullName):
     snd(fullName, cat='accessDenied')
-    return nvResponse(f'Access denied for {fullName}', status=403)
+    return HttpResponse(f'Access denied for {fullName}', status=403)
 
 # *** *** ***
 

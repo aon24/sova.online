@@ -71,6 +71,10 @@ class SessionSt(Page):
 
     # ***
 
+    # костыль, чтобы никто не видел поля с оценкой, если есть noAss_fd
+    def getOldValue(self, r, fv, do):
+        return {k: do.get(k, '') for k in fv if do.get(k, '') != fv[k] and not (fv.get('NOASS_FD') and k.startswith('ASSLEC'))}
+
     def queryOpen(self, r):
         dcUK = r.dcUK
         doc = dcUK.doc

@@ -16,6 +16,7 @@ import json
 
 
 class Profile(Page):
+    perdaFields = 'date_birth,address,passport,notes'.upper().split(',')  # perda
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
@@ -60,12 +61,12 @@ class Profile(Page):
 
         genderList = ['мужчина', 'женщина', 'кварцвинил']
         tPerDa = _div(className='tabBodyInner', children=[
-            *labField('Дата рождения', 'date_birth', 'dt'),
-            *labField('Адрес', 'address', 'tx'),
-            *labField('Паспорт', 'passport', 'tx'),
+            *labField('Дата рождения', 'date_birth', 'dt', name='perda'),
+            *labField('Адрес', 'address', 'tx', name='perda'),
+            *labField('Паспорт', 'passport', 'tx', name='perda'),
             *labField('Приветствие', 'hello', 'tx'),
             *labField('Пол', 'gender', 'lbsd', genderList),
-            *labField('Комментарий', 'notes', 'tx'),
+            *labField('Комментарий', 'notes', 'tx', name='perda'),
         ])
         tPhoto = _div(className='tabBodyInner', children=[
             _div(**style(height='100%', display='grid', gridTemplateRows='1fr auto'), children=[
@@ -83,7 +84,7 @@ class Profile(Page):
         # ***
 
         tabs = [('Контакты', tMain, 85),
-                ('Персон', tPerDa, 70),
+                ('Персон', self._staff and tPerDa, 70),
                 ('Фото', tPhoto, 55),
                 ('Группы', tGroup, 70),
                 ('Доп', tMore, 50),
@@ -92,6 +93,11 @@ class Profile(Page):
         return self.docPage([_tabNew('PR_Table_FD', tabs=tabs)], request.dcUK.mode == 'read' and [toolbar.close_])
 
 # *** *** ***
+
+    def getOldValue(self, r, fv, do):
+        if r.dcUK._staff:
+            return super().getOldValue(r, fv, do)
+        return {k: do.get(k, '') for k in fv if do.get(k, '') != fv[k] and k not in self.perdaFields}
 
     def queryOpen(self, r):
         dcUK = r.dcUK
@@ -105,6 +111,10 @@ class Profile(Page):
         dcUK.unid = dcUK.unid or dcUK._profilePK
 
         doc = dcUK.doc
+
+        if not r.dcUK._staff:  # hide and clean perda
+            for k in self.perdaFields:
+                doc[k] = ''
 
         if dcUK.mode == 'new':
             doc.status = 'active'

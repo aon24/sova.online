@@ -3,7 +3,7 @@
 AON 9 mar 2018
 
 '''
-from arm.api.forms.formTools import _btnNew, _btnEdit, style, gridStyle, _btnD, _field, labField, labell, labeldc, _div, _btnDel, _btnView
+from arm.api.forms.formTools import _btnNew, _btnEdit, style, gridStyle, _btnD, _field, labField, labell, labeldc, _div, _btnDel, _span
 from arm.tools.DC import DC, DCC, well, swell
 from arm.tools.first import err
 from arm.tools.common import today
@@ -93,7 +93,7 @@ class v_reports(Page):
                 data = self.getView(dcUK, dba='reports')
             elif dcUK.db == '1':  # reports and schedule
                 data = self.getViewLM(dcUK, dba='reports')
-            else:  # agents
+            else:  # agents (db == '2')
                 if dcUK.agentView == '0':  # список агентов
                     data = self.getViewLM(dcUK, dba='modules')
                 else:  # результаты
@@ -111,10 +111,16 @@ class v_reports(Page):
                 comment='\nДля сбора нового отчета выберите нужную категорию'
         )]
 
-        mmm = reload(import_module(f'nv_reports.rf_nv.description'))
-        for r in mmm.reportList(*oldQuar(0)):  # oldQuar(0) - от начала текущего квартала до today
-            repList.append(DCC(r))
-        repListKeys = [r.title for r in repList]
+        try:
+            s = request.dcUK.domain or self.domain
+            mmm = reload(import_module(f'nv_reports.{s}.description'))
+            for r in mmm.reportList(*oldQuar(0)):  # oldQuar(0) - от начала текущего квартала до today
+                repList.append(DCC(r))
+            repListKeys = [r.title for r in repList]
+        except:
+            s = f'module not found "nv_reports.{s}.description"'
+            err(s, cat='v_reports')
+            return _div(children=[_div(className='toolbar', children=[toolbar.close_]), _div(s)])
 
         self.upField = _div(children=[
             _div(className='toolbar', children=[toolbar.close_]),
@@ -147,9 +153,12 @@ class v_reports(Page):
         # sched = _field('category', 'band', ['включен', 'выполняется', 'все'], name='sched', className='list33str', recalcText=1)
         self.leftList = _div(children=[rep, sched])
 
-        return self.shamrock(expand='first', focus='', addUrl='&agentView={agentView}&category={category}&db={db}&title={title}')
+        return self.shamrock(expand='first', focus='', addUrl='&agentView={agentView}&category={category}&db={db}&title={title}&domain={domain}')
 
     def getView(self, dcUK, dba):
+        if dcUK.domain == 'feedback' and not dcUK._superUser:
+            return []  # only su
+
         mainDocs = []
         ids = []
         if dba == 'reports':
@@ -158,7 +167,7 @@ class v_reports(Page):
             dbAlias = 'nv_lm_Module'
 
         for m in well(dba):
-            if m.form.lower() != 'report':
+            if m.form != 'Report' or m.domain != dcUK.domain:
                 continue
 
             pk = m.pk
@@ -189,18 +198,19 @@ class v_reports(Page):
 
     def queryOpen(self, r):
         r.dcUK.doc._view_ = '1'
+        r.dcUK.doc.domain = r.dcUK.domain or self.domain
 
 # *** *** ***
 
     def setReport(self, i, r):
-        if not r.listbox:
+        if not i:
             return _div(name=f'krd_{i}', children=[
                 _div(r.comment, **style(textAlign='center', font='normal 9pt Verdana', color='#555'), br=1)
             ])
 
         ls = [
             labeldc('параметры для сбора отчета', **style(marginTop=10)),
-            _field(f'reportName_{i}', 'list', r.listbox, saveAlias=1, listItemClassName='repName',),
+            _field(f'firstList_{i}', 'list', r.firstList, saveAlias=1, listItemClassName='repName',),
         ]
 
         if r.addList:
@@ -248,8 +258,9 @@ class v_reports(Page):
                 ])
             ]
 
-        ls.append(_field(f'module_{i}', 'fd', xValue=r.module, **style(font='normal 9pt Verdana', color='#555')))
-        ls.append(_div(f':{r.comment}', **style(display='inline', font='normal 9pt Verdana', color='#555'), br=1))
+        ls.append(_field(f'module_{i}', 'fd', xValue=r.module, **style(font='normal 9pt Verdana', color='#888')))
+        ls.append(_span(': '))
+        ls.append(_field(f'comment_{i}', 'fd', xValue=r.comment, **style(font='normal 9pt Verdana', color='#555'), br=1))
 
         return _div(name=f'krd_{i}', children=ls)
 
@@ -299,7 +310,7 @@ class v_reports(Page):
 
 def oldQuar(n, sep='-'):
     y = datetime.today().year
-    q = int((datetime.today().month - 1) / 3)
+    q = int((datetime.today().month - 1) / 3)  # хитрожопо
     m = (q * 3) + 1
     qua = f'{y}-{m:02d}-01'
     if n > 0:
@@ -320,13 +331,11 @@ def monthSub(sourDate, n, day=0):
     start_date = datetime.strptime(sourDate, "%Y-%m-%d")
     sour_day = start_date.day
 
-    for i in range(0, n):
+    for i in range(n):
         start_date = start_date.replace(day=1) - timedelta(days=1)
 
     if day == 0:
         start_date = start_date.replace(day=sour_day)
-    elif day > 0:
-        start_date = start_date.replace(day=day)
 
     return start_date
 

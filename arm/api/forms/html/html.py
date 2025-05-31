@@ -4,12 +4,12 @@ Created on 2024
 @author: aon24
 '''
 from arm.api.forms.classPage import Page
-from arm.api.forms.formTools import _field
+from arm.api.forms.formTools import _field, _div
 from arm.api.forms.toolbars import toolbar
 from arm.tools.common import setVersionFiles
+from arm.settings import BASE_DIR
 
-from arm.settings import REPORT_DIR
-
+import os
 
 # *** *** ***
 
@@ -25,16 +25,18 @@ class html(Page):
 # *** *** ***
 
     def page(self, request):
-        return self.docPage([_field('html', 'json')], [toolbar.close_])
+        return self.docPage([_field('main', 'json')], [toolbar.close_])
 
 # *** *** ***
 
-    def getJsCssUrl(self):
-        return self.jsCssUrlRead + setVersionFiles(self.jsCssAdd, REPORT_DIR)
+    def getJsCssUrl(self, request):
+        fn = os.path.join('/api/jsv?nv_reports', request.dcUK.doc.jsCss)
+        return self.jsCssUrlRead + setVersionFiles(fn, '')
 
 # *** *** ***
 
     def queryOpen(self, r):
+        return
         doc = r.dcUK.doc
 
         self.jsCssAdd = []

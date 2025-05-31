@@ -1,8 +1,11 @@
 // *** *** ***
+let reportFields = ['module', 'title', 'firstList', 'addList', 'who', 'dt1', 'dt2', 'dt3', 'dt4', 'comment'];
 var _currCat = 0;
 let sheduleTimeList = doc => {
 	let scheduled = doc.getField('scheduled');
 	let dt = doc.getControl('schedDay');
+	if (!scheduled)
+		return;
 	dt.setValue('');
 	dt.changeDropList(`/api/well?clues=scheduled_${scheduled}_day`);
 	dt = doc.getControl('schedTime');
@@ -98,10 +101,10 @@ window.sovaActions.v_reports = {
 			let i = doc.util.partition(doc.getField('show'), '_')[1];
             let act = `title=${doc.getField('title')}`;
 
-			for(let it of ['scheduled', 'schedTime', 'schedDay'])
+			for(let it of ['scheduled', 'schedTime', 'schedDay', 'domain'])
 				act += `&${it}=${doc.getField(it)}`;
 
-			for(let it of ['module', 'reportName', 'addList', 'dt1', 'dt2', 'dt3', 'dt4']) {
+			for(let it of reportFields) {
 				let fi = `${it}_${i}`;
 				act += `&report_${it}=${doc.getField(fi)}`;
 			}
@@ -120,10 +123,10 @@ window.sovaActions.v_reports = {
 			let i = doc.util.partition(doc.getField('show'), '_')[1];
             let act = `title=${doc.getField('title')}`;
 
-			for(let it of ['scheduled', 'schedTime', 'schedDay'])
+			for(let it of ['scheduled', 'schedTime', 'schedDay', 'domain'])
 				act += `&${it}=${doc.getField(it)}`;
 
-			for(let it of ['module', 'reportName', 'addList', 'dt1', 'dt2', 'dt3', 'dt4']) {
+			for(let it of reportFields) {
 				let fi = `${it}_${i}`;
 				act += `&report_${it}=${doc.getField(fi)}`;
 			}

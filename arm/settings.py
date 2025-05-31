@@ -31,14 +31,15 @@ try:
 except:
     pass
 
-LOG_DIR = config.LOG_DIR or BASE_DIR / 'log'
-DB_DIR = config.DB_DIR or BASE_DIR / 'DB'
+LOG_DIR = Path(config.LOG_DIR or BASE_DIR / 'log')
+DB_DIR = Path(config.DB_DIR or BASE_DIR / 'DB')
 
 DEMO_MODE = config.DEMO_MODE
 DEVELOPMENT_MODE = config.DEVELOPMENT_MODE
 
 SECRET_KEY = config.SECRET_KEY
 DEBUG = bool(config.DEBUG)
+
 ALLOWED_HOSTS = [config.HOST]
 ALLOWED_HOSTS += [h.strip() for h in config.addAllowedHosts.split(',')]
 
@@ -75,9 +76,6 @@ TEMPLATE_DIR = BASE_DIR / 'templates'
 STATIC_DIR = BASE_DIR / 'static'
 STATICFILES_DIRS = [STATIC_DIR]
 MEDIA_ROOT = BASE_DIR / 'static' / 'media'
-
-API_DIR = BASE_DIR / 'arm' / 'api'
-REPORT_DIR = BASE_DIR / 'nv_reports' / 'rf_nv'
 
 # *** *** ***
 
@@ -125,7 +123,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
-SITE_ID = 1
+SITE_ID = 1  # имя сайта хранится в бд в таблице django-site. Испольуется при отправке письма "сброс пароля"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

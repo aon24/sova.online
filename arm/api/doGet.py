@@ -2,18 +2,16 @@
 """
 AON 2020
 """
-from arm.tools.httpMisc import notFound, jsonNotFound, accessDenied, nvResponse
-from arm.settings import API_DIR, BASE_DIR, REPORT_DIR
+from arm.tools.httpMisc import notFound, accessDenied, nvResponse
+from arm.settings import BASE_DIR
 from arm.tools.loadWell import loadWell
 from arm.tools.first import err
-
 from arm.tools.imgHeader import what
-from arm.tools.DC import DC, well, swell
+from arm.tools.DC import DC, well, swell, config
 from arm.api.forms.classPage import getPageObj
 from arm.tools.dbToolkit import DJ, Book
 
 from django.views.decorators.csrf import ensure_csrf_cookie
-
 from django.shortcuts import redirect
 from django.contrib.auth import logout
 
@@ -51,7 +49,7 @@ def apiDoGet(request):
 
         return redirect(f'/api/login/')
 
-    return notFound(f'api-path "{request.dcUK._path or "-?-"}" not found', request.dcUK.fullName)
+    return notFound(request)
 
 # *** *** ***
 
@@ -118,13 +116,12 @@ pwa = '''
 <link rel="manifest" type="application/json" href="/manifest.json">
 '''
 
-
 def returnPageOrDoc(request, manifest=None):
     opg = getPageObj(request)
     if not opg:
-        return notFound(f'doGet.returnPageOrDoc: form "{request.dcUK.form}"', request.dcUK.fullName)
+        return notFound(request)
 
-    jsDoc = opg.getJsDoc(request)
+    jsDoc = opg.getJsDoc(request, config.coocieBtn)
 
     html = well('index.html')
     html = html.replace('<title></title>', f'<title>{opg.title}</title>')
@@ -150,7 +147,7 @@ def _newForm(request):  # возможно для отладки React-form
     '''
     opg = getPageObj(request)
     if not opg:
-        return jsonNotFound(request)
+        return notFound(request, content_type='application/json')
     return nvResponse(opg.getJsDoc(request), 'application/json')
 
 # *** *** ***
@@ -163,6 +160,7 @@ def _new(request):
     if request.dcUK.form in ['v_profiles', 'v_students', 'v_schedule'] and not request.dcUK._staff:
         return accessDenied(request.dcUK.fullName)
     request.dcUK.mode = 'new'
+    request.dcUK.form = request.dcUK.form or 'arm'
     return returnPageOrDoc(request)
 
 # *** *** ***
@@ -170,29 +168,30 @@ def _new(request):
 
 def _login(request):
     request.dcUK.mode = 'new'
-    request.dcUK.form = 'arm' if request.user.is_authenticated else 'login'
-    return returnPageOrDoc(request, True)
+    if request.user.is_authenticated:
+        request.dcUK.form = 'arm'
+        manifest = None
+    else:
+        request.dcUK.form = 'login'
+        manifest = True
+    return returnPageOrDoc(request, manifest)
 
 # *** *** ***
 
 
 def jsv(request):
-    fn = os.path.join(API_DIR, request.dcUK._query).partition('::')[0]
+    if request.dcUK._query.startswith('forms/'):
+        fn = os.path.join(BASE_DIR, 'arm', 'api', request.dcUK._query).partition('::')[0]
+    else:
+        fn = os.path.join(BASE_DIR, request.dcUK._query).partition('::')[0]
     fn = os.path.normpath(fn)  # Удаляет ../ и ./
     try:
         with open(fn, 'rb') as f:
             mimeType = f'{guess_type(fn, False)[0]}; charset=utf-8'
             return nvResponse('' or f.read(), mimeType, request=request)
-    except:
-        fn = os.path.join(REPORT_DIR, request.dcUK._query).partition('::')[0]
-        fn = os.path.normpath(fn)
-        try:
-            with open(fn, 'rb') as f:
-                mimeType = f'{guess_type(fn, False)[0]}; charset=utf-8'
-                return nvResponse('' or f.read(), mimeType, request=request)
-        except Exception as ex:
-            err(f'jsv-path: {request.dcUK._path}\n{ex}', cat='doGet.py')
-            return notFound(fn, request.dcUK.fullName)
+    except Exception as ex:
+        err(f'jsv-path: {request.dcUK._path}\n{ex}', cat='doGet.py')
+        return notFound(request)
 
 # *** *** ***
 
@@ -208,7 +207,7 @@ def xImage(request):
             if what(path):
                 return nvResponse(f.read(), content_type=mimeType, request=request)
             else:
-                return notFound(f'not image: {path}', request.dcUK.fullName)
+                return notFound(request)
 
     except Exception as ex:
         err(f'{path}: {ex}', cat='xImage')
@@ -299,6 +298,9 @@ def apiRunCmd(request):
             loadWell('all')
 
     return nvResponse('"ok"', 'application/json')
+
+# *** *** ***
+
 
 _apiGetList = {
     # no authenticated

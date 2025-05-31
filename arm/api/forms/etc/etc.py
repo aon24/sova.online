@@ -27,9 +27,6 @@ class etc(Page):
             children=[
             _div(**style(margin='10px auto', height=1, width=250, border='0 solid #036', borderTopWidth=1)),
 
-            _btnD('Справочники',
-                'previewArm', 'newForm=v_classifiers&title=Справочники',
-                className='rsvTop', **style(width=150, margin='10px auto')),
             _btnD('Р А С С Ы Л К И', 'exportEmail', className='rsvTop',
                 **style(width=150, margin='10px auto')),
             _btnD('3 D L', 'previewArm', 'newForm=v_more&title=Лендинговые страницы',

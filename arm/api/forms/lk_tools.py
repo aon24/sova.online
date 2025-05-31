@@ -34,11 +34,17 @@ def sstButtons(sst, sgr):
                 pay_s = ' fv2yes'
                 break
 
+    if any([1 for x in sst.keys() if x.startswith('ASSLEC')]):
+        bf = ' fv2yes'
+    else:
+        bf = ''
+
     return [
         _div('Д', className=f'btnIcon mBtn fv2{sst.allow_s and " fv2yes"}', title='допущен'),
         _div('З', className=f'btnIcon mBtn fv2{sst.test_s and " fv2yes"}', title='зачет'),
         _div('Р', className=f'btnIcon mBtn fv2{pay_s}', title='оплачено'),
         _div('V', className=f'btnIcon mBtn fv2{sst.video_s and " fv2yes"}', title='видео'),
+        _div('ОС', className=f'btnIcon mBtn fv2{bf}', title='обратная связь'),
     ]
 
 
@@ -390,7 +396,7 @@ btnSetting = _btnD('🛠️', 'previewArm', 'newForm=etc&title=Настройк�
 btnProfile = _field('openProfile', 'btn', fd=1)
 
 
-def showLK(table, fioCLS=None):
+def showLKphone(table, fioCLS=None):
     if fioCLS:  # for office-mode
         fio, _, pk = fioCLS.partition('|')
         fioCLS = _btnD(fio, 'openProfile2', pk, **style(font='bold 12px Arial', color='#036'))
@@ -415,17 +421,22 @@ def showLK(table, fioCLS=None):
 # *** *** ***
 
 
-armButtom = [
-    _btnD('Пользователи', 'previewArm', 'newForm=v_profiles&title=Профайлы'),
-    _btnD('Программа', 'previewArm', 'newForm=v_content&title=Программа'),
-    _btnD('Расписание', 'previewArm', 'newForm=v_schedule&title=Расписание'),
-    _btnD('Список групп', 'previewArm', 'newForm=v_groups&title=Список групп'),
-    _btnD('Студенты по гр.', 'previewArm', 'newForm=v_students&title=Студенты'),
-    _btnD('Платежи', 'previewArm', 'newForm=v_payments&title=Платежи'),
-    _btnD('Тр-Фест-Озн.сем', 'previewArm', 'newForm=v_invite&title=Тренинг Фест Озн.сем.'),
-    _btnD('О Т Ч Е Т Ы', 'previewArm', 'newForm=v_reports&title=Отчеты и аналитика&rsMode=edit', **style(margin='10px 20px')),
+def armButtom(su):
+    btn = [
+        _btnD('Пользователи', 'previewArm', 'newForm=v_profiles&title=Профайлы'),
+        _btnD('Программа', 'previewArm', 'newForm=v_content&title=Программа'),
+        _btnD('Расписание', 'previewArm', 'newForm=v_schedule&title=Расписание'),
+        _btnD('Список групп', 'previewArm', 'newForm=v_groups&title=Список групп'),
+        _btnD('Студенты по гр.', 'previewArm', 'newForm=v_students&title=Студенты'),
+        _btnD('Платежи', 'previewArm', 'newForm=v_payments&title=Платежи'),
+        _btnD('Тр-Фест-Озн.сем', 'previewArm', 'newForm=v_invite&title=Тренинг Фест Озн.сем.'),
+        _btnD('Справочники', 'previewArm', 'newForm=v_classifiers&title=Справочники'),
+        _btnD('О Т Ч Е Т Ы', 'previewArm', 'newForm=v_reports&title=Отчеты и аналитика&rsMode=edit', **style(margin='10px 20px')),
+    ]
+    if su:
+        btn.append(_btnD('Обр.связь', 'previewArm', 'newForm=v_reports&title=Отчеты и аналитика&rsMode=edit&addUrl:&domain=feedback', **style(margin='10px 20px')))
 
-]
+    return _div(className='armPcBtn', **style(background='#FFD78040'), children=btn)
 
 
 def office():
@@ -470,7 +481,7 @@ def office():
         ])
 
 
-def showLKpc(table, fioCLS=None):
+def showLKpc(table, fioCLS=None, su=None):
     if fioCLS:
         fio, _, pk = fioCLS.partition('|')
         fioCLS = _btnD(fio, 'openProfile2', pk, **style(font='bold 14px Arial', color='#036'))
@@ -487,7 +498,7 @@ def showLKpc(table, fioCLS=None):
                 ]),
                 _div(**gridStyle('170px 1fr', overflow='hidden', height='calc(100vh - 30px'),
                     children=[
-                        _div(className='armPcBtn', **style(background='#FFD78040'), children=armButtom),
+                        armButtom(su),
                         _div(**style(height='inherit', padding=1),
                             children=[_tabNew('LK_Table_FD', tabs=table)]
                     )

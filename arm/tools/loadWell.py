@@ -1,7 +1,7 @@
 from arm.tools.first import snd, err
 from arm.tools.DC import toWell, well, swell, toSwell, clearSwell, clearWell, DC, getBody, config
 from arm.tools.common import setVersionJS, cleanPhone
-from arm.settings import API_DIR, STATIC_DIR
+from arm.settings import BASE_DIR, STATIC_DIR
 
 from time import time
 import traceback
@@ -24,12 +24,13 @@ def loadWell(key, param=None):
             clearWell('forms')
 
             try:
-                fn = os.path.join(API_DIR, 'react', 'index.html')
+                dirr = os.path.join(BASE_DIR, 'arm', 'api', 'react')
+                fn = os.path.join(dirr, 'index.html')
                 with open(fn, 'r', encoding='utf-8') as f:
-                    buf = setVersionJS(f.read(), API_DIR)[0]
+                    buf = setVersionJS(f.read(), BASE_DIR)[0]
                     toWell(buf, 'index.html')
                 fn = os.path.join(STATIC_DIR, 'home', 'manifest.json')
-                with open(fn, 'r', encoding='utf-8') as f:
+                with open(fn) as f:
                     buf = f.read().replace('{% site %}', config.host)
                     toWell(buf, 'manifest.json')
             except:
@@ -76,8 +77,6 @@ def loadWell(key, param=None):
             loadModule()
         elif key == 'Report':
             loadReport()
-        elif key == 'YandexDisk':
-            YandexDisk()
         elif key == 'Landing':
             loadLanding()
 
@@ -148,7 +147,8 @@ def loadReport():
     turnOnReport = []
     for m in Report.docs.all().order_by('-id').values():
         dc = getBody(m)
-        reports.append(dc)
+        if dc.form in ['html', 'Report']:
+            reports.append(dc)
         if dc.turn_on and dc.scheduled:
             turnOnReport.append(dc)
 

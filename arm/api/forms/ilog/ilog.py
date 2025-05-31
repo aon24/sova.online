@@ -58,6 +58,8 @@ class ilog(Page):
     # *** *** ***
 
     def queryOpen(self, r):
+        r.dcUK.doc._page_ = 1
+        r.dcUK.doc._view_ = 1
         global s_subCats, logList
         r.dcUK.doc.msg = 'загрузка...'
 
