@@ -69,7 +69,7 @@ class Page(object):
         self._staff = dcUK._staff
         self.noicons = dcUK.noicons
 
-        for a in ['jsCssUrl', 'jsCssUrlRead', 'jsCssUrlEdit', 'dbAlias', 'noCaching', 'styles']:
+        for a in ['_VIEW_', '_PAGE_', 'jsCssUrl', 'jsCssUrlRead', 'jsCssUrlEdit', 'dbAlias', 'noCaching', 'styles']:
             not getattr(self, a, None) and setattr(self, a, '')
 
         self.title = getattr(self, 'title', 'sova.online')
@@ -124,6 +124,10 @@ class Page(object):
                     version=f'{versionString}',
                     fd=dcUK.fd
                 )
+            if self._VIEW_:  # виды (не документы) - игнорировать сохранение
+                ds['_VIEW_'] = 1
+            if self._PAGE_:  # страница (не документ) - игнорировать ESC
+                ds['_PAGE_'] = 1
             if coocieBtn:  # наш сайт использует файлы cookie
                 ds['coocieButton'] = 1
 
@@ -159,7 +163,6 @@ class Page(object):
                 fd='1',
                 _view_='1'
             )
-
         return json.dumps(ds, ensure_ascii=False)
 
     def getOldValue(self, request, fv, do):
@@ -209,7 +212,7 @@ class Page(object):
             pg = self.parseCell(pg)
             jsPage = json.dumps(pg, ensure_ascii=False, sort_keys=True)
             crc = crc32((jsPage + jsCss).encode(), 0)
-            if self.noCaching:
+            if self.noCaching:  # кэширование естанавливается на кленте на 30 дней
                 self.urlForm = f'/api/get/loadForm?form={self.form}::{crc}'
             else:
                 self.urlForm = f'/api/getc/loadForm?form={self.form}::{crc}'

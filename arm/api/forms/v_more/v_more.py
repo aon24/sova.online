@@ -17,14 +17,16 @@ import json
 
 
 class v_more(Page):
+    title = 'Лендинг'
+    dbAlias = 'draft'
+    leftWidth = 105
+    noCaching = True
+    _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Лендинг'
-        self.dbAlias = 'draft'
-        self.leftWidth = 105
-        self.noCaching = True
+
 
         super().__init__(request)
 
@@ -90,7 +92,5 @@ class v_more(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
 
 # *** *** ***

@@ -16,13 +16,14 @@ import json
 
 
 class v_groups(Page):
+    title = 'Группы'
+    dbAlias = 'nv_NVGroup'
+    leftList = None
+    _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Группы'
-        self.dbAlias = 'nv_NVGroup'
-        self.leftList = None
 
         super().__init__(request)
 
@@ -51,7 +52,7 @@ class v_groups(Page):
         mainDocs = []
 
         for group in well('groups_groupId').values():
-            pk = group.pk
+            pk = group.id
 
             if dcUK.status != '2':  # 2 - все гр без учета курса и статуса
                 if dcUK.status == '0':  # кнопка в работе
@@ -75,7 +76,5 @@ class v_groups(Page):
         mainDocs = [ [m[0], m[1]] for m in sorted(mainDocs, key=lambda x: x[2], reverse=True)]
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
 
 # *** *** ***

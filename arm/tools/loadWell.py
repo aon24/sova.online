@@ -190,10 +190,10 @@ def loadSessionGr():
         dc.title = stmpl.title
 
         sessionsGr_GrId[nvgroup].append(dc)
-        sessionsGr_GrId_band[nvgroup].append(f'{dc.date_begin}|{dc.title}|{dc.pk}|{dc.status}')
+        sessionsGr_GrId_band[nvgroup].append(f'{dc.date_begin}|{dc.title}|{dc.id}|{dc.status}')
         sessionsGr_All.append(dc)
 
-        toWell(dc, 'sessionGr_Id', dc.pk)
+        toWell(dc, 'sessionGr_Id', dc.id)
 
     clearSwell('sessionsGr_GrId_band')  # for field 'leftList' type 'band'
     clearWell('sessionsGr_GrId')  # in lk_cur + stickers
@@ -210,6 +210,10 @@ def loadSessionGr():
 
 
 def createSessionSt():
+    '''
+    вызывается при старте и при сохранении SessionGr.
+    Можетбыть вызвана при сохранении SessionSt, если изменилась группа подмены
+    '''
     from nv.models import SessionSt
 
     studs = well('students_grId')
@@ -244,12 +248,12 @@ def createSessionSt():
             else:  # борьба с дублированием в подмененной группе
                 if prf in sessionSt_idPr:
                     for sst in sessionSt_idPr[prf]:
-                        if dc.pk == sst.pk:
+                        if dc.id == sst.id:
                             noPr = True
 
                 if sgr in sessionSt_sgrId:
                     for sst in sessionSt_sgrId[sgr]:
-                        if dc.pk == sst.pk:
+                        if dc.id == sst.id:
                             noGr = True
         elif ggr.status != 'active':  # не создавать сст для архивных групп
             return
@@ -267,7 +271,7 @@ def createSessionSt():
             sst = dcm.save()
             saved += 1
             if sst:
-                dc.id = dc.pk = sst.id
+                dc.id = sst.id
                 dc.sessiongr_id = dc.sessiongr
                 tempSst[f'{prf}|{sgr}'] = dc
             else:
@@ -295,7 +299,7 @@ def createSessionSt():
         for sgr in well('sessionsGr_GrId', nvGrId):
             if sgr.date_begin:  # у группы есть сессия с датой
                 for stud in studArr:  # для этой сесс гр бежим по все студентам группы
-                    getSst(sgr.pk, stud.id, sgr.sessiontmpl_id)  # False -проверить на подмену
+                    getSst(sgr.id, stud.id, sgr.sessiontmpl_id)  # False -проверить на подмену
 
     if well('other'):
         for k, prefArr in well('other').items():
@@ -307,8 +311,8 @@ def createSessionSt():
                     if sgr.sessiontmpl_id == tmpl and sgr.date_begin:
                         # если вызов для конкртеной группы, sessionSt_idPr пустой
                         sessionSt_idPr[pref] = sessionSt_idPr.get(pref) or well('sessionSt_idPr').get(pref, [])
-                        sessionSt_sgrId[sgr.pk] = sessionSt_sgrId.get(sgr.pk) or well('sessionSt_sgrId').get(sgr.pk, [])
-                        getSst(sgr.pk, pref, tmpl, owner)
+                        sessionSt_sgrId[sgr.id] = sessionSt_sgrId.get(sgr.id) or well('sessionSt_sgrId').get(sgr.id, [])
+                        getSst(sgr.id, pref, tmpl, owner)
 
     clearWell('sessionSt_idPr')
     clearWell('sessionSt_sgrId')
@@ -337,12 +341,12 @@ def loadGroups():
         dc = getBody(group)
 
         if dc.commonGroups:
-            commonGroups.append(f'{dc.title}|{dc.pk}')
+            commonGroups.append(f'{dc.title}|{dc.id}')
         else:
-            allGroups.append(f'{dc.title}|{dc.pk}')  # for droplist
+            allGroups.append(f'{dc.title}|{dc.id}')  # for droplist
 
-        toWell(dc, 'groups_groupId', dc.pk)  # use in schedule and sgr
-        groups.append(f'{dc.title}|{dc.pk}|{dc.status}')  # for views
+        toWell(dc, 'groups_groupId', dc.id)  # use in schedule and sgr
+        groups.append(f'{dc.title}|{dc.id}|{dc.status}')  # for views
 
     toSwell(sorted(allGroups, reverse=True), 'allGroups')
     toSwell(sorted(groups, reverse=True), 'groups')
@@ -365,7 +369,7 @@ def loadSessionTmpl():
         if not dc.nvEvent:
             err(f'dc.nvEvent empty. {dc.id}: {dc.title}', cat='loadSessionTmpl')
             continue
-        toWell(dc, 'sessionTmpl_id', dc.pk)  # чтобы ссылки работали для удаленных stml
+        toWell(dc, 'sessionTmpl_id', dc.id)  # чтобы ссылки работали для удаленных stml
         if dc.status == 'deleted':
             continue
 
@@ -375,7 +379,7 @@ def loadSessionTmpl():
 
         if dc.status == 'active':
             sessionTmpl_nve_band[dc.nvEvent] = sessionTmpl_nve_band.get(dc.nvEvent, [])
-            sessionTmpl_nve_band[dc.nvEvent].append(f'{dc.title}|{dc.pk}')
+            sessionTmpl_nve_band[dc.nvEvent].append(f'{dc.title}|{dc.id}')
 
     for cu,te in sessionTmpl_nve.items():
         toWell(sorted(te, key=lambda x: x.title), 'sessionTmpl_nve', cu)
@@ -417,7 +421,7 @@ def loadProfiles():
         full_name = dc.full_name
         status = dc.status
         role = dc.role
-        pk = dc.pk = dc.id
+        pk = dc.id
         phone = dc.phone
         fs = f'{full_name}|{pk}|{phone}|{dc.email}|{status}'
         alls.add(fs)
@@ -459,7 +463,7 @@ def loadProfiles():
                     students_grId[grId] = students_grId.get(grId, [])
                     students_grId[grId].append(dc)
         else:
-            for gr in swell('allGroups'):  # f'{dc.title}|{dc.pk}'
+            for gr in swell('allGroups'):  # f'{dc.title}|{dc.id}'
                 grT, _, grId = gr.partition('|')
                 if grT == '_без группы':
                     students_grId[grId] = students_grId.get(grId, [])

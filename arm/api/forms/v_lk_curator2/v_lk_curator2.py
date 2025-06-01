@@ -49,8 +49,6 @@ class v_lk_curator2(v_lk_curator):
         dcUK.doc.sgrId = dcUK.unid
         dcUK.doc.btnSgr = f"{sgr.title[:20]}|previewNew|form=SessionGr&title={group}&unid={dcUK.unid}&dbAlias=nv_SessionGr&rsMode=edit"
 
-        dcUK.doc._view_ = 1
-
     # *** *** ***
 
 

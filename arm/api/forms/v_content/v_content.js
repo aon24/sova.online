@@ -15,7 +15,15 @@ const showCourse = doc => {
 			
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.v_content = {
-	init2: doc => showCourse(doc),
+	init2: doc => {
+			doc.util.jsonByUrl(doc, `/api/well?clues=events`)
+				.then( sgr => { 
+					doc.changeDropList('upList', sgr, 0);
+					showCourse(doc);
+					//setTimeout(() => doc.forceUpdate(), 100);
+				})
+				.catch( () => {});
+	},
 	
 	cmd: {
 		cmdEdit:(doc, pk, ctrlKey, shiftKey) => {

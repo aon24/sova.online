@@ -68,7 +68,7 @@ class NVGroup(Page):
         doc.status = doc.status or 'active'
         doc.programm = doc.programm or swell('programm')[0]
 
-    def afterSave(self, dcUK, pk):  # by created new doc dcUK.doc.pk is None
+    def afterSave(self, dcUK, pk):  # by created new doc dcUK.doc.id is None
         if dcUK.doc.curator and dcUK.doc.title and pk:
             newGr = dcUK.doc.title
             try:

@@ -22,10 +22,12 @@ logoff = _div(className='page51', **style(textAlign='center', paddingTop=150), c
 
 
 class arm(Page):
+    _PAGE_ = 1
+    _VIEW_ = 1
+    form = 'arm'
+    title = config.orgName
 
     def __init__(self, request):
-        self.form = 'arm'
-        self.title = config.orgName
         self.noCaching = request.dcUK._staff
         self.dbAlias = 'arm'
         super().__init__(request)
@@ -45,14 +47,14 @@ class arm(Page):
 
                 lector = 'преподаватель' in dc.role and self.lectorSheet()
 
-                dcUK._studentProfilePK = dc.pk  # чтобы показать офису плтежи студента
+                dcUK._studentProfilePK = dc.id  # чтобы показать офису плтежи студента
 
                 fio = dc.full_name.partition(' ')[0]
                 if 'студент' in dc.role:
-                    fioCLS = f' <Студ: {fio}>|{dc.pk}'
+                    fioCLS = f' <Студ: {fio}>|{dc.id}'
                     student = ('студент', lk_student(self), 80)
                 else:
-                    fioCLS = f' <Сотр: {fio}>|{dc.pk}'
+                    fioCLS = f' <Сотр: {fio}>|{dc.id}'
                     student = ('сотрудник', lk_student(self), 100)
 
             if self._userAgent == 'mobile':
@@ -230,7 +232,7 @@ class arm(Page):
             d1 = sgr.D('date_begin') or '--.--.--'
             d2 = sgr.D('date_end') or '--.--.--'
 
-            pk = sgr.pk
+            pk = sgr.id
 
             sst = well('sessionTmpl_id', sgr.sessionTmpl_id)
             title = _div(f"{sst.title}\nс {d1} по {d2}",
@@ -292,8 +294,6 @@ class arm(Page):
 
         dcUK.doc.fullName = dcUK.fullName
         dcUK.doc.openProfile = f"{dcUK.fullName}|openProfile{'' if dcUK._profilePK else '|1'}"
-
-        dcUK.doc._page_ = 1
 
 # *** *** ***
 

@@ -17,12 +17,15 @@ class v_students(Page):
     '''
     button "Студенты по гр."
     '''
+    title = 'Студенты'
+    dbAlias = 'nv_Profile'
+    leftWidth = 105
+    _VIEW_ = 1
+
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Студенты'
-        self.dbAlias = 'nv_Profile'
-        self.leftWidth = 105
+
         super().__init__(request)
 
     # *** *** ***
@@ -66,17 +69,16 @@ class v_students(Page):
                 if dc.status == 'active':
                     continue
             title = _div(f"{dc.full_name}\n{dc.phone}",className='mCell',s2=1,br=1,**style(width='100%',letterSpacing=1))
-            btnE = _btnEdit('cmdEdit',dc.pk)
-            btnD = _btnDel('cmdDel',f'mainList|{dc.pk}|nv_Profile')
+            btnE = _btnEdit('cmdEdit',dc.id)
+            btnD = _btnDel('cmdDel',f'mainList|{dc.id}|nv_Profile')
 
             row = _div(**style(display='grid',placeItems='center start',gridTemplateColumns='1fr auto auto'),
                 children=[title,btnE,btnD])
-            mainDocs.append([dc.pk,row])
+            mainDocs.append([dc.id,row])
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
     def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
         r.dcUK.doc.leftList = json.dumps(swell('groups'), ensure_ascii=False)
 
     # *** *** ***

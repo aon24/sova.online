@@ -8,11 +8,9 @@ from arm.tools.DC import DC
 from arm.tools.first import snd, err
 from arm.tools.dbToolkit.Book import snoDB
 from arm.tools.dbToolkit.DJ import docFromDB
-from nv_reports.models import Report
 
 import importlib
 import traceback
-import json
 
 # *** *** ***
 
@@ -71,13 +69,13 @@ def startReport(agent):
         report.status = 'active'
         report.docNo = snoDB(report)
         report.starting_time = now('-')
-        report.lmRef = agent.pk
+        report.lmRef = agent.id
 
         # создаем пустой отчет
         dcuk = DC(dbAlias='nv_reports_Report', fullName=cat)
         dcuk.doc = report
         try:
-            report.pk = dcuk.save().id
+            report.id = dcuk.save().id
             snd(report.title, cat='Report created')
         except:
             return err('Report-save-error', cat='Report NOT created')
@@ -86,7 +84,7 @@ def startReport(agent):
         report = agent
 
     # перезаписываем то, что для amgr
-    dcuk = DC(dbAlias='nv_reports_Report', unid=agent.pk, fullName=cat)
+    dcuk = DC(dbAlias='nv_reports_Report', unid=agent.id, fullName=cat)
     docFromDB(dcuk)
 
     agent._run = ''
@@ -109,7 +107,7 @@ def startReport(agent):
         # ***
 
         report.end_time = now('-')
-        dcuk = DC(dbAlias='nv_reports_Report', unid=report.pk, fullName=cat)
+        dcuk = DC(dbAlias='nv_reports_Report', unid=report.id, fullName=cat)
         docFromDB(dcuk)
         dcuk.doc = report
         dcuk.save()
@@ -118,8 +116,7 @@ def startReport(agent):
             ref = DC(dbAlias='nv_reports_Report', fullName=cat)
             ref.doc = DC(ref=report.id, form='html', status='active')
             ref.doc.main = html.main
-            for k in ['title', 'reportName', 'firstList', 'addList']:
-                ref.doc[k] = html[k] or report[k]
+            ref.doc.title = html.title or report.title  # заголовок в виде
             ref.doc.jsCss = html.jsCss
             ref.save()
 

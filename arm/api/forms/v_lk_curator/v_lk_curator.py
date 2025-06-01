@@ -27,11 +27,14 @@ class v_lk_curator(Page):
     Открывается из лк куратора по кнопке слева "номер группы"(под * * *)
     Слева список сессий, справа студенты
     '''
+    dbAlias = 'nv_SessionSt'
+    _VIEW_ = 1
+
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/v_lk_curator/v_lk_curator.js']
         self.leftWidth = 105
-        self.dbAlias = 'nv_SessionSt'
+
         super().__init__(request)
 
     def putData(self, dcUK, buf):
@@ -147,7 +150,7 @@ class v_lk_curator(Page):
             title = _div(f"{prof.full_name}\n{sgr.d2} {s}",
                 s2=1, br=1, **style(letterSpacing=1, paddingLeft=2, color=color))
 
-            pk = sst.pk
+            pk = sst.id
             chb = _field(f'selOne_{pk}', 'chb', [''], cmd='selOne', nv=1, className='checkboxFV')
             btnE = _btnEdit('cmdEdit', pk)
             btnP = _btnPref('cmdPref', f'{sst.pref}|{pk}')
@@ -165,7 +168,6 @@ class v_lk_curator(Page):
         self.title = dcUK.title or 'ЛК куратора'
         dcUK.doc.group = dcUK.group or dcUK.title
         dcUK.doc.grId = dcUK.unid
-        dcUK.doc._view_ = 1
 
 # *** *** ***
 

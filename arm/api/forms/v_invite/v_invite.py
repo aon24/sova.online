@@ -18,14 +18,15 @@ class v_invite(Page):
     '''
     view for Pofiles with fields 'fest', 'training', 'invite'
     '''
+    title = 'Дополнительно'
+    dbAlias = 'nv_Profile'
+    leftWidth = 105
+    _VIEW_ = 1
+
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [ f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Дополнительно'
-        self.dbAlias = 'nv_Profile'
 
-        self.leftWidth = 105
-        self.viewbar = None
         
         super().__init__(request)
 
@@ -89,18 +90,16 @@ class v_invite(Page):
             title = _div(f'{dc.FULL_NAME}\n{dc.phone}',
                 className='mCell', s2=1, br=1, **style(width='100%', letterSpacing=1))
 
-            btnPay = _btnD('Р', 'cmdNewPay', dc.pk, className=f'btnIcon mBtn fv2 fv2yes', title='оплачено')
-            btnE = _btnEdit('cmdEdit', dc.pk)
-            btnD = _btnDel('cmdDel', f'mainList|{dc.pk}|nv_Profile')
+            btnPay = _btnD('Р', 'cmdNewPay', dc.id, className=f'btnIcon mBtn fv2 fv2yes', title='оплачено')
+            btnE = _btnEdit('cmdEdit', dc.id)
+            btnD = _btnDel('cmdDel', f'mainList|{dc.id}|nv_Profile')
 
             row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto auto'),
                 children=[title, btnPay, btnE, btnD])
-            mainDocs.append([dc.pk, row, dc.FULL_NAME])
+            mainDocs.append([dc.id, row, dc.FULL_NAME])
 
         mainDocs = [ [m[0], m[1]] for m in sorted(mainDocs, key=lambda x: x[2])]
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
     # *** *** ***
-    def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
 

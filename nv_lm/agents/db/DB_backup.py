@@ -1,7 +1,7 @@
 '''
 Created on 2025
 
-@author: ai(deepseek.com)
+@author: aon24
 '''
 from arm.settings import BASE_DIR
 from arm.tools.DC import DC

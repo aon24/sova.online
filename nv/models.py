@@ -1,5 +1,5 @@
 from arm.tools.loadWell import loadWell
-from arm.tools.DC import getBody
+from arm.tools.DC import getBody, well
 
 from django.db import models
 
@@ -101,16 +101,21 @@ class SessionSt(models.Model):
 
     def save(self, *args, **kwargs):
         if "_MODIFIER" in self.body:
-
-            old_sst = SessionSt.objects.values().filter(pk=self.pk)[0]
+            old_sst = SessionSt.objects.values().filter(id=self.id)[0]
             dcOld = getBody(old_sst)
             dcNew = getBody({'body': self.body})
 
             super().save(*args, **kwargs)
 
             if dcNew.owner != dcOld.owner or self.other_group != dcOld.other_group:
-                loadWell('SessionSt')
-
+                loadWell('SessionSt')  # сложно и долго
+            else:
+                ls = well('sessionSt_idPr', self.pref)
+                for sstFromWell in ls:
+                    if sstFromWell.id == str(self.id):
+                        for k, v in dcNew.items():  # студень обновил ос или зачет и пр.
+                            sstFromWell[k] = v
+                        break
         else:  # new sst - создаются только при сохранении SessionGr или Profile
             super().save(*args, **kwargs)
 

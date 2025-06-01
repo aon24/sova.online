@@ -11,9 +11,10 @@ from arm.api.forms.formTools import labField, _div, log, gridStyle, docTitle
 
 
 class Report(Page):
+    title = 'Отчет'
+    form = 'Report'
+
     def __init__(self, request):
-        self.title = 'Отчет'
-        self.form = 'Report'
         self.dbAlias = 'nv_lm_Module'
         super().__init__(request)
 

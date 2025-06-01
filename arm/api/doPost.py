@@ -31,7 +31,6 @@ def doPost(request):
             buf = request.META['wsgi.input'].read(ln).decode()
             return handler(request, buf)
         else:
-            err(f'POST error for "{request.dcUK._path}"', cat='doPost')
             return accessDenied(request)
     except Exception as ex:
         err(f'POST error for "{request.dcUK._path}": {ex}', cat='doPost')
@@ -85,7 +84,7 @@ def apiSaveDoc(request, buf):
 
     # check right in dcUK old doc
     if not checkRight(dcUK, saveDoc=True):
-        return accessDenied(f'{dcUK.fullName}(Role:{dcUK._role})')
+        return accessDenied(request)
 
     # ***
 
@@ -160,9 +159,9 @@ def apiSaveDoc(request, buf):
         return nvResponse('DocSave error', status=400)
 
     if dcUK.dbAlias.startswith('nv_'):
-        if opg and not opg.afterSave(dcUK, mmm.pk):
+        if opg and not opg.afterSave(dcUK, mmm.id):
             return nvResponse('AfterSave error', status=400)
-        return nvResponse(f'OK|{mmm.pk}')
+        return nvResponse(f'OK|{mmm.id}')
     else:
         if opg and not opg.afterSave(dcUK):
             return nvResponse('AfterSave error', status=400)
@@ -176,9 +175,9 @@ def deleteFromDB(request, buf=None):
     dcUK = request.dcUK
 
     if not checkRight(dcUK):
-        return accessDenied(f'{dcUK.fullName}(Role:{dcUK._role})')
+        return accessDenied(request)
 
-    dcUK.unid = dcUK.unid or dcUK.pk
+    dcUK.unid = dcUK.unid or dcUK.id
     if not dcUK.loadDoc():
         err(f'Документ уже удален: "{dcUK.dbAlias}:{dcUK.unid}"', cat=cat)
         return 'Документ уже удален', None, 410
@@ -202,7 +201,7 @@ def create(request, buf):
 
     # check right
     if not checkRight(dcUK):
-        return accessDenied(f'{dcUK.fullName}(Role:{dcUK._role})')
+        return accessDenied(request)
 
     # ***
 

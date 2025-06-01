@@ -233,6 +233,5 @@ def getBody(value):
         elif v:
             getRoot(dc, v)
 
-    dc.pk = dc.id
     return dc
 

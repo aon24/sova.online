@@ -81,7 +81,7 @@ def ass(fioList):
         for sgr in lectorsArr:
             students = studBalls = balls = 0
             # в каждую сессию группы добавляем сумму балов
-            for dc in well('sessionSt_sgrId', sgr.pk):  # all sst for this sgr
+            for dc in well('sessionSt_sgrId', sgr.id):  # all sst for this sgr
                 students += 1
                 ballslOne = 0
                 for x in dc.keys():

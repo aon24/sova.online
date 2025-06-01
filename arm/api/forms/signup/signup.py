@@ -11,16 +11,17 @@ from django.middleware.csrf import get_token
 
 
 class signup(Page):
+    title = 'Sova'
+    _VIEW_ = 1
+    noCaching = True
+
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = f'/api/jsv?forms/{self.form}/{self.form}.js'
-        self.title = 'Sova'
-        self.noCaching = True
 
         super().__init__(request)
 
     # ***
-
 
     def page(self, request):
         body = _div(
@@ -133,7 +134,7 @@ class signup(Page):
             'margin': 'auto',
             'height': '100%',
             'overflow': 'auto',
-            'backgroundImage': 'url(/static/images/nvbgGold.jpeg)',
+            'backgroundImage': 'url(/static/image/nvbgGold.jpeg)',
             'backgroundSize': '100% 100%'
         }
         return _div(focus='auto', style=st,
@@ -149,8 +150,4 @@ class signup(Page):
             ])
         
     # *** *** ***
-
-    def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
-        # dcUK.doc.phone = '+7(902) 694-10-43'
 

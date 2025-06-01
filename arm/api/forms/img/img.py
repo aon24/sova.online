@@ -17,12 +17,12 @@ import os
 
 
 class img(Page):
+    title = 'Pictures'
+    noCaching = True
+    dbAlias = 'arm'
+    form = 'img'
 
     def __init__(self, request):
-        self.title = 'Pictures'
-        self.noCaching = True
-        self.dbAlias = 'arm'
-        self.form = 'img'
         self.jsCssUrl = '/api/jsv?forms/img/img.js'
         self.pictures = self.pic = os.path.join('static', 'pictures')
         self.formDir = ''

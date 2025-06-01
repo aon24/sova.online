@@ -16,14 +16,15 @@ import json
 
 
 class v_classifiers(Page):
+    title = 'Справочники'
+    dbAlias = 'nv_Classifier'
+    leftList = None
+    noCaching = True
+    _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Справочники'
-        self.dbAlias = 'nv_Classifier'
-        self.leftList = None
-        self.noCaching = True
 
         super().__init__(request)
 
@@ -61,7 +62,7 @@ class v_classifiers(Page):
         mainDocs = []
 
         for cls in sorted(swell('classifiers'), key=lambda dc: dc.description.lower()):
-            pk = cls.pk
+            pk = cls.id
 
             if status != 'все':
                 if status == 'актив' and cls.status != 'active':
@@ -87,7 +88,5 @@ class v_classifiers(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
 
 # *** *** ***

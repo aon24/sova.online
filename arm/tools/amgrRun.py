@@ -18,7 +18,7 @@ import json
 @checkBusy  # Декоратор, блокирующий повторный вызов функции до ее завершения.
 def runAgent(m):
     m.starting_time = now('-')
-    Module.objects.filter(pk=m.pk).update(starting_time=m.starting_time)
+    Module.objects.filter(id=m.id).update(starting_time=m.starting_time)
     try:
         m.log = ''
 
@@ -56,7 +56,7 @@ def runAgent(m):
         m._run = ''
         if m.SCHEDULED == 'now':
             m.TURN_ON = ''  # 1 раз и нефиг
-        dc = DC(dbAlias='nv_lm_Module', unid=m.pk, fullName=cat)
+        dc = DC(dbAlias='nv_lm_Module', unid=m.id, fullName=cat)
         dc.doc = m
         dc.save()
         snd(f'End: {m.title}', cat=cat)
@@ -66,7 +66,7 @@ def runAgent(m):
         s = f'{m.title}\n{ex}\n{traceback.format_exc()}'
         m.log += s
         err(s, cat=cat)
-        dc = DC(dbAlias='nv_lm_Module', unid=m.pk, fullName=cat)
+        dc = DC(dbAlias='nv_lm_Module', unid=m.id, fullName=cat)
         dc.doc = m
         dc.save()
 

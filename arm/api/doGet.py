@@ -25,9 +25,6 @@ from mimetypes import guess_type
 # @login_required(login_url='login/')
 @ensure_csrf_cookie
 def apiDoGet(request):
-    if request.method != 'GET':
-        return nvResponse('Error', None, 500)
-
     right, handler = _apiGetList.get(request.dcUK._path, (None, None))
 
     if handler:
@@ -44,7 +41,7 @@ def apiDoGet(request):
                 return handler(request)
         if right == 'well':
             listName = request.dcUK.clues.partition('::')[0]
-            if listName in ['']:
+            if listName in ['q']:
                 return handler(request)
 
         return redirect(f'/api/login/')
@@ -59,7 +56,6 @@ def _openDoc(request):
     параметры: dbAlias+, form+, dbaGr, unidGr, smartPhone... etc
     '''
 
-    # checkRight(dba, mode, fullName) - return accessDenied(fullName)
     dcUK = request.dcUK
 
     if request.dcUK.mode == 'new':
@@ -158,7 +154,7 @@ def _new(request):
     url: /new?form=myform&dbAlias=dba
     '''
     if request.dcUK.form in ['v_profiles', 'v_students', 'v_schedule'] and not request.dcUK._staff:
-        return accessDenied(request.dcUK.fullName)
+        return accessDenied(request)
     request.dcUK.mode = 'new'
     request.dcUK.form = request.dcUK.form or 'arm'
     return returnPageOrDoc(request)

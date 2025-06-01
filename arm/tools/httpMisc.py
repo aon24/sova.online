@@ -32,7 +32,7 @@ def nvResponse(body, content_type='text/html; charset=UTF-8', status=200, reques
         body = gzip.compress(body)
         headers.append(('Content-Encoding', 'gzip'))
 
-    if request and request.dcUK._path in ['image', 'jsv', 'loadForm']:
+    if request and request.dcUK._path in ['image', 'jsv']:
         days = 30
         maxAge = 60 * 60 * 24 * days
         headers.append(('Expires', email.utils.formatdate(time.time() + maxAge, usegmt=True)))
@@ -48,25 +48,18 @@ def nvResponse(body, content_type='text/html; charset=UTF-8', status=200, reques
 
     return HttpResponse(body, status=status, headers=headers)
 
-
-def badReq(par, fullName='-?-'):
-    err('param: %s' % par, cat='badReq')
-    return accessDenied(fullName)
-
-
 def notFound(request, content_type='text/html; charset=UTF-8'):
     ip = request.META.get('HTTP_X_FORWARDED_FOR')
-    if ip:
-        ip = ip.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    err(f'{request.dcUK.fullName}({request.user.username} {ip}) {request.path}?{request.dcUK._query}', cat='Яя-api  404')
+    ip = ip.split(',')[0] if ip else request.META.get('REMOTE_ADDR')
+    err(f'{request.dcUK.fullName}({request.user.username} {ip}) {request.path}?{request.dcUK.query}', cat='Яя-api  404')
     return HttpResponse('""', content_type=content_type, status=404)
 
 
-def accessDenied(fullName):
-    snd(fullName, cat='accessDenied')
-    return HttpResponse(f'Access denied for {fullName}', status=403)
+def accessDenied(request):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    ip = ip.split(',')[0] if ip else request.META.get('REMOTE_ADDR')
+    err(f'{request.method}: {request.dcUK.fullName}({request.user.username} {ip}) {request.path}?{request.dcUK.query}', cat='accessDenied')
+    return HttpResponse(' ', status=403)
 
 # *** *** ***
 

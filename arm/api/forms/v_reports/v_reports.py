@@ -24,6 +24,7 @@ class v_reports(Page):
     title = 'Отчеты'
     leftWidth = 350
     noCaching = True
+    _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
@@ -170,7 +171,7 @@ class v_reports(Page):
             if m.form != 'Report' or m.domain != dcUK.domain:
                 continue
 
-            pk = m.pk
+            pk = m.id
 
             if dba == 'reports' and dcUK.title not in ['Все собранные отчеты', m.title]:
                 continue
@@ -192,12 +193,11 @@ class v_reports(Page):
                 continue
 
             refsDocs[o.ref] = refsDocs.get(o.ref, [])
-            refsDocs[o.ref].append([o.pk, _div(o.title or '-', className='rCell', **style(marginLeft=20, width='100%'))])
+            refsDocs[o.ref].append([o.id, _div(o.title or '-', className='rCell', **style(marginLeft=20, width='100%'))])
 
         return {'mainDocs': mainDocs, 'refsDocs': refsDocs}
 
     def queryOpen(self, r):
-        r.dcUK.doc._view_ = '1'
         r.dcUK.doc.domain = r.dcUK.domain or self.domain
 
 # *** *** ***
@@ -279,7 +279,7 @@ class v_reports(Page):
             if m.form != 'Module':
                 continue
 
-            pk = m.pk
+            pk = m.id
 
             if category == 'выполняется' and not m.run:
                 continue
