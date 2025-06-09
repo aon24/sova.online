@@ -69,7 +69,6 @@ class v_students(Page):
         grId = (dcUK.selected + '|').split('|')[1]  # 2022-6/Дн|65|active
         mainDocs = []
 
-<<<<<<< HEAD
         for dc in well('students_grId', grId):
             if dc.status == 'active':
                 color = '#000'
@@ -77,16 +76,6 @@ class v_students(Page):
                 color = '#aaa'
 
             title = _div(f"{dc.full_name}\n{dc.phone} ({dc.D('_created')})", className='mCell', s2=1, br=1, **style(width='100%', color=color, letterSpacing=1))
-=======
-        for dc in well('students_grId',grId):
-            if dcUK.status == '0':
-                if dc.status != 'active':
-                    continue
-            if dcUK.status == '1':
-                if dc.status == 'active':
-                    continue
-            title = _div(f"{dc.full_name}\n{dc.phone}",className='mCell',s2=1,br=1,**style(width='100%',letterSpacing=1))
->>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
             btnE = _btnEdit('cmdEdit',dc.id)
             btnD = _btnDel('cmdDel',f'mainList|{dc.id}|nv_Profile')
 

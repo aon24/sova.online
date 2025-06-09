@@ -30,11 +30,7 @@ def loadWell(key, param=None):
                     buf = setVersionJS(f.read(), BASE_DIR)[0]
                     toWell(buf, 'index.html')
                 fn = os.path.join(STATIC_DIR, 'home', 'manifest.json')
-<<<<<<< HEAD
                 with open(fn, encoding='utf-8') as f:
-=======
-                with open(fn) as f:
->>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
                     buf = f.read().replace('{% site %}', config.host)
                     toWell(buf, 'manifest.json')
             except:
@@ -467,11 +463,7 @@ def loadProfiles():
                 if grId:
                     students_grId[grId] = students_grId.get(grId, [])
                     students_grId[grId].append(dc)
-<<<<<<< HEAD
         elif 'студент' in role:
-=======
-        else:
->>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
             for gr in swell('allGroups'):  # f'{dc.title}|{dc.id}'
                 grT, _, grId = gr.partition('|')
                 if grT == '0_без группы':
