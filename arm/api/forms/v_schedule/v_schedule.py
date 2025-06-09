@@ -20,14 +20,14 @@ from datetime import datetime, timedelta
 
 
 class v_schedule(Page):
+    title = 'Сессии'
+    dbAlias = 'nv_SessionGr'
+    leftWidth = 105
+    _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [ f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Сессии'
-        self.dbAlias = 'nv_SessionGr'
-
-        self.leftWidth = 105
         
         super().__init__(request)
 
@@ -195,7 +195,7 @@ class v_schedule(Page):
 
             group = well('groups_groupId', sgr.nvgroup_id).title
             title = self.getRef(sgr, group)
-            btnD = _btnDel('deleteSessionGr', f'{sgr.pk}|\n{group} ({sgr.d2})\n{sgr.title}')  # удалить док из вида mainList
+            btnD = _btnDel('deleteSessionGr', f'{sgr.id}|\n{group} ({sgr.d2})\n{sgr.title}')  # удалить док из вида mainList
 
             row = _div(**gridStyle('1fr auto auto', placeItems='center start'),
                 children=[title, _btnEdit('cmdEdit', sgr.id), btnD])
@@ -221,9 +221,6 @@ class v_schedule(Page):
             _br(),
             _span(f'{vid}: {sgr.title}',**style(color='#555')),
         ], className='rCell')
-
-    def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
 
 # *** *** ***
 

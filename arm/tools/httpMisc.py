@@ -48,26 +48,18 @@ def nvResponse(body, content_type='text/html; charset=UTF-8', status=200, reques
 
     return HttpResponse(body, status=status, headers=headers)
 
-
-def badReq(par, fullName='-?-'):
-    err('param: %s' % par, cat='badReq')
-    return accessDenied(fullName)
-
-
-def notFound(s, un=''):
-    err(f'404 (fullName={un})\n{s}', cat='page not found')
-    return nvResponse(f'''<h3>API-404<br/>{s}</h3> not found (un={un or '-?-'})''')
+def notFound(request, content_type='text/html; charset=UTF-8'):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    ip = ip.split(',')[0] if ip else request.META.get('REMOTE_ADDR')
+    err(f'{request.dcUK.fullName}({request.user.username} {ip}) {request.path}?{request.dcUK.query}', cat='Яя-api  404')
+    return HttpResponse('""', content_type=content_type, status=404)
 
 
-def jsonNotFound(request):
-    dcUK = request.dcUK
-    err(f'404. fullName={dcUK.fullName} path?query={dcUK.path}?{dcUK.query}', cat='json-object not found')
-    return nvResponse(f'''404 "{dcUK.path or 'block not found'} ({dcUK.fullName or '-?-'})"''', 'application/json', 200)
-
-
-def accessDenied(fullName):
-    snd(fullName, cat='accessDenied')
-    return nvResponse(f'Access denied for {fullName}', status=403)
+def accessDenied(request):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    ip = ip.split(',')[0] if ip else request.META.get('REMOTE_ADDR')
+    err(f'{request.method}: {request.dcUK.fullName}({request.user.username} {ip}) {request.path}?{request.dcUK.query}', cat='accessDenied')
+    return HttpResponse(' ', status=403)
 
 # *** *** ***
 

@@ -3,7 +3,6 @@
 from arm.tools.common import now, today
 from arm.tools.first import snd, err
 from arm.tools.httpMisc import nvResponse
-# from arm.tools.checkRights import notEditor
 from arm.tools.DC import well
 from arm.tools.imgHeader import what
 from arm.settings import DB_DIR, BASE_DIR, DEMO_MODE
@@ -15,11 +14,12 @@ _noCompress = 'compressed|.jpg|.jpeg|.gif|.pdf|.png|.arj|octet-stream|.zip|.rar|
 # *** *** ***
 
 
-def uploadFile(request):
-    def _err(s):
-        err(s, cat='error-upload.py')
-        return nvResponse(s, None, 400)
+def _err(s):
+    err(s, cat='error-upload.py')
+    return nvResponse(s, status=400)
 
+
+def uploadFile(request):
     if DEMO_MODE and not request.dcUK._superUser:
         return _err(f'uploadFile: read only for {request.dcUK.fullName}')
 

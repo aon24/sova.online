@@ -17,7 +17,7 @@ def paymentsList(dcUK):
             t12 = f'{pay.D("t1")} - {pay.D("t2")}' if pay.t2 else pay.D('t1')
         else:
             t12 = ''
-        btnV = _btnView('previewArm', f'form=Payment&dbAlias=nv_Payment&unid={pay.pk}&mode=preview&title=Оплата')
+        btnV = _btnView('previewArm', f'form=Payment&dbAlias=nv_Payment&unid={pay.id}&mode=preview&title=Оплата')
         title = _div(f"{pay.PURPOSE}\n{t12}",
             className='mCell', s2=1, br=1, **style(letterSpacing=1))
         row = _div(**gridStyle('90px 1fr 33px', border='0 solid #aaa', borderBottomWidth=1),
@@ -45,7 +45,7 @@ def reportList(dcUK):
         if m.form != 'report':
             continue
 
-        pk = m.pk
+        pk = m.id
 
         if dcUK.title not in ['Все собранные отчеты', m.title]:
             continue
@@ -66,7 +66,7 @@ def reportList(dcUK):
             continue
 
         refsDocs[o.ref] = refsDocs.get(o.ref, [])
-        refsDocs[o.ref].append([o.pk, _div(o.title or '-', className='rCell', **style(marginLeft=20, width='100%'))])
+        refsDocs[o.ref].append([o.id, _div(o.title or '-', className='rCell', **style(marginLeft=20, width='100%'))])
 
     return {'mainDocs': mainDocs, 'refsDocs': refsDocs}
 

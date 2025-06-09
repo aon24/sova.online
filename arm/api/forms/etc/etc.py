@@ -11,12 +11,11 @@ from arm.api.forms.toolbars import toolbar
 
 
 class etc(Page):
+    title = 'Настройки'
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = f'/api/jsv?forms/{self.form}/{self.form}.js'
-        self.title = 'Настройки'
-        self.noCaching = True
 
         super().__init__(request)
 
@@ -27,9 +26,6 @@ class etc(Page):
             children=[
             _div(**style(margin='10px auto', height=1, width=250, border='0 solid #036', borderTopWidth=1)),
 
-            _btnD('Справочники',
-                'previewArm', 'newForm=v_classifiers&title=Справочники',
-                className='rsvTop', **style(width=150, margin='10px auto')),
             _btnD('Р А С С Ы Л К И', 'exportEmail', className='rsvTop',
                 **style(width=150, margin='10px auto')),
             _btnD('3 D L', 'previewArm', 'newForm=v_more&title=Лендинговые страницы',
@@ -40,7 +36,7 @@ class etc(Page):
 
             _btnD('Life', 'loadWell', **style(width=150, margin='10px auto'), title='Перезагрузка справочников', className='rsvTop'),
             _btnD('Log', 'xopen', '/api/new?form=ilog', **style(width=150, margin='10px auto'), title='syslog', className='rsvTop'),
-            _a('Admin', href='/admin', **style(margin='10px auto')),
+            _a('Admin', href='/admin/', **style(margin='10px auto')),
         ])
 
     def page(self, request):
@@ -62,7 +58,7 @@ class etc(Page):
                     _btnD('\xa0очистить\xa0', 'reset_etc', className='toolbar-button'),
                 ]),
 
-                request.dcUK._staff and self.office()
+                self._staff and self.office()
             ])
         ]
         

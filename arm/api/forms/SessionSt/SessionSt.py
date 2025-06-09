@@ -53,23 +53,34 @@ class SessionSt(Page):
             )
         if self.noicons:
             table = [
-                ('1️⃣', self.common(st=True), 45, 'информация'),  # 🦉📓
+                # ('1️⃣', self.common(st=True), 45, 'информация'),  # 🦉📓
+                # ('Материалы', main, 100, 'учебные материалы'),
+                # ('Задания', self.jobs(st=True), 80, 'задания'),
+                # ('Обр. связь', ass, 100, 'Обратная связь'),
                 ('Материалы', main, 100, 'учебные материалы'),
-                ('Задания', self.jobs(st=True), 80, 'задания'),
                 ('Обр. связь', ass, 100, 'Обратная связь'),
+                ('1️⃣', self.common(st=True), 45, 'информация'),  # 🦉📓
+
             ]
         else:
             table = [
-                ('/image/i.png', self.common(st=True), 50, 'информация'),
+                # ('/image/i.png', self.common(st=True), 50, 'информация'),
+                # ('/image/s_ummv.png', main, 50, 'учебные материалы'),
+                # ('/image/s_dz.png', self.jobs(st=True), 50, 'задания'),
+                # ('/image/s_feedback.png', ass, 50, 'Обратная связь'),
                 ('/image/s_ummv.png', main, 50, 'учебные материалы'),
-                ('/image/s_dz.png', self.jobs(st=True), 50, 'задания'),
                 ('/image/s_feedback.png', ass, 50, 'Обратная связь'),
+                ('/image/i.png', self.common(st=True), 50, 'информация'),
             ]
 
         tool = [toolbar.saveClose, toolbar.close_] if self._role == 'куратор' or self._staff else [toolbar.close_]
         return self.docPage([_tabNew('sst_Table_FD', tabs=table)], tool)
 
     # ***
+
+    # костыль, чтобы никто не видел поля с оценкой, если есть noAss_fd
+    def getOldValue(self, r, fv, do):
+        return {k: do.get(k, '') for k in fv if do.get(k, '') != fv[k] and not (fv.get('NOASS_FD') and k.startswith('ASSLEC'))}
 
     def queryOpen(self, r):
         dcUK = r.dcUK

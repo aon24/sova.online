@@ -1,7 +1,7 @@
 from arm.tools.first import snd, err
 from arm.tools.DC import toWell, well, swell, toSwell, clearSwell, clearWell, DC, getBody, config
 from arm.tools.common import setVersionJS, cleanPhone
-from arm.settings import API_DIR, STATIC_DIR
+from arm.settings import BASE_DIR, STATIC_DIR
 
 from time import time
 import traceback
@@ -24,12 +24,13 @@ def loadWell(key, param=None):
             clearWell('forms')
 
             try:
-                fn = os.path.join(API_DIR, 'react', 'index.html')
+                dirr = os.path.join(BASE_DIR, 'arm', 'api', 'react')
+                fn = os.path.join(dirr, 'index.html')
                 with open(fn, 'r', encoding='utf-8') as f:
-                    buf = setVersionJS(f.read(), API_DIR)[0]
+                    buf = setVersionJS(f.read(), BASE_DIR)[0]
                     toWell(buf, 'index.html')
                 fn = os.path.join(STATIC_DIR, 'home', 'manifest.json')
-                with open(fn, 'r', encoding='utf-8') as f:
+                with open(fn, encoding='utf-8') as f:
                     buf = f.read().replace('{% site %}', config.host)
                     toWell(buf, 'manifest.json')
             except:
@@ -76,8 +77,6 @@ def loadWell(key, param=None):
             loadModule()
         elif key == 'Report':
             loadReport()
-        elif key == 'YandexDisk':
-            YandexDisk()
         elif key == 'Landing':
             loadLanding()
 
@@ -107,7 +106,8 @@ def loadCls():
                     for it in arr:
                         tx, code, short, sticker = f'{it}|||'.split('|')[:4]
                         evs.append(f'{tx}|{code}')
-                        esh.append(f'{short}|{code}')
+                        if short:
+                            esh.append(f'{short}|{code}')
                         toWell(tx, 'eventsByCode', code)
                         toWell(sticker, 'stickerByCode', code)
 
@@ -148,7 +148,8 @@ def loadReport():
     turnOnReport = []
     for m in Report.docs.all().order_by('-id').values():
         dc = getBody(m)
-        reports.append(dc)
+        if dc.form in ['html', 'Report']:
+            reports.append(dc)
         if dc.turn_on and dc.scheduled:
             turnOnReport.append(dc)
 
@@ -190,10 +191,10 @@ def loadSessionGr():
         dc.title = stmpl.title
 
         sessionsGr_GrId[nvgroup].append(dc)
-        sessionsGr_GrId_band[nvgroup].append(f'{dc.date_begin}|{dc.title}|{dc.pk}|{dc.status}')
+        sessionsGr_GrId_band[nvgroup].append(f'{dc.date_begin}|{dc.title}|{dc.id}|{dc.status}')
         sessionsGr_All.append(dc)
 
-        toWell(dc, 'sessionGr_Id', dc.pk)
+        toWell(dc, 'sessionGr_Id', dc.id)
 
     clearSwell('sessionsGr_GrId_band')  # for field 'leftList' type 'band'
     clearWell('sessionsGr_GrId')  # in lk_cur + stickers
@@ -210,6 +211,10 @@ def loadSessionGr():
 
 
 def createSessionSt():
+    '''
+    вызывается при старте и при сохранении SessionGr.
+    Можетбыть вызвана при сохранении SessionSt, если изменилась группа подмены
+    '''
     from nv.models import SessionSt
 
     studs = well('students_grId')
@@ -244,12 +249,12 @@ def createSessionSt():
             else:  # борьба с дублированием в подмененной группе
                 if prf in sessionSt_idPr:
                     for sst in sessionSt_idPr[prf]:
-                        if dc.pk == sst.pk:
+                        if dc.id == sst.id:
                             noPr = True
 
                 if sgr in sessionSt_sgrId:
                     for sst in sessionSt_sgrId[sgr]:
-                        if dc.pk == sst.pk:
+                        if dc.id == sst.id:
                             noGr = True
         elif ggr.status != 'active':  # не создавать сст для архивных групп
             return
@@ -260,14 +265,14 @@ def createSessionSt():
                 sessiongr=sgr,
                 status='active',
                 owner=owner,
-                allow_s=1,
-                video_s=1,
+                # allow_s=1,
+                # video_s=1,
             )
 
             sst = dcm.save()
             saved += 1
             if sst:
-                dc.id = dc.pk = sst.id
+                dc.id = sst.id
                 dc.sessiongr_id = dc.sessiongr
                 tempSst[f'{prf}|{sgr}'] = dc
             else:
@@ -295,7 +300,7 @@ def createSessionSt():
         for sgr in well('sessionsGr_GrId', nvGrId):
             if sgr.date_begin:  # у группы есть сессия с датой
                 for stud in studArr:  # для этой сесс гр бежим по все студентам группы
-                    getSst(sgr.pk, stud.id, sgr.sessiontmpl_id)  # False -проверить на подмену
+                    getSst(sgr.id, stud.id, sgr.sessiontmpl_id)  # False -проверить на подмену
 
     if well('other'):
         for k, prefArr in well('other').items():
@@ -307,8 +312,8 @@ def createSessionSt():
                     if sgr.sessiontmpl_id == tmpl and sgr.date_begin:
                         # если вызов для конкртеной группы, sessionSt_idPr пустой
                         sessionSt_idPr[pref] = sessionSt_idPr.get(pref) or well('sessionSt_idPr').get(pref, [])
-                        sessionSt_sgrId[sgr.pk] = sessionSt_sgrId.get(sgr.pk) or well('sessionSt_sgrId').get(sgr.pk, [])
-                        getSst(sgr.pk, pref, tmpl, owner)
+                        sessionSt_sgrId[sgr.id] = sessionSt_sgrId.get(sgr.id) or well('sessionSt_sgrId').get(sgr.id, [])
+                        getSst(sgr.id, pref, tmpl, owner)
 
     clearWell('sessionSt_idPr')
     clearWell('sessionSt_sgrId')
@@ -337,12 +342,12 @@ def loadGroups():
         dc = getBody(group)
 
         if dc.commonGroups:
-            commonGroups.append(f'{dc.title}|{dc.pk}')
+            commonGroups.append(f'{dc.title}|{dc.id}')
         else:
-            allGroups.append(f'{dc.title}|{dc.pk}')  # for droplist
+            allGroups.append(f'{dc.title}|{dc.id}')  # for droplist
 
-        toWell(dc, 'groups_groupId', dc.pk)  # use in schedule and sgr
-        groups.append(f'{dc.title}|{dc.pk}|{dc.status}')  # for views
+        toWell(dc, 'groups_groupId', dc.id)  # use in schedule and sgr
+        groups.append(f'{dc.title}|{dc.id}|{dc.status}')  # for views
 
     toSwell(sorted(allGroups, reverse=True), 'allGroups')
     toSwell(sorted(groups, reverse=True), 'groups')
@@ -365,7 +370,7 @@ def loadSessionTmpl():
         if not dc.nvEvent:
             err(f'dc.nvEvent empty. {dc.id}: {dc.title}', cat='loadSessionTmpl')
             continue
-        toWell(dc, 'sessionTmpl_id', dc.pk)  # чтобы ссылки работали для удаленных stml
+        toWell(dc, 'sessionTmpl_id', dc.id)  # чтобы ссылки работали для удаленных stml
         if dc.status == 'deleted':
             continue
 
@@ -375,7 +380,7 @@ def loadSessionTmpl():
 
         if dc.status == 'active':
             sessionTmpl_nve_band[dc.nvEvent] = sessionTmpl_nve_band.get(dc.nvEvent, [])
-            sessionTmpl_nve_band[dc.nvEvent].append(f'{dc.title}|{dc.pk}')
+            sessionTmpl_nve_band[dc.nvEvent].append(f'{dc.title}|{dc.id}')
 
     for cu,te in sessionTmpl_nve.items():
         toWell(sorted(te, key=lambda x: x.title), 'sessionTmpl_nve', cu)
@@ -417,7 +422,7 @@ def loadProfiles():
         full_name = dc.full_name
         status = dc.status
         role = dc.role
-        pk = dc.pk = dc.id
+        pk = dc.id
         phone = dc.phone
         fs = f'{full_name}|{pk}|{phone}|{dc.email}|{status}'
         alls.add(fs)
@@ -458,10 +463,10 @@ def loadProfiles():
                 if grId:
                     students_grId[grId] = students_grId.get(grId, [])
                     students_grId[grId].append(dc)
-        else:
-            for gr in swell('allGroups'):  # f'{dc.title}|{dc.pk}'
+        elif 'студент' in role:
+            for gr in swell('allGroups'):  # f'{dc.title}|{dc.id}'
                 grT, _, grId = gr.partition('|')
-                if grT == '_без группы':
+                if grT == '0_без группы':
                     students_grId[grId] = students_grId.get(grId, [])
                     students_grId[grId].append(dc)
 

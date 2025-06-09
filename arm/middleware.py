@@ -86,15 +86,21 @@ class MobileMW(object):
         self.get_response = get_response
 
     def __call__(self, request):
-        # print(f"MobileMW: **************PATH_INFO={request.META['PATH_INFO']}")
-        # print(f"MobileMW: ************** QUERY_STRING={unquote(request.META['QUERY_STRING'])}")
+        # print(f"MobileMW: ************** url: {unquote(request.path)}?{unquote(request.META['QUERY_STRING'])}")
 
-        path = request.META.get('PATH_INFO').strip()
+        user = request.user
+
+        path = request.path
+        if path.startswith('/admin') and not(user and user.is_superuser):
+            request.path = ''
+            request.dcUK = DC()
+            return self.get_response(request)
+
         if path.endswith('/'):  # м.б "api/key?param" , а м.б. "api/key/?param"
             path = path[:-1]
         path = path.rpartition('/')[2]  # path = key
 
-        query = unquote(request.META['QUERY_STRING']) or 'form=arm'
+        query = unquote(request.META['QUERY_STRING'])
 
         if '?' in query:
             query = query.rpartition('?')[2]
@@ -104,7 +110,6 @@ class MobileMW(object):
             _userAgent=(ua.is_mobile and 'mobile') or (ua.is_pc and 'pc') or (ua.is_tablet and 'tablet') or 'unknown',
             _path=path,
             _query=query,
-            _method=request.method
         )
         dcUK = request.dcUK
         for p in query.split('&'):
@@ -112,7 +117,6 @@ class MobileMW(object):
                 l, _, r = p.partition('=')
                 dcUK[l.strip()] = r.strip().replace('џ', '?')
 
-        user = request.user
         if not user.is_authenticated:
             return self.get_response(request)
 

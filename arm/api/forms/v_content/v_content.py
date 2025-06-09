@@ -17,6 +17,10 @@ import json
 
 
 class v_content(Page):
+    title = 'Программа'
+    leftWidth = 115
+    dbAlias = 'nv_SessionTmpl'
+    _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
@@ -24,10 +28,7 @@ class v_content(Page):
             f'/api/jsv?forms/{self.form}/{self.form}.js',
             f'/api/jsv?forms/SessionTmpl/SessionTmpl.js',
         ]
-        self.title = 'Программа'
-        self.noCaching = True
-        self.leftWidth = 115
-        self.dbAlias = 'nv_SessionTmpl'
+
         super().__init__(request)
 
     def getData(self, dcUK):
@@ -54,12 +55,6 @@ class v_content(Page):
     # *** *** ***
 
     def page(self, request):
-        events = swell('events')  # названия мерориятия | code
-
-        lsNew = []
-        for c in events:
-            lsNew.append(c.partition('|')[2])
-
         self.leftList = _field('leftList', 'band', [], className='list3str')
 
         self.viewbar = self.makeViewbar(
@@ -67,10 +62,10 @@ class v_content(Page):
             rightBtn=[_field('status', 'band', ['актив', 'архив'], className='radioBand', **style(marginLeft='auto '))],
         )
 
-        # 1 вверху экрана список мероприятий
+        # 1 вверху экрана список мероприятий upList: swell('events')
         self.upField = _div(children=[
             _div(className='toolbar', children=[toolbar.close_]),
-            _field('upList', 'band', events, recalcText=1, rowLength=1, className='event', addBtn='cmdNew', blocking=3),
+            _field('upList', 'band', [], recalcText=1, rowLength=1, className='event', addBtn='cmdNew', blocking=3),
         ])
 
         url = '/api/getData?form=v_content&cmd=showC&nve={upList}&lector={leftList}&status={status}&view={view}'
@@ -97,7 +92,7 @@ class v_content(Page):
                 continue
 
             title = _div(f'{the.title}', br=1, className='mCell', **style(width='100%', letterSpacing=1))
-            pk = the['pk']
+            pk = the.id
             btnE = _btnEdit('cmdEdit', pk)
             btnC = _btnCopy('cmdNewCopy', pk)
             btnD = _btnDel('cmdDel', f'mainList|{pk}|nv_SessionTmpl')  # удалить док из вида mainList

@@ -12,12 +12,13 @@ import json
 # *** *** ***
 
 class info(Page):
+    title = 'Info'
+    dbAlias = 'no'
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Info'
-        self.dbAlias = 'no'
+
         super().__init__(request)
 
     def page(self, request):

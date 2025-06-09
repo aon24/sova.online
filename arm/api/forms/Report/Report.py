@@ -5,15 +5,16 @@ AON 18 apr 2017
 '''
 from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
-from arm.api.forms.formTools import labField, _div, sent, gridStyle, docTitle
+from arm.api.forms.formTools import labField, _div, log, gridStyle, docTitle
 
 # *** *** ***
 
 
 class Report(Page):
+    title = 'Отчет'
+    form = 'Report'
+
     def __init__(self, request):
-        self.title = 'Отчет'
-        self.form = 'Report'
         self.dbAlias = 'nv_lm_Module'
         super().__init__(request)
 
@@ -41,7 +42,7 @@ class Report(Page):
                     *labField('Формула отбора', 'QUERYMAIN'),
                     *labField('Комментарий', 'NOTES'),
             ]),
-            sent(),
+            log(),
         ]
 
         return self.docPage(fields, [toolbar.close_])

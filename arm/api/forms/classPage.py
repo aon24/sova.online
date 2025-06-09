@@ -5,7 +5,7 @@ Created on 24 apr 2020
 '''
 
 # *** *** ***
-from arm.settings import API_DIR, DEBUG
+from arm.settings import BASE_DIR, DEBUG
 from arm.tools.common import setVersionFiles
 from arm.tools.first import err, versionString
 from arm.tools.DC import DC, well, toWell, swell
@@ -14,6 +14,7 @@ from arm.api.forms.toolbars import toolbar
 
 from django.http import HttpResponse
 
+import os
 import json
 import importlib
 from copy import deepcopy
@@ -54,9 +55,10 @@ def getPageObj(request):
 
 class Page(object):
     '''
-    urlForms - словарь в форме, хранит url для форм. КЛЮЧ: form+mode, возвращает "apigetc?loadForm&outlet.gru::2113546371"
+    urlForms - словарь в форме, хранит url для форм. КЛЮЧ: form+mode+.., возвращает "api/getc?loadForm&outlet.gru::2113546371"
     form-json - в глобальном словаре готовый json. КЛЮЧ: 'form::CRC-СУММА'
     '''
+    styles = '<link href="/static/fonts/home.css" rel="stylesheet">\n'
 
     def __init__(self, request):
         dcUK = request.dcUK
@@ -67,7 +69,7 @@ class Page(object):
         self._staff = dcUK._staff
         self.noicons = dcUK.noicons
 
-        for a in ['jsCssUrl', 'jsCssUrlRead', 'jsCssUrlEdit', 'dbAlias', 'noCaching', 'styles']:
+        for a in ['_VIEW_', '_PAGE_', 'jsCssUrl', 'jsCssUrlRead', 'jsCssUrlEdit', 'dbAlias', 'noCaching', 'styles']:
             not getattr(self, a, None) and setattr(self, a, '')
 
         self.title = getattr(self, 'title', 'sova.online')
@@ -75,6 +77,7 @@ class Page(object):
         self.leftWidth = getattr(self, 'leftWidth', 0)
         self.status = swell('status')
 
+        API_DIR = os.path.join(BASE_DIR, 'arm', 'api')
         if self.jsCssUrl:
             self.jsCssUrlRead = self.jsCssUrlEdit = setVersionFiles(self.jsCssUrl, API_DIR)
         else:
@@ -83,14 +86,14 @@ class Page(object):
 
     # *** *** ***
 
-    def getJsDoc(self, request):
+    def getJsDoc(self, request, coocieBtn=None):
         '''
         fормирует словарь для отправки клиенту
         '''
         dcUK = request.dcUK
         if dcUK.doc:  # доступ к конкретному документу
             if dcUK.dbAlias.startswith('nv_') and dcUK.unid:  # django
-                if dcUK.dbAlias.rpartition('_')[2] != self.form and self.form != 'info':
+                if dcUK.dbAlias.rpartition('_')[2] != self.form and self.form not in ['info', 'html']:
                     return '{}'  # защита от подмены form=qqq в url "/api/opendoc?dbAlias=nv_SessionSt&unid=5481&form=SessionGr&mode=edit"
 
             dcUK.doc.form = dcUK.doc.form or self.form
@@ -121,14 +124,20 @@ class Page(object):
                     version=f'{versionString}',
                     fd=dcUK.fd
                 )
+            if self._VIEW_:  # виды (не документы) - игнорировать сохранение
+                ds['_VIEW_'] = 1
+            if self._PAGE_:  # страница (не документ) - игнорировать ESC
+                ds['_PAGE_'] = 1
+            if coocieBtn:  # наш сайт использует файлы cookie
+                ds['coocieButton'] = 1
+
             if self.mode == 'new':
                 ds['oldValues'] = {k: '' for k in fv}
             elif self.mode == 'edit':  # чтобы можно было установить новое значение в queryOpen
                 if self.form == 'info' and not request.dcUK._superUser:
                     ds['oldValues'] = {}
                 else:
-                    # костыль, чтобы никто не видел поля с оценкой, если есть noAss_fd
-                    ds['oldValues'] = {k: do.get(k, '') for k in fv if do.get(k, '') != fv[k] and not (fv.get('NOASS_FD') and k.startswith('ASSLEC'))}
+                    ds['oldValues'] = self.getOldValue(request, fv, do)
         except Exception as e:
             ex = str(e)
             tr = str(traceback.format_exc())
@@ -154,8 +163,11 @@ class Page(object):
                 fd='1',
                 _view_='1'
             )
-
         return json.dumps(ds, ensure_ascii=False)
+
+    def getOldValue(self, request, fv, do):
+        '''do - old(fields from DB), fv - after queryOpen'''
+        return {k: do.get(k, '') for k in fv if do.get(k, '') != fv[k]}
 
     def page(self, request=None): pass
 
@@ -200,7 +212,7 @@ class Page(object):
             pg = self.parseCell(pg)
             jsPage = json.dumps(pg, ensure_ascii=False, sort_keys=True)
             crc = crc32((jsPage + jsCss).encode(), 0)
-            if self.noCaching:
+            if self.noCaching:  # кэширование естанавливается на кленте на 30 дней
                 self.urlForm = f'/api/get/loadForm?form={self.form}::{crc}'
             else:
                 self.urlForm = f'/api/getc/loadForm?form={self.form}::{crc}'

@@ -13,11 +13,12 @@ from django.middleware.csrf import get_token
 
 
 class login(Page):
+    title = 'Sova'
+    noCaching = True
+
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = f'/api/jsv?forms/{self.form}/{self.form}.js'
-        self.title = 'Sova'
-        self.noCaching = True
 
         super().__init__(request)
 
@@ -101,14 +102,14 @@ class login(Page):
             'height': '100vh',
             'overflow': 'auto',
             'paddingTop': 50,
-            'backgroundImage': 'url(/static/images/nvbg.jpeg)',
+            'backgroundImage': 'url("/static/image/nvbg.jpeg")',
             'backgroundSize': '100% 100%'
         }
         return _div(className='bg52', focus='auto', style=st, children=[
             _div(**style(margin='auto', fontSize=40, width='90%', maxWidth=500), children=[
                 _teg('fieldset',
                     **style(
-                            backgroundImage='url(/static/images/nvbgGreen.jpeg)',
+                            backgroundImage='url("/static/image/nvbgGreen.jpeg")',
                             backgroundSize='100% 100%',
                             border='3px solid #fff'),
                     children=[

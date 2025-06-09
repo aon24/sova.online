@@ -18,12 +18,15 @@ logList = []
 
 
 class ilog(Page):
+    title = 'Log'
+    noCaching = True
+    _PAGE_ = 1
+    _VIEW_ = 1
 
     def __init__(self, request):
-        self.title = 'Log'
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.noCaching = True
+
         super().__init__(request)
 
     def page(self, request):

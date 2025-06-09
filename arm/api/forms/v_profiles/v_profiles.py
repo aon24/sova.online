@@ -15,14 +15,15 @@ import json
 
 
 class v_profiles(Page):
+    title = 'Профайлы'
+    dbAlias = 'nv_Profile'
+    leftWidth = 105
+    roles = swell('role')
+    _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js',]
-        self.title = 'Профайлы'
-        self.dbAlias = 'nv_Profile'
-        self.leftWidth = 105
-        self.roles = swell('role')
 
         super().__init__(request)
 
@@ -83,8 +84,6 @@ class v_profiles(Page):
 
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
-    def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
 
     # *** *** ***
 

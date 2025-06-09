@@ -15,12 +15,13 @@ import json
 
 
 class v_payments(Page):
+    title = 'Платежи'
+    dbAlias = 'nv_Payment'
+    _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'Платежи'
-        self.dbAlias = 'nv_Payment'
         self.leftList = None
 
         self.upField = _div(className='toolbar', children=[toolbar.close_])
@@ -70,7 +71,7 @@ class v_payments(Page):
             elif pay.status == 'active':
                 continue
 
-            pk = pay.pk
+            pk = pay.id
             group = well('groups_groupId',pay.nvgroup).title
             ch = pay.cash[:1].upper()
             date = _div(f"{pay.D('pay_date')}\n{ch}: {pay.summa}",
@@ -100,7 +101,6 @@ class v_payments(Page):
         return {'mainDocs': mainDocs, 'refsDocs': None}
 
     def queryOpen(self, r):
-        r.dcUK.doc._view_ = 1
         r.dcUK.doc.profile = r.dcUK.profile
 
     # *** *** ***

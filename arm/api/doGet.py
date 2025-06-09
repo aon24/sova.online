@@ -2,18 +2,16 @@
 """
 AON 2020
 """
-from arm.tools.httpMisc import notFound, jsonNotFound, accessDenied, nvResponse
-from arm.settings import API_DIR, BASE_DIR, REPORT_DIR
+from arm.tools.httpMisc import notFound, accessDenied, nvResponse
+from arm.settings import BASE_DIR
 from arm.tools.loadWell import loadWell
 from arm.tools.first import err
-
 from arm.tools.imgHeader import what
-from arm.tools.DC import DC, well, swell
+from arm.tools.DC import DC, well, swell, config
 from arm.api.forms.classPage import getPageObj
 from arm.tools.dbToolkit import DJ, Book
 
 from django.views.decorators.csrf import ensure_csrf_cookie
-
 from django.shortcuts import redirect
 from django.contrib.auth import logout
 
@@ -27,9 +25,6 @@ from mimetypes import guess_type
 # @login_required(login_url='login/')
 @ensure_csrf_cookie
 def apiDoGet(request):
-    if request.method != 'GET':
-        return nvResponse('Error', None, 500)
-
     right, handler = _apiGetList.get(request.dcUK._path, (None, None))
 
     if handler:
@@ -46,12 +41,12 @@ def apiDoGet(request):
                 return handler(request)
         if right == 'well':
             listName = request.dcUK.clues.partition('::')[0]
-            if listName in ['']:
+            if listName in ['q']:
                 return handler(request)
 
         return redirect(f'/api/login/')
 
-    return notFound(f'api-path "{request.dcUK._path or "-?-"}" not found', request.dcUK.fullName)
+    return notFound(request)
 
 # *** *** ***
 
@@ -61,7 +56,6 @@ def _openDoc(request):
     параметры: dbAlias+, form+, dbaGr, unidGr, smartPhone... etc
     '''
 
-    # checkRight(dba, mode, fullName) - return accessDenied(fullName)
     dcUK = request.dcUK
 
     if request.dcUK.mode == 'new':
@@ -87,6 +81,12 @@ def _openDoc(request):
 
             else:
                 dcUK.mode = dcUK.mode or 'read'
+
+            if dcUK.dbAlias == 'nv_SessionSt':
+                if not (dcUK._staff or 'куратор' in dcUK._role):
+                    if dcUK._profilePK != dcUK.doc.pref or not dcUK.doc.allow_s:
+                        return nvResponse(b'', status=403)
+
         else:
             s = f'Документ не найден ({dcUK._path}?{dcUK._QUERY})'
             err(s, cat='openDoc')
@@ -118,13 +118,12 @@ pwa = '''
 <link rel="manifest" type="application/json" href="/manifest.json">
 '''
 
-
 def returnPageOrDoc(request, manifest=None):
     opg = getPageObj(request)
     if not opg:
-        return notFound(f'doGet.returnPageOrDoc: form "{request.dcUK.form}"', request.dcUK.fullName)
+        return notFound(request)
 
-    jsDoc = opg.getJsDoc(request)
+    jsDoc = opg.getJsDoc(request, config.coocieBtn)
 
     html = well('index.html')
     html = html.replace('<title></title>', f'<title>{opg.title}</title>')
@@ -150,7 +149,7 @@ def _newForm(request):  # возможно для отладки React-form
     '''
     opg = getPageObj(request)
     if not opg:
-        return jsonNotFound(request)
+        return notFound(request, content_type='application/json')
     return nvResponse(opg.getJsDoc(request), 'application/json')
 
 # *** *** ***
@@ -161,8 +160,9 @@ def _new(request):
     url: /new?form=myform&dbAlias=dba
     '''
     if request.dcUK.form in ['v_profiles', 'v_students', 'v_schedule'] and not request.dcUK._staff:
-        return accessDenied(request.dcUK.fullName)
+        return accessDenied(request)
     request.dcUK.mode = 'new'
+    request.dcUK.form = request.dcUK.form or 'arm'
     return returnPageOrDoc(request)
 
 # *** *** ***
@@ -170,29 +170,30 @@ def _new(request):
 
 def _login(request):
     request.dcUK.mode = 'new'
-    request.dcUK.form = 'arm' if request.user.is_authenticated else 'login'
-    return returnPageOrDoc(request, True)
+    if request.user.is_authenticated:
+        request.dcUK.form = 'arm'
+        manifest = None
+    else:
+        request.dcUK.form = 'login'
+        manifest = True
+    return returnPageOrDoc(request, manifest)
 
 # *** *** ***
 
 
 def jsv(request):
-    fn = os.path.join(API_DIR, request.dcUK._query).partition('::')[0]
+    if request.dcUK._query.startswith('forms/'):
+        fn = os.path.join(BASE_DIR, 'arm', 'api', request.dcUK._query).partition('::')[0]
+    else:
+        fn = os.path.join(BASE_DIR, request.dcUK._query).partition('::')[0]
     fn = os.path.normpath(fn)  # Удаляет ../ и ./
     try:
         with open(fn, 'rb') as f:
             mimeType = f'{guess_type(fn, False)[0]}; charset=utf-8'
             return nvResponse('' or f.read(), mimeType, request=request)
-    except:
-        fn = os.path.join(REPORT_DIR, request.dcUK._query).partition('::')[0]
-        fn = os.path.normpath(fn)
-        try:
-            with open(fn, 'rb') as f:
-                mimeType = f'{guess_type(fn, False)[0]}; charset=utf-8'
-                return nvResponse('' or f.read(), mimeType, request=request)
-        except Exception as ex:
-            err(f'jsv-path: {request.dcUK._path}\n{ex}', cat='doGet.py')
-            return notFound(fn, request.dcUK.fullName)
+    except Exception as ex:
+        err(f'jsv-path: {request.dcUK._path}\n{ex}', cat='doGet.py')
+        return notFound(request)
 
 # *** *** ***
 
@@ -208,7 +209,7 @@ def xImage(request):
             if what(path):
                 return nvResponse(f.read(), content_type=mimeType, request=request)
             else:
-                return notFound(f'not image: {path}', request.dcUK.fullName)
+                return notFound(request)
 
     except Exception as ex:
         err(f'{path}: {ex}', cat='xImage')
@@ -249,6 +250,11 @@ def _loadDoc(request):
         doc = Book.docFromDB(dcUK)
 
     if doc:
+        if dcUK.dbAlias == 'nv_SessionSt':
+            if not (dcUK._staff or 'куратор' in dcUK._role):
+                if dcUK._profilePK != doc.pref or not dcUK.doc.allow_s:
+                    return nvResponse(b'', status=403)
+
         opg = getPageObj(request)
         if opg:
             return nvResponse(opg.getJsDoc(request), 'application/json')
@@ -299,6 +305,9 @@ def apiRunCmd(request):
             loadWell('all')
 
     return nvResponse('"ok"', 'application/json')
+
+# *** *** ***
+
 
 _apiGetList = {
     # no authenticated

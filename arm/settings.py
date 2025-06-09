@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 try:
     f = open('/etc/sova.ini')
 except:
-    f = open(os.path.join(BASE_DIR, 'DB', 'sova.ini'))
+    f = open(os.path.join(BASE_DIR, 'DB', 'sova.ini'), encoding='utf-8')  # for windows
 
 for s in f.readlines():
     l, _, r = s.partition('=')
@@ -26,19 +26,20 @@ f.close()
 # ***
 
 try:
-    with open(os.path.join(BASE_DIR, 'DB', 'contacts.txt')) as f:
+    with open(os.path.join(BASE_DIR, 'DB', 'contacts.txt'), encoding='utf-8') as f:
         config.contacts = f.read()
 except:
     pass
 
-LOG_DIR = config.LOG_DIR or BASE_DIR / 'log'
-DB_DIR = config.DB_DIR or BASE_DIR / 'DB'
+LOG_DIR = Path(config.LOG_DIR or BASE_DIR / 'log')
+DB_DIR = Path(config.DB_DIR or BASE_DIR / 'DB')
 
 DEMO_MODE = config.DEMO_MODE
 DEVELOPMENT_MODE = config.DEVELOPMENT_MODE
 
 SECRET_KEY = config.SECRET_KEY
 DEBUG = bool(config.DEBUG)
+
 ALLOWED_HOSTS = [config.HOST]
 ALLOWED_HOSTS += [h.strip() for h in config.addAllowedHosts.split(',')]
 
@@ -52,7 +53,7 @@ if DEVELOPMENT_MODE:  # Письма сохраняются в файлы
     EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
     EMAIL_FILE_PATH = BASE_DIR / 'test_emails'
 else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_BACKEND = 'arm.tools.safeSmtp.SafeSMTPEmailBackend'
 
 # *** *** ***
 # Для корректной работы с Nginx
@@ -75,9 +76,6 @@ TEMPLATE_DIR = BASE_DIR / 'templates'
 STATIC_DIR = BASE_DIR / 'static'
 STATICFILES_DIRS = [STATIC_DIR]
 MEDIA_ROOT = BASE_DIR / 'static' / 'media'
-
-API_DIR = BASE_DIR / 'arm' / 'api'
-REPORT_DIR = BASE_DIR / 'nv_reports' / 'rf_nv'
 
 # *** *** ***
 
@@ -125,7 +123,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
-SITE_ID = 1
+SITE_ID = 1  # имя сайта хранится в бд в таблице django-site. Испольуется при отправке письма "сброс пароля"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

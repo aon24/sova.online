@@ -8,38 +8,37 @@ from arm.tools.DC import DC
 from arm.tools.first import snd, err
 from arm.tools.dbToolkit.Book import snoDB
 from arm.tools.dbToolkit.DJ import docFromDB
-from nv_reports.models import Report
 
 import importlib
 import traceback
-import json
 
 # *** *** ***
 
-def makeReport(agent):
+
+def makeReport(oneReport):
     '''
     создает в базе отчетов заготовку отчета
-    вызывается из v_reports, если выбрано "сейчас 1 раз"(agent - dc-obj from v_reports)
+    вызывается из v_reports, если выбрано "сейчас 1 раз"(oneReport - dc-obj from v_reports)
     заготовка аналогична агенту с расписанием "выполнить сейчас 1 раз"
-    agent - dc object, form=Module
     '''
-    report = DC(dbAlias='nv_reports_Report', fullName='makeReport', domain=agent.domain)
-    report.doc = DC(form='Report')
-    for k in agent.keys():
+    report = DC()
+    for k in oneReport.keys():
         l, _, r = k.partition('_')
         if l == 'REPORT':
-            report.doc[r] = agent[k]
+            report[r] = oneReport[k]
 
-    report.doc.title = agent.title
-    report.doc.scheduled = 'now'
-    report.doc.turn_on = 1
-    report.doc.status = 'active'
-    report.doc.lmRef = agent.id
-    report.doc.domain = agent.domain  # rf_nv
-    report.doc.docNo = snoDB(report)
+    report.form = 'Report'
+    report.title = oneReport.title
+    report.domain = oneReport.domain
+    report.scheduled = 'now'
+    report.turn_on = 1
+    report.status = 'active'
 
-    if report.save():
-        snd(agent.report_title, cat='Report created')
+    dcuk = DC(dbAlias='nv_reports_Report', fullName='makeReport')
+    report.docNo = snoDB(dcuk)
+    dcuk.doc = report
+    if dcuk.save():
+        snd(oneReport.report_title, cat='Report created')
     else:
         err('Report-save-error', cat='Report NOT created')
 
@@ -47,53 +46,94 @@ def makeReport(agent):
 
 
 @checkBusy  # Декоратор, блокирующий повторный вызов функции до ее завершения.
-def startReport(report):
+def startReport(agent):
     """
     вызывается из amgr
+    в параметре report либо задание из расписания (form = 'Module'),
+    либо одноразовый отчет (form = 'Report' и scheduled=='now' and turn_on = 1)
     """
     cat = 'Report run'
-    path = f'nv_reports.{report.domain}.{report.module}'
-    snd(f'Start(import_module): "{path}"\nReport.title: "{report.title}"', cat=cat)
+    path = f'nv_reports.{agent.domain}.{agent.module}'
+    snd(f'Start(import_module): "{path}"\nReport.title: "{agent.title}"', cat=cat)
 
-    report.starting_time = now('-')
-    Report.objects.filter(pk=report.pk).update(starting_time=report.starting_time)
+    if agent.form == 'Module':
+        # вызов по расписанию. Надо создать отчет
+        report = DC()
+        for k in agent.keys():
+            l, _, r = k.partition('_')
+            if l == 'REPORT':
+                report[r] = agent[k]
+
+        report.form = 'Report'
+        report.title = agent.title
+        report.status = 'active'
+        report.docNo = snoDB(report)
+        report.starting_time = now('-')
+        report.lmRef = agent.id
+
+        # создаем пустой отчет
+        dcuk = DC(dbAlias='nv_reports_Report', fullName=cat)
+        dcuk.doc = report
+        try:
+            report.id = dcuk.save().id
+            snd(report.title, cat='Report created')
+        except:
+            return err('Report-save-error', cat='Report NOT created')
+
+    else:  # одноразовый отчет.Он уже создан и сохранен в makeReport
+        report = agent
+
+    # перезаписываем то, что для amgr
+    dcuk = DC(dbAlias='nv_reports_Report', unid=agent.id, fullName=cat)
+    docFromDB(dcuk)
+
+    agent._run = ''
+    if agent.SCHEDULED == 'now':  # одноразовый отчет.Он уже создан и сохранен в makeReport
+        agent.TURN_ON = ''  # 1 раз и нефиг
+        agent.starting_time = now('-')
+
+    dcuk.doc = agent
+    if not dcuk.save():
+        return err('Module-save-error', cat='Report NOT created')
 
     try:
         mmm = importlib.import_module(path)
         importlib.reload(mmm)
+
+        # *** make !!!
+
         htmlList = mmm.main(report) or []
 
+        # ***
+
         report.end_time = now('-')
-        report.turn_on = report._run = ''
-        dc = DC(dbAlias='nv_reports_Report', unid=report.pk, fullName=cat)
-        docFromDB(dc)
-        dc.doc = report
-        dc.save()
+        dcuk = DC(dbAlias='nv_reports_Report', unid=report.id, fullName=cat)
+        docFromDB(dcuk)
+        dcuk.doc = report
+        dcuk.save()
 
         for html in htmlList:
             ref = DC(dbAlias='nv_reports_Report', fullName=cat)
             ref.doc = DC(ref=report.id, form='html', status='active')
-            ref.doc.html = json.dumps(html.main, ensure_ascii=False)
-            for k in ['title', 'reportName', 'addList']:
-                ref.doc[k] = html[k] or report[k]
-
+            ref.doc.main = html.main
+            ref.doc.title = html.title or report.title  # заголовок в виде
+            ref.doc.jsCss = html.jsCss
             ref.save()
 
         snd(f'Finish: {report.title}', cat=cat)
 
     except Exception as ex:
-        report.turn_on = report._run = ''
-        s = f'{report.title}\n{ex}\n{traceback.format_exc()}'
+        s = f'{report.title}(path:"{path}")\n{ex}\n{traceback.format_exc()}'
         report._log += s
-        err(report, cat=cat)
-        dc = DC(dbAlias='nv_reports_Report', unid=report.id, fullName=cat)
-        docFromDB(dc)
-        dc.doc = report
-        dc.save()
+        err(s, cat=cat)
+        dcuk = DC(dbAlias='nv_reports_Report', unid=report.id, fullName=cat)
+        docFromDB(dcuk)
+        dcuk.doc = report
+        dcuk.save()
 
         if report.lmRef:
             dc = DC(dbAlias='nv_lm_Module', unid=report.lmRef, fullName=cat)
             docFromDB(dc)
-            dc.doc.turn_on = ''
+            dc.doc._run = dc.doc.turn_on = ''
             dc.save()
 

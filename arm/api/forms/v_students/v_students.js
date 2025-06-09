@@ -1,7 +1,7 @@
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.v_students = {
 	// *** *** ***
-	
+	init2: doc => window.sovaActions.v_students.recalc.UPLIST(doc,0),	
 	cmd: {
 		cmdNew: doc => {
 			let page = {
@@ -27,7 +27,14 @@ window.sovaActions.v_students = {
 
 	},
 	recalc: {
-		UPLIST: doc => doc.loadView('mainList', true),
+		UPLIST: (doc, i) => {
+	        doc.util.jsonByUrl(doc, `/api/getData?form=v_students&cmd=getGroups&status=${i}`)
+	            .then( js => {
+					doc.changeDropList('LEFTLIST', js);
+					doc.loadView('mainList', true);
+	            })
+	            .catch( e => doc.msg.error(e) );
+		},
 		LEFTLIST: doc => doc.loadView('mainList', true),
 
 	}

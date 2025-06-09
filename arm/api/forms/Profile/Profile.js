@@ -44,10 +44,7 @@ window.sovaActions.Profile = {
 		PR_TABLE_FD: doc => doc.forceUpdate(),
 	},	
 	hide: {
-		createUser: doc => doc.getField('username'),
-		changeUser: doc => !doc.getField('username'),
 		cur_gr: doc => !doc.getField('role').includes('куратор'),
-		// lec_gr: doc => !doc.getField('role').includes('преподаватель'),
 	},
 	validate: {
 	        full_name: doc => doc.getField('full_name') ? '' : 'ФИО',
