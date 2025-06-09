@@ -177,9 +177,13 @@ def deleteFromDB(request, buf):
     if not checkRight(dcUK):
         return accessDenied(request)
 
+<<<<<<< HEAD
     unid, _, dbAlias = (buf or '').partition('|')
     dcUK.unid = unid
     dcUK.dbAlias = dbAlias
+=======
+    dcUK.unid = dcUK.unid or dcUK.id
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
     if not dcUK.loadDoc():
         err(f'Документ уже удален: "{dbAlias}:{unid}"', cat=cat)
         return nvResponse('Документ уже удален', status=410)

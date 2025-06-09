@@ -121,8 +121,9 @@ class wsgiRH(BaseHTTPRequestHandler):
             result_iter = wsgiApplication(self.get_environ(), self.start_response)  # run WSGI-application
             if result_iter:
                 for data in result_iter:
-                    self.wfile.write(data)
-                    self.wfile.flush()
+                    if data:
+                        self.wfile.write(data)
+                        self.wfile.flush()
 
 #        except Exception as ex:
 #            self.log_error('svServer.py.handle_one_request: %r', ex)

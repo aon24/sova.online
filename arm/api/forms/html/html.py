@@ -17,12 +17,15 @@ import os
 
 
 class html(Page):
+<<<<<<< HEAD
+=======
+    title = 'html'
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
     _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-        self.title = 'html'
         super().__init__(request)
 
 # *** *** ***

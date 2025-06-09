@@ -193,6 +193,7 @@ class v_reports(Page):
                 continue
 
             refsDocs[o.ref] = refsDocs.get(o.ref, [])
+<<<<<<< HEAD
             if o.title.startswith('{'):
                 try:
                     title = eval(o.title)
@@ -201,6 +202,9 @@ class v_reports(Page):
             else:
                 title = _div(o.title or '-', className='rCell', **style(marginLeft=20, width='100%'))
             refsDocs[o.ref].append([o.id, title])
+=======
+            refsDocs[o.ref].append([o.id, _div(o.title or '-', className='rCell', **style(marginLeft=20, width='100%'))])
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 
         return {'mainDocs': mainDocs, 'refsDocs': refsDocs}
 

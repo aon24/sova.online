@@ -12,7 +12,7 @@ def reportList(dt1, dt2):
         dict(
             module='F1',
             title='Форма 1.1-1.10. Сводные таблицы',
-            listbox=[
+            firstList=[
                 'Ф 1.1 Независимая оценка',
                 'Ф 1.2 Метапредметная диагностика',
                 'Ф 1.3 Сравнительный анализ',
@@ -25,7 +25,7 @@ def reportList(dt1, dt2):
         dict(
             module='F2',
             title='Форма 2. Анализ оценочных показателей',
-            listbox=[
+            firstList=[
                 'Форма 2. Отчет по набору показателей',
                 'Форма 2-2. Отчет по набору показателей СП',
             ],
@@ -41,7 +41,7 @@ def reportList(dt1, dt2):
         dict(
             module='F3.main',
             title='Динамика за 2 периода',
-            listbox=[
+            firstList=[
                 'Сравнительные данные',
                 'Ф 3.Д. Отчет + документы для проверки',
             ],
@@ -54,7 +54,7 @@ def reportList(dt1, dt2):
         dict(
             module='F4.main',
             title='Персональный контроль. Студент.',
-            listbox=[
+            firstList=[
                 'Посещаемость',
                 'Оплата',
                 'Успеваемость',
@@ -68,7 +68,7 @@ def reportList(dt1, dt2):
         dict(
             module='F3.main',
             title='Персональный контроль. Преподаватель.',
-            listbox=[
+            firstList=[
                 'Оценки (рейтинг)',
             ],
             addList=[

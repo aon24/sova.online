@@ -1,5 +1,9 @@
 from arm.api.doGet import apiDoGet
+<<<<<<< HEAD
 from arm.views import CustomSignupView, CustomLoginView, rsApi, download_file, staticFiles, home, homePage, manifest
+=======
+from arm.views import CustomSignupView, CustomLoginView, rsApi, download_file, staticFiles, home, homePage
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 from arm.tools.first import snd
 from arm.tools.amgr import amgrLoop
 from arm.tools.loadWell import loadWell
@@ -37,11 +41,18 @@ urlpatterns = [
 
     path('', homePage),
     path('admin/', admin.site.urls),
+<<<<<<< HEAD
     re_path('^manifest.json', manifest),
 
     # *.html, favicon.ico,manifest.json,robots.txt,sitemap.xml
     re_path(r'.*\.(html|txt|ico|xml|js|json|css|png)$', home),
 
+=======
+    path('favicon.ico', home),
+    path('manifest.json', home),
+    path('robot.txt', home),
+    path('sitemap.xml', home),
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # ***

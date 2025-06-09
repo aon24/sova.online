@@ -7,12 +7,21 @@ from arm.settings import LOGIN_INVALID_URL
 from arm.tools.DC import well
 from arm.tools.common import cleanPhone
 from arm.api.doGet import _login
+<<<<<<< HEAD
 from arm.tools.first import err, snd
 from arm.api.doGet import apiDoGet, _apiGetList
+=======
+from arm.tools.first import err
+from arm.api.doGet import apiDoGet
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 from arm.api.doPost import doPost
 from arm.tools.dbToolkit.upload import uploadFile
 from arm.tools.dbToolkit.download import downloadFile
 import arm.tools.DC as dcm
+<<<<<<< HEAD
+=======
+from arm.tools.httpMisc import notFound
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 
 from allauth.account.views import SignupView, LoginView
 from allauth.account.forms import SignupForm
@@ -20,7 +29,11 @@ from allauth.account.forms import SignupForm
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django import forms
+<<<<<<< HEAD
 from django.http import HttpResponse, FileResponse, HttpResponseNotAllowed
+=======
+from django.http import HttpResponse, FileResponse
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 from django.conf import settings
 
 from urllib.parse import unquote
@@ -41,6 +54,7 @@ def rsApi(request):
         else:
             return doPost(request)
 
+<<<<<<< HEAD
     elif request.method == 'HEAD':
         if request.dcUK._path in _apiGetList:
             response = HttpResponse()
@@ -50,6 +64,9 @@ def rsApi(request):
             return custom_404_view(request, None)
 
     return HttpResponseNotAllowed(["GET", "HEAD"])
+=======
+    return custom_404_view(request)
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 
 # *** *** ***
 
@@ -60,7 +77,11 @@ def custom_404_view(request, exception):
     else:
         ip = request.META.get('REMOTE_ADDR')
 
+<<<<<<< HEAD
     err(f"{request.user.username} ({ip}) {request.method}:{request.path}?{unquote(request.META['QUERY_STRING'])}", cat='Я 404')
+=======
+    err(f"{request.user.username} ({ip}) {request.path}?{unquote(request.META['QUERY_STRING'])}", cat='Я 404')
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
     return HttpResponse(' ', status=404)
 
 # *** *** ***
@@ -113,12 +134,18 @@ def homePage(request):
 # ***
 
 
+<<<<<<< HEAD
 def home(request, f=None, **kwargs):
     return staticFiles(request, '/home' + request.path)
+=======
+def home(request):
+    return staticFiles(request, '/home' + request.META['PATH_INFO'])
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 
 # ***
 
 
+<<<<<<< HEAD
 def manifest(request):
     return HttpResponse(well('manifest.json'), 'application/json')
 
@@ -126,10 +153,16 @@ def manifest(request):
 def staticFiles(request, fileName=None):
     try:
         fileName = fileName or request.path
+=======
+def staticFiles(request, fileName=None):
+    try:
+        fileName = fileName or request.META['PATH_INFO']
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
         fileName = fileName.replace('/static', '')
         filePath = os.path.join(settings.STATIC_DIR, fileName[1:])
         filePath = os.path.normpath(filePath)  # Удаляет ../ и ./
         if os.path.exists(filePath):
+<<<<<<< HEAD
             if request.method == 'HEAD':
                 return HttpResponse()
             if request.method != 'GET':
@@ -145,11 +178,20 @@ def staticFiles(request, fileName=None):
         pass
 
     return custom_404_view(request, None)
+=======
+            with open(filePath, 'rb') as f:
+                return HttpResponse(f.read(), guess_type(filePath)[0], headers=[('X-Frame-Options', 'SAMEORIGIN'), ])
+    except Exception as ex:
+        err(f'"{filePath}"\{ex}', cat='Static page')
+
+    return notFound(request)
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 
 # ***
 
 
 def download_file(request):
+<<<<<<< HEAD
     filePath = os.path.join(settings.STATIC_DIR, request.path[1:])
     filePath = os.path.normpath(filePath)
     if os.path.exists(filePath):
@@ -160,5 +202,13 @@ def download_file(request):
         return FileResponse(open(filePath, 'rb'), as_attachment=True)
 
     return custom_404_view(request, None)
+=======
+    filePath = os.path.join(settings.STATIC_DIR, request.META['PATH_INFO'][1:])
+    filePath = os.path.normpath(filePath)
+    if os.path.exists(filePath):
+        return FileResponse(open(filePath, 'rb'), as_attachment=True)
+
+    return HttpResponse(f'"{filePath}" not found', status=404)
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 
 # ***

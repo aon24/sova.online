@@ -65,7 +65,11 @@ def showCourse(dcUK):
         if dcUK.lector != 'Все' and dcUK.lector not in sesTml.lector:
             continue
 
+<<<<<<< HEAD
         theArr.append(makeSketch(btnCmd='cmdEdit', btnPar=sesTml.id, sticker=getSticker(sesTml), title=sesTml.title))
+=======
+        theArr.append(makeSketch(btnCmd='cmdEdit', btnPar=sesTml.id, sticker=getSticker(sesTml), title=sesTml.title, contextMenuCmdList=None))
+>>>>>>> 2d0df3faef32214b0a2de7e9081ee69fdf60e770
 
     theArr.insert(0, _div(nveTitle, className='h2', **style(color='#00f', textDecoration='none')))
     return _div(**style(width='auto', background='#00ff0010', height='100%', overflowY='auto'), children=theArr)
@@ -365,7 +369,7 @@ def showC(dcUK):  # эскизы
         for ss in byEvent[k]:
             if dcUK.cmd == 'showC3':
                 btnCmd = 'cmdOpenSess'
-                btnPar = f"form={ss['form']}&rsMode=edit&dbAlias=nv_{ss['form']}&unid={ss['pk']}&title={ss['title']}"
+                btnPar = f"form={ss['form']}&rsMode=edit&dbAlias=nv_{ss['form']}&unid={ss['id']}&title={ss['title']}"
 
                 theArr.append(makeSketch(
                     btnCmd=btnCmd,
