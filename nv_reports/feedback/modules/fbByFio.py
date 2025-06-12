@@ -64,6 +64,8 @@ def main(m):
         ngr = len(resultArr[0]) - 1
         # заголовок документа в виде
         title = f'{fio}. Гр:{ngr} Сесс:{ni} ОС:{os}'
+        title = _div(**gridStyle('1fr 70px 70px 70px', marginLeft=20), className='rCell', children=[
+            _div(fio), _div(f'Гр:{ngr}'), _div(f'Сесс:{ni}'), _div(f'ОС:{os}')])
 
         html = DC(log=m.log, title=title)
         html.main = json.dumps([_div(className='first', children=rows)], ensure_ascii=False)

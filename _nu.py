@@ -104,7 +104,7 @@ class wsgiRH(BaseHTTPRequestHandler):
     # *** *** ***
 
     def handle_one_request(self):
-        try:
+        if 1:#try:
             self.raw_requestline = self.rfile.readline(65537)
             if len(self.raw_requestline) > 65536:
                 self.requestline = ''
@@ -125,9 +125,9 @@ class wsgiRH(BaseHTTPRequestHandler):
                         self.wfile.write(data)
                         self.wfile.flush()
 
-        except Exception as ex:
-            self.log_error('svServer.py.handle_one_request: %r', ex)
-            self.close_connection = True
+#        except Exception as ex:
+#            self.log_error('svServer.py.handle_one_request: %r', ex)
+#            self.close_connection = True
 
     # *** *** ***
 
