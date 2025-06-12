@@ -30,7 +30,7 @@ def loadWell(key, param=None):
                     buf = setVersionJS(f.read(), BASE_DIR)[0]
                     toWell(buf, 'index.html')
                 fn = os.path.join(STATIC_DIR, 'home', 'manifest.json')
-                with open(fn) as f:
+                with open(fn, encoding='utf-8') as f:
                     buf = f.read().replace('{% site %}', config.host)
                     toWell(buf, 'manifest.json')
             except:
@@ -106,7 +106,8 @@ def loadCls():
                     for it in arr:
                         tx, code, short, sticker = f'{it}|||'.split('|')[:4]
                         evs.append(f'{tx}|{code}')
-                        esh.append(f'{short}|{code}')
+                        if short:
+                            esh.append(f'{short}|{code}')
                         toWell(tx, 'eventsByCode', code)
                         toWell(sticker, 'stickerByCode', code)
 
@@ -264,8 +265,8 @@ def createSessionSt():
                 sessiongr=sgr,
                 status='active',
                 owner=owner,
-                allow_s=1,
-                video_s=1,
+                # allow_s=1,
+                # vi-deo_s=1,
             )
 
             sst = dcm.save()
@@ -462,10 +463,10 @@ def loadProfiles():
                 if grId:
                     students_grId[grId] = students_grId.get(grId, [])
                     students_grId[grId].append(dc)
-        else:
+        elif 'студент' in role:
             for gr in swell('allGroups'):  # f'{dc.title}|{dc.id}'
                 grT, _, grId = gr.partition('|')
-                if grT == '_без группы':
+                if grT == '0_без группы':
                     students_grId[grId] = students_grId.get(grId, [])
                     students_grId[grId].append(dc)
 

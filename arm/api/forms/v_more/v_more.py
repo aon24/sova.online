@@ -7,7 +7,7 @@ Created on 2023
 
 from arm.tools.DC import well, swell
 from arm.tools.first import err
-from arm.api.forms.formTools import style, _div, _search, _field, _btnDel, _btnEdit, _btnNew, _btnView
+from arm.api.forms.formTools import style, _div, _search, _field, _btnDel, _btnEdit, _btnNew, _btnView, _btnCopy
 from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
 
@@ -17,16 +17,15 @@ import json
 
 
 class v_more(Page):
-    title = 'Лендинг'
-    dbAlias = 'draft'
-    leftWidth = 105
     noCaching = True
     _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
-
+        self.title = 'Лендинг'
+        self.dbAlias = 'draft'
+        self.leftWidth = 105
 
         super().__init__(request)
 
@@ -58,7 +57,7 @@ class v_more(Page):
         self.leftList = _field('leftList', 'band', [], className='list3str')
 
         self.viewbar = self.makeViewbar(
-            leftBtn=[_btnNew('a_design'), _btnNew('a_more')],
+            leftBtn=[_btnNew('a_design'), _btnNew('a_more'), _btnNew('a_html')],
             rightBtn=_search()
         )
 
@@ -82,12 +81,13 @@ class v_more(Page):
             title = _div(f"{cls.key} -- {cls.project} -- {cls.pageName}\n{cls.pageSize} ({cls.modified or cls.created})",
                 className='mCell', s2=1, br=1, **style(width='100%', paddingLeft=2, letterSpacing=1))
 
-            btnV = _btnView('cmdView', pk)
+            btnV = _btnView('cmdView', f'pk={pk}&title={cls.PAGENAME}')
             btnE = _btnEdit('cmdEdit', pk)
+            btnC = _btnCopy('cmdNewCopy', f'pk={pk}&form={cls.form}&title={cls.pageName}')
             btnD = _btnDel('cmdDel', f'mainList|{pk}|draft')
 
-            row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto auto'),
-                children=[title, btnV, btnE, btnD])
+            row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto auto auto'),
+                children=[title, btnV, btnE, btnC, btnD])
             mainDocs.append([pk, row])
 
         return {'mainDocs': mainDocs, 'refsDocs': None}

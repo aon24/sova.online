@@ -10,23 +10,25 @@ window.sovaActions.v_more = {
 	// *** *** ***
 	
 	cmd: {
-/*
-		saved: doc => {
-			if (doc.mainDoc !== doc) {
-				let parentDoc = doc.page.owner;
-				let view = parentDoc.getControl('mainList');
-				view && view.loadView(true, doc.unid);
-			}
+		cmdNewCopy: (doc, param, ctrlKey) => {
+			let pKeys = doc.util.urlKeys(param);
+			let page = {
+				rsMode: 'new',
+				newForm: `${pKeys.form}&sourceDoc=${pKeys.pk}`,
+				dbAlias: 'draft',
+				title: pKeys.title || 'Создание страницы',
+			};
+			doc.previewNew(page, ctrlKey);
 		},
-*/		
 		cmdNew: (doc, p) => doc.util.xopen(`/api/new?dbAlias=draft&form=${p}&project=${doc.getField('leftList')}&key=${doc.getField('key')}`),
 
-		cmdView:(doc, pk, ctrlKey, shiftKey) => {
+		cmdView: (doc, param, ctrlKey, shiftKey) => {
+			let pKeys = doc.util.urlKeys(param);
 			let view = doc.getControl('mainList');
-			view.rowClick(pk);
 			let page = doc.util.urlKeys(view.props.previewUrl);
-			page.title = 'Просмотр';
-			page.unid = pk;
+			view.rowClick(pKeys.pk);
+			page.title = pKeys.title || 'Просмотр';
+			page.unid = pKeys.pk;
 			page.rsMode = 'read';
 			//page.form = 'a_design';
 			doc.previewNew(page, ctrlKey, shiftKey);

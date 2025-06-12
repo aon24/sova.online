@@ -7,7 +7,7 @@ Created on 2020.
 from arm.tools.first import err
 from arm.tools.DC import well, swell, DC, toWell
 from arm.tools.loadWell import loadWell
-from arm.api.forms.formTools import style, _div, _btnD, _field, _btnEdit, _btnPref
+from arm.api.forms.formTools import style, _div, _btnD, _field, _btnEdit, _btnPref, gridStyle
 from arm.api.forms.classPage import Page
 from arm.tools.dbToolkit.DJ import docFromDB
 from arm.api.forms.toolbars import toolbar
@@ -38,7 +38,7 @@ class v_lk_curator(Page):
         super().__init__(request)
 
     def putData(self, dcUK, buf):
-        if dcUK.cmd != 'setField' or not buf:
+        if not (dcUK.cmd == 'setField' and buf and (dcUK._staff or 'куратор' in dcUK._role)):
             err(f'Unknown cmd: {dcUK.cmd}', cat=self.form)
             return HttpResponse(f'PutData for {self.form}. Unknown cmd: {dcUK.cmd}', None, 200)
 
@@ -51,7 +51,7 @@ class v_lk_curator(Page):
             for i, ch in enumerate(ls):
                 if ch:
                     pk, _, val = ch.partition('=')
-                    dc = DC(unid=pk, dbAlias='nv_SessionSt')
+                    dc = DC(unid=pk, dbAlias='nv_SessionSt', fullName=dcUK.fullName, _superUser=dcUK._superUser)
                     if docFromDB(dc) and dc.form != 'SessionGr':  # в списке могут быть сиссии группы(commonSessGr)
                         if dc.doc[dcUK['field']] != val:
                             dc.doc[dcUK['field']] = val
@@ -92,9 +92,9 @@ class v_lk_curator(Page):
                 _div(**style(width=10), name='viewbar'),
                 _btnD('Допуск-', 'cmdSet', 'allow_r', name='viewbar'),
                 _div(**style(width=10), name='viewbar'),
-                _btnD('Video+', 'cmdSet', 'video_s', name='viewbar'),
+                _btnD('Был', 'cmdSet', 'was_s', name='viewbar'),
                 _div(**style(width=10), name='viewbar'),
-                _btnD('Video-', 'cmdSet', 'video_r', name='viewbar'),
+                _btnD('Не был', 'cmdSet', 'was_r', name='viewbar'),
                 _div(**style(width=10), name='viewbar'),
                 _btnD('Зачёт+', 'cmdSet', 'test_s', name='viewbar'),
     ]
@@ -125,7 +125,7 @@ class v_lk_curator(Page):
             return {'mainDocs': [('1', 'Сессии для студентов не созданы (нет даты начала)'), ]}
 
         sgr = well('sessionGr_Id',sgrId)
-
+        gridStr = ''
         for sst in sessArr:
             if topStatus != 'все':
                 if topStatus == 'актив' and sst.status != 'active':
@@ -155,7 +155,8 @@ class v_lk_curator(Page):
             btnE = _btnEdit('cmdEdit', pk)
             btnP = _btnPref('cmdPref', f'{sst.pref}|{pk}')
 
-            row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='32px 1fr auto auto auto auto auto auto auto'),
+            gridStr = gridStr or f'32px 1fr{" auto"*len(sstButtons(sst, sgr))} auto auto'
+            row = _div(**gridStyle(gridStr, placeItems='center start'),
                 children=[chb, title, *sstButtons(sst, sgr), btnE, btnP])
 
             mainDocs.append([pk, row, prof and prof.full_name])

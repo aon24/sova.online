@@ -11,15 +11,18 @@ from arm.tools.common import setVersionFiles
 import os
 
 # *** *** ***
+'''
+создается в отчетах и агентах
+'''
 
 
 class html(Page):
-    title = 'html'
     _VIEW_ = 1
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
+        self.title = 'html'
         super().__init__(request)
 
 # *** *** ***

@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 try:
     f = open('/etc/sova.ini')
 except:
-    f = open(os.path.join(BASE_DIR, 'DB', 'sova.ini'))
+    f = open(os.path.join(BASE_DIR, 'DB', 'sova.ini'), encoding='utf-8')  # for windows
 
 for s in f.readlines():
     l, _, r = s.partition('=')
@@ -26,7 +26,7 @@ f.close()
 # ***
 
 try:
-    with open(os.path.join(BASE_DIR, 'DB', 'contacts.txt')) as f:
+    with open(os.path.join(BASE_DIR, 'DB', 'contacts.txt'), encoding='utf-8') as f:
         config.contacts = f.read()
 except:
     pass

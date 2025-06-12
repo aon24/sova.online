@@ -193,7 +193,14 @@ class v_reports(Page):
                 continue
 
             refsDocs[o.ref] = refsDocs.get(o.ref, [])
-            refsDocs[o.ref].append([o.id, _div(o.title or '-', className='rCell', **style(marginLeft=20, width='100%'))])
+            if o.title.startswith('{'):
+                try:
+                    title = eval(o.title)
+                except:
+                    title = f'ERROR: {o.title}'
+            else:
+                title = _div(o.title or '-', className='rCell', **style(marginLeft=20, width='100%'))
+            refsDocs[o.ref].append([o.id, title])
 
         return {'mainDocs': mainDocs, 'refsDocs': refsDocs}
 
@@ -231,8 +238,8 @@ class v_reports(Page):
             ls.append(_field(f'dt1_{i}', 'dt', **style(margin='auto'), xValue=r.dt1))
         else:
             ls += [
-                labeldc('задать квартал в качестве периода', **style(marginTop=10)),
-                qartButton,
+                r.quarter and labeldc('задать квартал в качестве периода', **style(marginTop=10)),
+                r.quarter and qartButton,
                 _div(**gridStyle('auto auto', marginTop=10), children=[
                     labell('Начало периода'),
                     labell('Конец периода')

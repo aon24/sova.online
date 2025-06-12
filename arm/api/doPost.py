@@ -170,17 +170,19 @@ def apiSaveDoc(request, buf):
 # *** *** ***
 
 
-def deleteFromDB(request, buf=None):
+def deleteFromDB(request, buf):
     cat = 'doPost.deleteFromDB'
     dcUK = request.dcUK
 
     if not checkRight(dcUK):
         return accessDenied(request)
 
-    dcUK.unid = dcUK.unid or dcUK.id
+    unid, _, dbAlias = (buf or '').partition('|')
+    dcUK.unid = unid
+    dcUK.dbAlias = dbAlias
     if not dcUK.loadDoc():
-        err(f'Документ уже удален: "{dcUK.dbAlias}:{dcUK.unid}"', cat=cat)
-        return 'Документ уже удален', None, 410
+        err(f'Документ уже удален: "{dbAlias}:{unid}"', cat=cat)
+        return nvResponse('Документ уже удален', status=410)
 
     dcUK.doc.status = 'deleted'
     if dcUK.save():
@@ -191,7 +193,7 @@ def deleteFromDB(request, buf=None):
 
     else:
         err(f'Ошибка записи в базу: "{dcUK.dbAlias}:{dcUK.unid}"', cat=cat)
-        return 'Ошибка записи в базу', None, 411
+        return nvResponse('Ошибка записи в базу', status=411)
 
 # *** *** ***
 

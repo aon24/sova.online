@@ -248,7 +248,7 @@ def docSaveDB(dcUK):
         dcUK.doc.pageSize = le
         snd(f'{le} (doc {dcUK.doc.docNo} in "{dcUK.dbAlias}") press:{proc}%', cat='ROOT-size')
 
-    fi = {k:v for k, v in dcUK.doc.items() if v and k != 'UNID'}
+    fi = {k:v.replace("'", "''") for k, v in dcUK.doc.items() if v and k != 'UNID'}
     xfi = json.dumps(fi, ensure_ascii=False)
 
     if dcUK.update or not dcUK.dbAlias.lower().endswith('draft'):  # делаем историю только для *DRAFT.sqlite

@@ -5,7 +5,7 @@ Created on 2023
 @author: aon24
 '''
 from arm.tools.DC import well, swell
-from ..formTools import style, _div, _field, _btnDel, _btnEdit, _btnNew
+from ..formTools import style, _div, _field, _btnDel, _btnEdit, _btnNew, gridStyle
 from ..classPage import Page
 from arm.api.forms.toolbars import toolbar
 
@@ -36,7 +36,15 @@ class v_students(Page):
 
         if dcUK.cmd == 'getSelected':
             data = self.getView(dcUK)
+        elif dcUK.cmd == 'getGroups':
+            if dcUK.status == '0':
+                data = [k for k in swell('groups') if k.endswith('active')]
+            elif dcUK.status == '1':
+                data = [k for k in swell('groups') if k.endswith('closed')]
+            else:
+                data = swell('groups')
         else:
+            # '/api/well?clues=groups'
             data = f'invalid cmd: {dcUK.cmd}'
         return json.dumps(data, ensure_ascii=False)
 
@@ -51,7 +59,7 @@ class v_students(Page):
         self.upField = _div(children=[
             _div(className='toolbar',children=[toolbar.close_]),
         ])
-        self.leftList = _field('leftList', 'band', '/api/well?clues=groups')
+        self.leftList = _field('leftList', 'band', [])
 
         return self.shamrock(addUrl='&status={upList}')
 
@@ -61,19 +69,18 @@ class v_students(Page):
         grId = (dcUK.selected + '|').split('|')[1]  # 2022-6/Дн|65|active
         mainDocs = []
 
-        for dc in well('students_grId',grId):
-            if dcUK.status == '0':
-                if dc.status != 'active':
-                    continue
-            if dcUK.status == '1':
-                if dc.status == 'active':
-                    continue
-            title = _div(f"{dc.full_name}\n{dc.phone}",className='mCell',s2=1,br=1,**style(width='100%',letterSpacing=1))
+        for dc in well('students_grId', grId):
+            if dc.status == 'active':
+                color = '#000'
+            else:
+                color = '#aaa'
+
+            title = _div(f"{dc.full_name}\n{dc.phone} ({dc.D('_created')})", className='mCell', s2=1, br=1, **style(width='100%', color=color, letterSpacing=1))
             btnE = _btnEdit('cmdEdit',dc.id)
             btnD = _btnDel('cmdDel',f'mainList|{dc.id}|nv_Profile')
-
-            row = _div(**style(display='grid',placeItems='center start',gridTemplateColumns='1fr auto auto'),
-                children=[title,btnE,btnD])
+            reg = _div('✅', title='зарегистрировался') if dc.user else _div('☹︎', title='не зарегистрировался')
+            row = _div(**gridStyle('1fr auto auto auto', placeItems='center start'),
+                children=[title, reg, btnE, btnD])
             mainDocs.append([dc.id,row])
 
         return {'mainDocs': mainDocs, 'refsDocs': None}

@@ -6,7 +6,7 @@ Created on 2024
 
 from arm.tools.DC import well, config
 from arm.api.forms.formTools import _tabNew, _btnEdit, _field, style, _div, gridStyle
-from arm.api.forms.lk_tools import getSessStByProfId, sstButtons, rightBtnLK, btnLogout, btnSetting, btnProfile
+from arm.api.forms.lk_tools import getSessStByProfId, sstButtons, rightBtnLK3, btnLogout, btnSetting, btnProfile
 
 from datetime import datetime, timedelta
 
@@ -63,7 +63,7 @@ def studentSheet(arm):
     arm.leftList = arm.leftWidth = arm.upField = None
     arm.viewbar = arm.makeViewbar(
         **gridStyle('1px 1fr', borderWidth='0 0 2px 0', background='transparent'),
-        rightBtn=rightBtnLK('3', arm._userAgent),
+        rightBtn=rightBtnLK3(),
     )
 
     url = '/api/getData?form=arm&cmd=getSelected3&showLK_id={showLK_id}&status={status3}&plan={plan3}'
@@ -87,6 +87,7 @@ def getViewStudent(dcUK):
     days = 1 if dcUK.plan == '0' else 100000  # не показ эскизы через 1 день после оконч or isEmpty
     yesterday = datetime.now() - timedelta(days=days)
     last = yesterday.strftime("%Y-%m-%d")
+    gridStr = ''
 
     for sst in sessStArr:
         if sst.form == 'SessionGr':
@@ -120,7 +121,8 @@ def getViewStudent(dcUK):
 
 
         pk = f"unid={sst.id}&form={sst.form or 'SessionSt'}"
-        row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto auto auto auto auto'),
+        gridStr = gridStr or f'32px 1fr{" auto"*len(sstButtons(sst, sgr))} auto'
+        row = _div(**gridStyle(gridStr, placeItems='center start'),
             children=[title, *sstButtons(sst, sgr), _btnEdit('cmdEdit3', pk)])
 
         forSort.append((sgr.title, [pk, row]))

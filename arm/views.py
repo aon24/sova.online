@@ -7,13 +7,12 @@ from arm.settings import LOGIN_INVALID_URL
 from arm.tools.DC import well
 from arm.tools.common import cleanPhone
 from arm.api.doGet import _login
-from arm.tools.first import err
-from arm.api.doGet import apiDoGet
+from arm.tools.first import err, snd
+from arm.api.doGet import apiDoGet, _apiGetList
 from arm.api.doPost import doPost
 from arm.tools.dbToolkit.upload import uploadFile
 from arm.tools.dbToolkit.download import downloadFile
 import arm.tools.DC as dcm
-from arm.tools.httpMisc import notFound
 
 from allauth.account.views import SignupView, LoginView
 from allauth.account.forms import SignupForm
@@ -21,7 +20,7 @@ from allauth.account.forms import SignupForm
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 from django import forms
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, HttpResponseNotAllowed
 from django.conf import settings
 
 from urllib.parse import unquote
@@ -42,7 +41,15 @@ def rsApi(request):
         else:
             return doPost(request)
 
-    return custom_404_view(request)
+    elif request.method == 'HEAD':
+        if request.dcUK._path in _apiGetList:
+            response = HttpResponse()
+            # response.headers['Last-Modified'] = 'Mon, 02 Jun 2025 10:00:00 GMT'
+            return response
+        else:
+            return custom_404_view(request, None)
+
+    return HttpResponseNotAllowed(["GET", "HEAD"])
 
 # *** *** ***
 
@@ -53,7 +60,7 @@ def custom_404_view(request, exception):
     else:
         ip = request.META.get('REMOTE_ADDR')
 
-    err(f"{request.user.username} ({ip}) {request.path}?{unquote(request.META['QUERY_STRING'])}", cat='Я 404')
+    err(f"{request.user.username} ({ip}) {request.method}:{request.path}?{unquote(request.META['QUERY_STRING'])}", cat='Я 404')
     return HttpResponse(' ', status=404)
 
 # *** *** ***
@@ -106,35 +113,52 @@ def homePage(request):
 # ***
 
 
-def home(request):
-    return staticFiles(request, '/home' + request.META['PATH_INFO'])
+def home(request, f=None, **kwargs):
+    return staticFiles(request, '/home' + request.path)
 
 # ***
 
 
+def manifest(request):
+    return HttpResponse(well('manifest.json'), 'application/json')
+
+
 def staticFiles(request, fileName=None):
     try:
-        fileName = fileName or request.META['PATH_INFO']
+        fileName = fileName or request.path
         fileName = fileName.replace('/static', '')
         filePath = os.path.join(settings.STATIC_DIR, fileName[1:])
         filePath = os.path.normpath(filePath)  # Удаляет ../ и ./
         if os.path.exists(filePath):
-            with open(filePath, 'rb') as f:
-                return HttpResponse(f.read(), guess_type(filePath)[0], headers=[('X-Frame-Options', 'SAMEORIGIN'), ])
-    except Exception as ex:
-        err(f'"{filePath}"\{ex}', cat='Static page')
+            if request.method == 'HEAD':
+                return HttpResponse()
+            if request.method != 'GET':
+                return HttpResponseNotAllowed(["GET", "HEAD"])
 
-    return notFound(request)
+            with open(filePath, 'rb') as f:
+                ip = request.META.get('HTTP_X_FORWARDED_FOR')
+                ip = ip.split(',')[0] if ip else request.META.get('REMOTE_ADDR')
+                snd(f"{request.user.username} ({ip}) {fileName}", cat='home')
+                return HttpResponse(f.read(), guess_type(filePath)[0], headers=[('X-Frame-Options', 'SAMEORIGIN'), ])
+                # return HttpResponse(f.read(), guess_type(filePath)[0], headers=[('X-Frame-Options', 'SAMEORIGIN'), ('Cache-Control', f'max-age={60 * 60 * 24 * 30}')])
+    except:
+        pass
+
+    return custom_404_view(request, None)
 
 # ***
 
 
 def download_file(request):
-    filePath = os.path.join(settings.STATIC_DIR, request.META['PATH_INFO'][1:])
+    filePath = os.path.join(settings.STATIC_DIR, request.path[1:])
     filePath = os.path.normpath(filePath)
     if os.path.exists(filePath):
+        if request.method == 'HEAD':
+            return HttpResponse()
+        if request.method != 'GET':
+            return HttpResponseNotAllowed(["GET", "HEAD"])
         return FileResponse(open(filePath, 'rb'), as_attachment=True)
 
-    return HttpResponse(f'"{filePath}" not found', status=404)
+    return custom_404_view(request, None)
 
 # ***

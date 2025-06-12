@@ -62,11 +62,12 @@ window.sovaActions.v_schedule = {
 				fi = 'allow_s';
 				value = '';
 			}
-			else if (fi === 'video_s')
-				text = 'Разрешить "видео"';
-			else if (fi === 'video_r') {
-				text = 'Заблокировать "видео"';
-				fi = 'video_s';
+
+			else if (fi === 'was_s')
+				text = 'Установить "Был на занятии"';
+			else if (fi === 'was_r') {
+				text = 'Установить "Пропустил"';
+				fi = 'was_s';
 				value = '';
 			}
 			else

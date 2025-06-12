@@ -81,6 +81,12 @@ def _openDoc(request):
 
             else:
                 dcUK.mode = dcUK.mode or 'read'
+
+            if dcUK.dbAlias == 'nv_SessionSt':
+                if not (dcUK._staff or 'куратор' in dcUK._role):
+                    if dcUK._profilePK != dcUK.doc.pref or not dcUK.doc.allow_s:
+                        return nvResponse(b'', status=403)
+
         else:
             s = f'Документ не найден ({dcUK._path}?{dcUK._QUERY})'
             err(s, cat='openDoc')
@@ -244,6 +250,11 @@ def _loadDoc(request):
         doc = Book.docFromDB(dcUK)
 
     if doc:
+        if dcUK.dbAlias == 'nv_SessionSt':
+            if not (dcUK._staff or 'куратор' in dcUK._role):
+                if dcUK._profilePK != doc.pref or not dcUK.doc.allow_s:
+                    return nvResponse(b'', status=403)
+
         opg = getPageObj(request)
         if opg:
             return nvResponse(opg.getJsDoc(request), 'application/json')

@@ -34,21 +34,37 @@ def sstButtons(sst, sgr):
                 pay_s = ' fv2yes'
                 break
 
-    if any([1 for x in sst.keys() if x.startswith('ASSLEC')]):
-        bf = ' fv2yes'
+    try:  # feedback
+        if well('profiles', sst.pref).user:
+            if any([1 for x in sst.keys() if x.startswith('ASSLEC')]):
+                bf = ' fv2yes'
+            else:
+                bf = ''
+            brnFB = _div('ОС', className=f'btnIcon mBtn fv2{bf}', title='обратная связь')
+
+        else:  # ×
+            brnFB = _div('❌', **style(color='red', width=30, textAlign='center'), title='не зарегистрировался')
+    except:
+        brnFB = _div('ER', **style(color='red', width=30, textAlign='center'), title='сбой профайла')
+
+    if sst.was_s:  # vi-deo_s
+        was = _div('✔️', className=f'btnIcon mBtn fv2 fv2yes', title='был на занятии')
     else:
-        bf = ''
+        was = _div('-', className=f'btnIcon mBtn fv2', title='пропустил')
 
     return [
         _div('Д', className=f'btnIcon mBtn fv2{sst.allow_s and " fv2yes"}', title='допущен'),
         _div('З', className=f'btnIcon mBtn fv2{sst.test_s and " fv2yes"}', title='зачет'),
         _div('Р', className=f'btnIcon mBtn fv2{pay_s}', title='оплачено'),
-        _div('V', className=f'btnIcon mBtn fv2{sst.video_s and " fv2yes"}', title='видео'),
-        _div('ОС', className=f'btnIcon mBtn fv2{bf}', title='обратная связь'),
+        was,  # visited
+        brnFB,  # feedback
     ]
 
 
 def showCourse(dcUK):
+    '''
+    вызывается только из v_content для показа SessionTmpl в виде эскизов
+    '''
     theArr = []
     nveTitle, _, nve = dcUK.nve.partition('|')
     for sesTml in well('sessionTmpl_nve', nve):
@@ -62,7 +78,7 @@ def showCourse(dcUK):
         if dcUK.lector != 'Все' and dcUK.lector not in sesTml.lector:
             continue
 
-        theArr.append(makeSketch(btnCmd='cmdEdit', btnPar=sesTml.id, sticker=getSticker(sesTml), title=sesTml.title, contextMenuCmdList=None))
+        theArr.append(makeSketch(btnCmd='cmdEdit', btnPar=sesTml.id, sticker=getSticker(sesTml), title=sesTml.title))
 
     theArr.insert(0, _div(nveTitle, className='h2', **style(color='#00f', textDecoration='none')))
     return _div(**style(width='auto', background='#00ff0010', height='100%', overflowY='auto'), children=theArr)
@@ -74,24 +90,32 @@ MONTHS = 'S Январь Февраль Март Апрель Май Июнь И
 DAYS = [_div(it, className='c_day_name' if i < 5 else 'c_day_name_wknd') for i, it in enumerate('пн вт ср чт пт сб вс'.split(' '))]
 
 
-def makeSketch(btnCmd, btnPar, sticker, title, d2=None, ls=None, bg=None, contextMenuCmdList=None):
+def makeSketch(btnCmd, btnPar, sticker, title, d2=None, ls=None, bg=None, contextMenuCmdList=None, disable=None):
     sh = 5
+    if disable:
+        btnCmd = 'disable'
+        bod = _div(className='c_disabled',
+            children=[
+                _div(title, br=1),
+        ])
+    else:
+        bod = _div(
+            **style(borderRadius=15,
+            backgroundRepeat='no-repeat', backgroundImage=sticker, backgroundSize='100% 100%'),
+            children=[
+                _div(title, br=1, **style(
+                    color='#ffffff',
+                    textShadow=f'5px 0px {sh}px #0000ff80, -5px -0px {sh}px #0000ff80, 0px 5px {sh}px #0000ff, -0px -5px {sh}px #0000ff',
+                    height='100%', padding=15, overflow='hidden')
+                ),
+        ])
     return _div(**style(display='inline-block', margin=10, position='relative'), contextMenuCmdList=contextMenuCmdList, children=[
         _btnD('', btnCmd, btnPar,
             **style(borderRadius=15, width=190,
                 display='grid', gridTemplateRows='134px 1em'),
             className='sticker',
             children=[
-                _div(
-                    **style(borderRadius=15,
-                    backgroundRepeat='no-repeat', backgroundImage=sticker, backgroundSize='100% 100%'),
-                    children=[
-                        _div(title, br=1, **style(
-                            color='#ffffff',
-                            textShadow=f'5px 0px {sh}px #0000ff80, -5px -0px {sh}px #0000ff80, 0px 5px {sh}px #0000ff, -0px -5px {sh}px #0000ff',
-                            height='100%', padding=15, overflow='hidden')
-                        ),
-                ]),
+                bod,
                 d2 and _div(d2, **style(background='#fff', textAlign='center', color='#888', margin='auto', width=170)),
                 ls and _div(**style(padding='3px 0', display='flex', justifyContent='center'), children=ls),
                 bg and _div(**style(height='100%', borderRadius=15,
@@ -189,10 +213,10 @@ def showCC(dcUK):  # календарь
                     dts = str(dt)
                     cmd = par = contextMenuCmdList = None
                     if dts in busyDays:  # open/edit sgr
-                        grt = grTitles[dts]  # grTitles['01.01.2001': [titleSes1, titleSess2...]]
+                        grt = grTitles[dts]  # grTitles[2025-11-27: [titleSes1, titleSess2...]]
                         sgr = busyDays[dts]
                         if len(lsgr) < 2:  # одна группа в этот день
-                            cls += f' c_dayx{sgr.nvEvent}'
+                            clsEv = f' c_dayx{sgr.nvEvent}'
                             title = _div(sgr.title)
                             if curator:
                                 cmd, par = 'dayX', f'unid={sgr.id}&title={grt[0]}'
@@ -208,7 +232,12 @@ def showCC(dcUK):  # календарь
                                 cmd, par = 'cmdOpenSess', f'rsMode=read&unid={sgr.id}&dbAlias=nv_SessionGr&form=SessionGr&title={grt[0]}'
                             else:  # student
                                 form = sgr.form or 'SessionSt'  # for sessionsGrCommon form='SessionGr'
-                                cmd, par = 'cmdOpenSess', f'rsMode=edit&unid={sgr.id}&dbAlias=nv_{form}&form={form}&title={grt[0]}'
+                                if sgr.allow_s:
+                                    cmd, par = 'cmdOpenSess', f'rsMode=edit&unid={sgr.id}&dbAlias=nv_{form}&form={form}&title={grt[0]}'
+                                else:
+                                    clsEv = ' c_disabledC'
+                            cls += clsEv
+
                         else:
                             contextMenuCmdList = ['Выберите группу||']
                             cmd, par = 'selectGr', ''
@@ -216,7 +245,7 @@ def showCC(dcUK):  # календарь
                                 title = _div(f'{grt[0]}\n{sgr.title}', br=1)
                                 cls += f' c_dayx{sgr.nvEvent}'
                             else:
-                                title = _div(', '.join(grt))
+                                title = _div('\n'.join(grt), br=1)
                                 cls += f' c_dayx'
                     else:
                         if curator:
@@ -317,8 +346,9 @@ def showC(dcUK):  # эскизы
 
     for sgr in sessArr:  # dc-sgr + stmpl.title + stmpl.nvEvent
         dateEnd = sgr.date_end or sgr.date_begin
-        if dateEnd < last:  # не показ эскизы через 1 день после оконч or isEmpty
-            continue
+        if dcUK.cmd != 'showC3':  # NU 08-jun показать все с допуском или вообще все, но без д. серыми
+            if dateEnd < last:  # не показ эскизы через 1 день после оконч or isEmpty
+                continue
 
         if sgr.nvEvent == 'CL':
             event = well('eventsByCode', 'CL')
@@ -329,14 +359,18 @@ def showC(dcUK):  # эскизы
             if sgr.form == 'SessionGr':  # for sessionsGrCommon form='SessionGr'
                 form = 'SessionGr'
                 sgr2 = sgr
+                disable = None
             else:
                 form = 'SessionSt'
                 sgr2 = well('sessionGr_Id', sgr.SESSIONGR_ID)
-            byEvent[event].append(dict(form=form, pk=sgr.id, d2=sgr.d2, title=sgr.title, sticker=sgr.sticker, ls=sstButtons(sgr, sgr2)))
+                disable = not sgr.ALLOW_S
+            edc = dict(form=form, pk=sgr.id, d2=sgr.d2, title=sgr.title, sticker=sgr.sticker, ls=sstButtons(sgr, sgr2), disable=disable)
         else:
             stmpl = well('sessionTmpl_id', sgr.sessionTmpl_id)
             sticker = getSticker(stmpl)
-            byEvent[event].append(dict(pk=sgr.id, nvgroup=sgr.nvgroup_id, d2=sgr.d2, title=sgr.title, sticker=sticker))
+            edc = dict(pk=sgr.id, nvgroup=sgr.nvgroup_id, d2=sgr.d2, title=sgr.title, sticker=sticker)
+
+        byEvent[event].append(edc)
 
     smArr = []
     for k in byEvent:
@@ -344,7 +378,7 @@ def showC(dcUK):  # эскизы
         for ss in byEvent[k]:
             if dcUK.cmd == 'showC3':
                 btnCmd = 'cmdOpenSess'
-                btnPar = f"form={ss['form']}&rsMode=edit&dbAlias=nv_{ss['form']}&unid={ss['id']}&title={ss['title']}"
+                btnPar = f"form={ss['form']}&rsMode=edit&dbAlias=nv_{ss['form']}&unid={ss['pk']}&title={ss['title']}"
 
                 theArr.append(makeSketch(
                     btnCmd=btnCmd,
@@ -353,6 +387,7 @@ def showC(dcUK):  # эскизы
                     title=ss['title'],
                     d2=ss['d2'],
                     ls=ss['ls'],
+                    disable=ss.get('disable')
                 ))
                 continue
 
@@ -375,7 +410,14 @@ def showC(dcUK):  # эскизы
                 btnCmd = 'cmdOpenSess'
                 btnPar = f'rsMode=read&unid={ss["pk"]}&title={ss["title"]}&dbAlias=nv_SessionGr'
 
-            theArr.append(makeSketch(btnCmd=btnCmd, btnPar=btnPar, sticker=ss['sticker'], title=title, d2=ss['d2'], contextMenuCmdList=contextMenuCmdList))
+            theArr.append(makeSketch(
+                btnCmd=btnCmd,
+                btnPar=btnPar,
+                sticker=ss['sticker'],
+                title=title,
+                d2=ss['d2'],
+                contextMenuCmdList=contextMenuCmdList,
+            ))
 
         if theArr:
             sm = _div(k, className='h3', **style(background='#44ff8810', padding=10,), children=[
@@ -517,13 +559,29 @@ def getSessStByProfId(dcUK):
     sstArr = list(well('sessionSt_idPr', studId) or []) + well('sessionsGrCommon')
     # !!! well('sessionsGrCommon') - здесь уже сессии общих групп
 
+    if dcUK.event:
+        events = [dcUK.event]
+    else:
+        events = [e.partition('|')[2] for e in swell('shortEvents')]
+
     for sst in sstArr:
         if sst.sessiongr_id:
             sgr = well('sessionGr_Id', sst.sessiongr_id)
         else:
             sgr = sst  # она и есть сессия группы
 
-        if dcUK.status == '0' and sgr.status != 'active':
+        if dcUK.view == '2':  # эскизы - убираем лишнее
+            if sgr.nvEvent not in events:  # nvEvent - '1', ... 'CL'
+                continue
+        # календарь в режиме "все" показывает все(вкл Пр 1,2)
+        elif dcUK.event:  # календарь не в режиме "все"
+            if sgr.nvEvent not in events:
+                continue
+
+        if sgr.status != 'active':
+            continue
+
+        if dcUK.status == '0' and not sst.ALLOW_S:  # только с допуском
             continue
 
         stmpl = well('sessionTmpl_id', sgr.sessiontmpl_id)
@@ -540,7 +598,13 @@ def getSessStByProfId(dcUK):
 
 
 # *** *** ***
+
+
 def rightBtnLK(n, userAgent, na=None):
+    '''
+    n = '', '2', '3' - curator, lector, student
+    na = 'viewbar1' в форме v_shedule
+    '''
     if userAgent == 'mobile':
         event = _field(f'event{n}', 'lbsd', list(['Все|'] + swell('events')), recalcText=1, edit=1, xValue='Все',
             title='выберите событие',
@@ -563,3 +627,17 @@ def rightBtnLK(n, userAgent, na=None):
         _field(f'status{n}', 'band', ['актив', 'все'], className='radioBand'),
     ]
 
+
+def rightBtnLK3():
+    event = _field(f'event3', 'band', swell('shortEvents'), recalcText=1,
+        className='radioBand',
+        title='выберите событие',
+        name=f'event3+')
+
+    return [
+        _field(f'changeView3', 'band', ['к1', 'к2', 'события'], className='radioBand', title='календарь/эскизы'),
+        _div(**style(flex=1)),
+        event,
+        _div(**style(flex=1)),
+        _field(f'status3', 'band', ['допуск', 'все'], className='radioBand'),
+    ]
