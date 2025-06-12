@@ -266,11 +266,7 @@ def createSessionSt():
                 status='active',
                 owner=owner,
                 # allow_s=1,
-<<<<<<< HEAD
                 # vi-deo_s=1,
-=======
-                # video_s=1,
->>>>>>> c12b7ce89e6306a27bee8b8bafed372c478a93d2
             )
 
             sst = dcm.save()
