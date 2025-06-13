@@ -4,8 +4,42 @@ window.sovaActions.SessionSt = {
 		doc.videoList = JSON.parse(doc.getField('VIDEOLIST_FD') || '[]');
 		doc.videoList.sort((a, b) => (a.name || '') > (b.name || '') ? 1 : -1);
 		for (let i=0; i < 10; i++) {
-			doc.sova.hide[`UM_Table_FD_${i}`] = doc => i !== doc.getField('UM_Table_FD');
-			doc.sova.hide[`sst_Table_FD_${i}`] = doc => i !== doc.getField('sst_Table_FD');
+// не исп.	doc.sova.hide[`UM_Table_FD_${i}`] = doc => i !== doc.getField('UM_Table_FD');
+//			doc.sova.hide[`sst_Table_FD_${i}`] = doc => i !== doc.getField('sst_Table_FD');
+			doc.sova.hide[`job1${i+1}`] = doc => !doc.getField(`job1${i+1}`);
+		}
+	}
+	,
+	init2: doc => {
+		// учебные материалы будут удалены, если doc.mtx == '' and doc.videoList_FD == ''
+		let mainTabs = doc.getControl('sst_Table_FD');
+		let items = [...mainTabs.items];
+		if (!doc.getField('mtx') && !doc.getField('videoList_FD'))
+			items[0] = null; // учебные материалы
+			
+		// задания будут удалены, если все doc.job{i} == '' (i: 1-10)
+		let ever;
+		for (let i=1; i <= 10; i++)
+			ever = ever || doc.getField(`job${i}`);
+		if (!ever)
+			items[1] = null; // задания
+
+		if (doc.getField('hideAss_FD'))
+			items[2] = null; // обратная связь
+
+		mainTabs.items = [];
+		
+		let newInd = 0;
+		for (let i=0; i < items.length; i++) {
+			if (items[i]) {
+				mainTabs.items.push(items[i]);
+				// name -остались старые, скрывать надо по новому
+				let k = newInd;
+				doc.sova.hide[`sst_Table_FD_${i}`] = doc => k !== doc.getField('sst_Table_FD');
+				newInd++;
+			}
+			else
+				doc.sova.hide[`sst_Table_FD_${i}`] = doc => true;
 		}
 	},
 	
@@ -83,11 +117,7 @@ window.sovaActions.SessionSt = {
 		student: doc => doc.getField('STUDENT_FD'),
 	},
 	hide: {
-		job1: doc => !doc.getField('job1'),
-		job2: doc => !doc.getField('job2'),
-		job3: doc => !doc.getField('job3'),
-		job4: doc => !doc.getField('job4'),
-		job5: doc => !doc.getField('job5'),
+		rtf: doc => !doc.getField('mtx'),
 		video: doc => !doc.getField('videoList_FD'),
 		ass: doc => doc.getField('noAss_fd'),
 		delGr: doc => !doc.getField('other_group_FD') || doc.getField('STUDENT_FD'),

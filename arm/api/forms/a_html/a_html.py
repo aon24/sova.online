@@ -13,6 +13,13 @@ from arm.api.forms.toolbars import toolbar
 # *** *** ***
 
 WIDTH = 1200
+"""
+форма для генерации html
+генерит страницу в doc.html_FD из поля body с подстановкой 4-х шаблонов
+def queryOpen(self, r):
+    ...
+    doc.html_FD = f'{doc.body.replace(*tr(1)).replace(*tr(2)).replace(*tr(3)).replace(*tr(4))}'
+"""
 
 
 class a_html(Page):
@@ -60,14 +67,11 @@ class a_html(Page):
             prj = [_div(**style(width='100%', height='100%'), children=[_field('html_FD', 'html')])]
             return _div(className='bg52', children=[
                 _div(className='page', children=prj),
-                _div(children=[toolbar.close_], #className='toolbar')
+                _div(children=[toolbar.close_],
                     ** style(display='flex', justifyContent='center', height=40, maxHeight=40,
                             padding=3)),
-                        # backgroundSize='contain', backgroundImage='url("/static/pictures/grass.png")')),
             ])
 
-        # main = _div(**style(height='100%', overflow='auto'), children=[*prj, ])
-        # return self.docPage([main], tool)
 
     # ***
 

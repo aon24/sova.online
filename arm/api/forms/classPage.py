@@ -320,14 +320,14 @@ class Page(object):
         return _div(**style(margin='0 5px', paddingTop=5, height='100%', overflow='auto',
                     display='grid', gridTemplateRows='auto 1fr'), children=[
             _div(children=[
-                labell('Краткое описание', skip=not tmpl, name='mtxLabel'),
+                labell('Краткое описание (если поле пустое, материал скрыт)', skip=not tmpl, name='mtxLabel'),
                 _field('mtx', 'tx', fd=not tmpl, name='mtx', **style(margin=10, fontSize=20, textAlign='center')),
                 _fileShow('fm', label='файлы', fd=not tmpl),
                 labell('Ссылки', name='href'),
                 _field('href', 'links', **style(width='100%'), fd=not tmpl, name='href'),
             ]),
 
-            _div(children=[_field('rtf', 'rtf', readOnly=not tmpl, fd=not tmpl)],
+            _div(name='rtf', children=[_field('rtf', 'rtf', readOnly=not tmpl, fd=not tmpl)],
                 **style(position='relative', width='100%', height='calc(100% - 10px)', marginTop=5,
                     border='2px solid #888', background='#fff')
             ),

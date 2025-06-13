@@ -185,20 +185,14 @@ def queryOpenForGrSt(doc, student=None):
 
         doc.group_fd = well('groups_groupId', docGr.nvgroup).title
         doc.nvgroup_fd = f'{doc.group_fd}|{docGr.nvgroup}'
-
-        for i in range(1, 6):
-            doc[f'job{i}'] = docGr[f'job{i}'] or docTm[f'job{i}']
-
         doc.title = docTm.title
     else:  # SessionGr
         docTm = well('sessionTmpl_id', doc.sessionTmpl)
-
-        for i in range(1, 6):
-            doc[f'job{i}'] = docTm[f'job{i}']
-
         doc.lector = doc.lector or docTm.lector
         doc.openTmpl = f"{docTm.title}|previewNew|title={docTm.title}&form=SessionTmpl&unid={docTm.id}&dbAlias=nv_SessionTmpl&rsMode=edit"
 
+    for i in range(1, 11):
+        doc[f'job{i}'] = docTm[f'job{i}']
     doc.nvEvent = docTm.nvEvent
     doc.partLabel = docTm.partLabel
     doc.description = docTm.description
@@ -209,12 +203,14 @@ def queryOpenForGrSt(doc, student=None):
         else:
             doc.videoList_FD = docTm.videoList
 
-    doc.fm = docTm.fm
-    doc.mtx = docTm.mtx
-    doc.href = docTm.href
-    doc.rtf = docTm.rtf
-    doc.colorStyleMap = docTm.colorStyleMap
+    if docTm.mtx:
+        doc.mtx = docTm.mtx
+        doc.fm = docTm.fm  # файлы
+        doc.href = docTm.href
+        doc.rtf = docTm.rtf
+        doc.colorStyleMap = docTm.colorStyleMap
 
+    return docTm
 
 # *** *** ***
 

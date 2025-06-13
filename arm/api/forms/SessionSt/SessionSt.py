@@ -11,6 +11,7 @@ from arm.api.forms.formTools import style, _div, _field, _tabNew
 from arm.api.forms.SessionTmpl.SessionTmpl import queryOpenForGrSt
 from arm.api.forms.toolbars import toolbar
 
+import json
 # *** *** ***
 
 WIDTH = 1200
@@ -38,40 +39,33 @@ class SessionSt(Page):
 
         # ***
 
-        fields = []
-        for i, s in enumerate(swell('ratings') or []):
-            fields += [_div(s, className='h4') , _field(f'assLec{i+1}', 'rating', **style(margin='auto'))]
-
         tass = [toolbar.saveClose, toolbar.close_] if self.mode == 'edit' else [toolbar.close_]
         ass = _div(**style(padding=10, height='100%', overflowY='auto'),
                 name='ass',
                 children=[
                     _div('Оцените', className='h2'),
-                    *fields,
+                    _field('ratings_FD', 'json'),
                     _div(**style(textAlign='center', paddingTop=4), children=tass)
                 ]
             )
         if self.noicons:
             table = [
-                # ('1️⃣', self.common(st=True), 45, 'информация'),  # 🦉📓
-                # ('Материалы', main, 100, 'учебные материалы'),
-                # ('Задания', self.jobs(st=True), 80, 'задания'),
-                # ('Обр. связь', ass, 100, 'Обратная связь'),
                 ('Материалы', main, 100, 'учебные материалы'),
+                ('Задания', self.jobs(st=True), 80, 'задания'),
                 ('Обр. связь', ass, 100, 'Обратная связь'),
                 ('1️⃣', self.common(st=True), 45, 'информация'),  # 🦉📓
 
             ]
         else:
             table = [
-                # ('/image/i.png', self.common(st=True), 50, 'информация'),
-                # ('/image/s_ummv.png', main, 50, 'учебные материалы'),
-                # ('/image/s_dz.png', self.jobs(st=True), 50, 'задания'),
-                # ('/image/s_feedback.png', ass, 50, 'Обратная связь'),
                 ('/image/s_ummv.png', main, 50, 'учебные материалы'),
+                ('/image/s_dz.png', self.jobs(st=True), 50, 'задания'),
                 ('/image/s_feedback.png', ass, 50, 'Обратная связь'),
                 ('/image/i.png', self.common(st=True), 50, 'информация'),
             ]
+
+        #  учебные материалы будут удалены, если doc.mtx == '' and doc.videoList_FD == ''
+        #  задания будут удалены, если все doc.job{i} == '' (i: 1-10)
 
         tool = [toolbar.saveClose, toolbar.close_] if self._role == 'куратор' or self._staff else [toolbar.close_]
         return self.docPage([_tabNew('sst_Table_FD', tabs=table)], tool)
@@ -85,7 +79,16 @@ class SessionSt(Page):
     def queryOpen(self, r):
         dcUK = r.dcUK
         doc = dcUK.doc
-        full_name = well('profiles', doc.pref).full_name
+        if 'куратор' in dcUK._role or dcUK._staff:
+            prof = well('profiles', doc.pref)
+        else:
+            prof = well('profiles', dcUK._profilePK)
+
+        if not prof:
+            dcUK.doc = {}
+            return
+
+        full_name = prof.full_name
         doc.fullName = full_name
 
         if not (full_name == dcUK.fullName or dcUK._superUser):
@@ -103,12 +106,35 @@ class SessionSt(Page):
         doc.other_group_fd = other and other.title
 
         # ***
+        # чтобы отключить закладку 'обратная связь' Ass
+        if doc.pref == dcUK._profilePK or dcUK._superUser:
+            fields = []
+            for i, s in enumerate(swell('ask_1') or []):
+                fields += [_div(s, className='h4') , _field(f'assLec{i+1}', 'rating', **style(margin='auto'))]
+            doc.ratings_FD = json.dumps(fields, ensure_ascii=False)
+        else:
+            doc.hideAss_FD = 1
+        # ***
 
         if doc.owner:
             doc.other_fd = doc.group_fd
             doc.owner_fd = well('groups_groupId', doc.owner).title
 
-        queryOpenForGrSt(doc, student=True)
+        docTm = queryOpenForGrSt(doc, student=True)
+
+        # чтобы отключить закладку 'обратная связь' Ass
+        if doc.pref == dcUK._profilePK or dcUK._superUser:
+            reqs = swell(f'ask_{docTm.nvEvent}')  # для каждого типа событий свои вопросы
+            if reqs:
+                fields = []
+                for i, s in enumerate(reqs):
+                    fields += [_div(s, className='h4') , _field(f'assLec{i+1}', 'rating', **style(margin='auto'))]
+                doc.ratings_FD = json.dumps(fields, ensure_ascii=False)
+            else:  # нет вопросов
+                doc.hideAss_FD = 1
+        else:
+            doc.hideAss_FD = 1
+        # ***
 
         # *** *** ***
 

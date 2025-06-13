@@ -434,28 +434,26 @@ def _tabNew(xName, tabs, center=None):
 
     header = []
     body = []
-    w = i = 0
+    i = 0
     for it in tabs:
         if it:
             hStr, bodyIt, wit = it[:3]
             if bodyIt:
                 title = it[3] if len(it) > 3 else None
-                w += wit
                 if '/' in hStr:  # url for icon
                     icon = _div(**style(padding=1, width=wit + 10), children=[
                         _div(title=title, **style(height=wit, background=f'center / contain  no-repeat url("{hStr}")'))
                     ])
                     header.append(icon)
-                    w += 13
                 else:  # text
                     header.append(f'{hStr}:{wit}')
-                body.append(_div(name=f'{xName}_{i}', title=title, children=[bodyIt]))
+                body.append(_div(name=f'{xName}_{i}', children=[bodyIt]))
                 i += 1
 
     return  _div(className='tabNew', children=[
                 _div(className='tnHeaderC' if center else 'tnHeader', children=[
                     _div(className='tnLast') if center else None,
-                    _field(xName, 'band', header, **style(width=w), className='tnBand'),
+                    _field(xName, 'band', header, **style(width='auto'), className='tnBand'),
                     _div(className='tnLast')
                 ]),
                 _div(className='tnBody', children=body)

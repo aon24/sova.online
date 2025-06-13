@@ -139,8 +139,7 @@ def staticFiles(request, fileName=None):
                 ip = request.META.get('HTTP_X_FORWARDED_FOR')
                 ip = ip.split(',')[0] if ip else request.META.get('REMOTE_ADDR')
                 snd(f"{request.user.username} ({ip}) {fileName}", cat='home')
-                return HttpResponse(f.read(), guess_type(filePath)[0], headers=[('X-Frame-Options', 'SAMEORIGIN'), ])
-                # return HttpResponse(f.read(), guess_type(filePath)[0], headers=[('X-Frame-Options', 'SAMEORIGIN'), ('Cache-Control', f'max-age={60 * 60 * 24 * 30}')])
+                return HttpResponse(f.read(), guess_type(filePath)[0], headers=[('X-Frame-Options', 'SAMEORIGIN'), ('Cache-Control', f'max-age={60 * 60 * 24 * 30}')])
     except:
         pass
 

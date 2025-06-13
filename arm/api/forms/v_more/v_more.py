@@ -14,6 +14,10 @@ from arm.api.forms.toolbars import toolbar
 import json
 
 # *** *** ***
+'''
+Разработка лендинга и страниц для сайта
+создание форм a_design, a_html, a_more
+'''
 
 
 class v_more(Page):

@@ -6,12 +6,16 @@ Created on 2023
 '''
 from arm.tools.DC import swell
 from arm.api.forms.classPage import Page
-from arm.api.forms.formTools import style, _div, _field, _span, labField
+from arm.api.forms.formTools import style, _div, _field, _span
 from arm.tools.loadWell import loadLanding
 
 # *** *** ***
 
 WIDTH = 1200
+'''
+форма для сайта, аналогична вкладке materials из форм Session*,
+но с полями для сайтовых страниц: project, pageName, key
+'''
 
 
 class a_more(Page):
