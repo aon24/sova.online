@@ -5,9 +5,9 @@ Created on 2023
 @author: aon24
 '''
 
-from arm.tools.DC import well, swell
+from arm.tools.DC import swell
 
-from ..formTools import labField,style,_div,_h2,_field
+from ..formTools import labField, style, _div, _h2, _field
 from ..classPage import Page
 
 # *** *** ***
@@ -29,9 +29,9 @@ class Classifier(Page):
         cat = set()
         [cat.add(dc.category) for dc in swell('classifiers') if dc.category]
 
-        status = _div(**style(marginTop=10, display='grid', gridTemplateColumns=f'1fr 60px 120px'), children=[
-                    _div(), _div('Статус', className='label'),
-                    _field('status', 'lbsd', self.status, placeholder='выбирай', alias=1)
+        status = _div(**style(marginTop=10, display='grid', gridTemplateColumns='1fr 60px 120px'), children=[
+                     _div(), _div('Статус', className='label'),
+                     _field('status', 'lbsd', self.status, placeholder='выбирай', alias=1)
         ])
 
         fields = [
@@ -60,4 +60,3 @@ class Classifier(Page):
         return True
 
     # ***
-

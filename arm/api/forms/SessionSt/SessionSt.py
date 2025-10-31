@@ -7,7 +7,7 @@ Created on 2023
 from arm.tools.DC import well, swell
 from arm.tools.loadWell import loadWell
 from arm.api.forms.classPage import Page
-from arm.api.forms.formTools import style, _div, _field, _tabNew
+from arm.api.forms.formTools import style, _div, _field, _tabNew, labField
 from arm.api.forms.SessionTmpl.SessionTmpl import queryOpenForGrSt
 from arm.api.forms.toolbars import toolbar
 
@@ -18,6 +18,16 @@ WIDTH = 1200
 
 
 class SessionSt(Page):
+    '''
+    Сессия студнта. Документ в БД. Таблица nv_SessionSt
+    SessionTmpl-SessionGr-SessionSt - три основные формы в ЛК
+    1. SessionTmpl - шаблон по которому создаются сессии групп и студентов.
+        содержит видео и другие материалы по конкретной сессии(лекции)
+    2. SessionGr - отображает(не хронит в себе) то, что есть в SessionTmpl,
+        хранит в себе привязку к шаблону и к группе и дату-время
+    3. SessionSt - отображает(не хронит в себе) то, что есть в SessionTmpl и в SessionGr,
+        хранит в себе привязку к сессии группы и к студенту, ответы на задания, обратную связь конкретного студня
+    '''
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
@@ -41,28 +51,23 @@ class SessionSt(Page):
 
         tass = [toolbar.saveClose, toolbar.close_] if self.mode == 'edit' else [toolbar.close_]
         ass = _div(**style(padding=10, height='100%', overflowY='auto'),
-                name='ass',
-                children=[
+                   name='ass',
+                   children=[
                     _div('Оцените', className='h2'),
                     _field('ratings_FD', 'json'),
-                    _div(**style(textAlign='center', paddingTop=4), children=tass)
+                    *labField('Ваши пожелания и предлжения', 'assLecText1'),
+                    _div(**style(textAlign='center', paddingTop=4, maxWidth=280, margin='auto'), children=tass)
                 ]
             )
-        if self.noicons:
-            table = [
-                ('Материалы', main, 100, 'учебные материалы'),
-                ('Задания', self.jobs(st=True), 80, 'задания'),
-                ('Обр. связь', ass, 100, 'Обратная связь'),
-                ('1️⃣', self.common(st=True), 45, 'информация'),  # 🦉📓
 
-            ]
-        else:
-            table = [
-                ('/image/s_ummv.png', main, 50, 'учебные материалы'),
-                ('/image/s_dz.png', self.jobs(st=True), 50, 'задания'),
-                ('/image/s_feedback.png', ass, 50, 'Обратная связь'),
-                ('/image/i.png', self.common(st=True), 50, 'информация'),
-            ]
+        ii = ('/image/i.png', self.common(st=True), 50, 'информация')
+        table = [
+            ('куратор' in self._role or self._staff) and ii,
+            ('/image/s_ummv.png', main, 50, 'учебные материалы'),
+            ('/image/s_dz.png', self.jobs(st=True), 50, 'задания'),
+            ('/image/s_feedback.png', ass, 50, 'Обратная связь'),
+            not ('куратор' in self._role or self._staff) and ii,
+        ]
 
         #  учебные материалы будут удалены, если doc.mtx == '' and doc.videoList_FD == ''
         #  задания будут удалены, если все doc.job{i} == '' (i: 1-10)
@@ -101,7 +106,6 @@ class SessionSt(Page):
             doc.student_FD = 1
             dcUK.fd = 'STATUS'
 
-
         other = well('groups_groupId', doc.other_group)
         doc.other_group_fd = other and other.title
 
@@ -110,7 +114,7 @@ class SessionSt(Page):
         if doc.pref == dcUK._profilePK or dcUK._superUser:
             fields = []
             for i, s in enumerate(swell('ask_1') or []):
-                fields += [_div(s, className='h4') , _field(f'assLec{i+1}', 'rating', **style(margin='auto'))]
+                fields += [_div(s, className='h4'), _field(f'assLec{i+1}', 'rating', **style(margin='auto'))]
             doc.ratings_FD = json.dumps(fields, ensure_ascii=False)
         else:
             doc.hideAss_FD = 1
@@ -128,13 +132,12 @@ class SessionSt(Page):
             if reqs:
                 fields = []
                 for i, s in enumerate(reqs):
-                    fields += [_div(s, className='h4') , _field(f'assLec{i+1}', 'rating', **style(margin='auto'))]
+                    fields += [_div(s, className='h4'), _field(f'assLec{i+1}', 'rating', **style(margin='auto'))]
                 doc.ratings_FD = json.dumps(fields, ensure_ascii=False)
             else:  # нет вопросов
                 doc.hideAss_FD = 1
         else:
             doc.hideAss_FD = 1
-        # ***
 
         # *** *** ***
 
@@ -150,4 +153,3 @@ class SessionSt(Page):
                     loadWell('SessionSt', ogr)
 
         return True
-

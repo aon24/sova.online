@@ -27,6 +27,7 @@ python _m.py migrate --database=nv
 '''
 # *** *** ***
 
+
 class MultiRouter:
     def db_for_read(self, model, **hints):
         if model._meta.app_label == 'nv':
@@ -47,11 +48,11 @@ class MultiRouter:
             return 'reports'
         else:
             return None
-    
+
     def allow_relation(self, obj1, obj2, **hints):
-        return True # Return True if a relation between obj1 and obj2 should be allowed
-        
+        return True  # Return True if a relation between obj1 and obj2 should be allowed
+
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        return None # None if the router has no opinion.
+        return None  # None if the router has no opinion.
 
 # *** *** ***

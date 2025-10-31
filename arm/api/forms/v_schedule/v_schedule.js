@@ -1,18 +1,23 @@
 const showCalendar = doc => {
 	doc.checked = false;
-	if (doc.getField('changeView') === 3 || doc.getField('upList') !== 0)
+
+	if (doc.getField('changeView') === 'l' || doc.getField('upList') !== 0) {
 		doc.loadView('mainList', true);
+	}
 	else {
-		let url = ['/api/getData?form=v_schedule',
+		let url = ['form=v_schedule',
 					`cmd=getSelected&plan=${doc.getField('plan')}`,
 					`view=${doc.getField('changeView')}`,
 					`selected=${doc.getField('leftList')}`,
 					`status=${doc.getField('status')}`,
 					`upList=${doc.getField('upList')}`,
-					`event=${doc.part(doc.getField('event'), '|')[1]}`,
+					`event=${doc.getField('event')}`,
 				].join('&')
-		doc.util.jsonByUrl(doc, url)
-			.then( js => doc.setField('showCourse', js) )
+		doc.util.getJson(doc, url)
+			.then( js => {
+				doc.setField('showCourse', js);
+				doc.forceUpdate();
+			})
 			.catch( e => doc.msg.error(e.message) );
 	}
 };
@@ -20,7 +25,7 @@ const showCalendar = doc => {
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.v_schedule = {
 	init2: doc => {
-		doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeUp&uplist=0`)
+		doc.util.getJson(doc, `form=${doc.form}&cmd=changeUp&uplist=0`)
 			.then( newList => {
 				doc.changeDropList('leftList', newList, 0);
 				showCalendar(doc);
@@ -31,11 +36,11 @@ window.sovaActions.v_schedule = {
 		viewbar: doc => !doc.checked, // cPlus
 		viewbar1: doc => doc.getField('upList'),
 		viewbar2: doc => doc.getField('upList') !== 1,
-		mainList: doc => doc.getField('changeView') !== 3 && doc.getField('upList') === 0,
-		showCalendar: doc => doc.getField('changeView') === 3 || doc.getField('upList'),
-		plan: doc => doc.getField('upList') || doc.getField('changeView') < 2,
+		mainList: doc => doc.getField('changeView') !== 'l' && doc.getField('upList') === 0,
+		showCalendar: doc => doc.getField('changeView') === 'l' || doc.getField('upList'),
+		plan: doc => doc.getField('upList') || ['k1', 'k2'].includes(doc.getField('changeView')),
 		cPlus: doc => doc.getField('upList') !== 2,
-		event: doc => doc.getField('upList') || doc.getField('changeView') > 1,
+		event: doc => doc.getField('upList') || !['k1', 'k2'].includes(doc.getField('changeView')),
 	},
 	// *** *** ***
 	
@@ -85,14 +90,16 @@ window.sovaActions.v_schedule = {
 							buf += `${id}=${value}`;
 						}
 					}
-					if (buf)
-                        doc.util.serverAction(doc, `putData?form=v_lk_curator&cmd=setField&field=${fi}`, buf)
+					if (buf) {
+						let body = JSON.stringify([`form=v_lk_curator&cmd=setField&field=${fi}`, buf]);
+                        doc.util.getJson(doc, body, true)
 							.then( res => {
 								if (res !== 'OK')
 									console.error(`http-status: ${res}`)
 								doc.loadView('mainList', true);
 							})
 							.catch( err => console.error(err) );
+					}
 				}) // end msg.box
 				.catch(() => {});
 		},
@@ -146,8 +153,15 @@ window.sovaActions.v_schedule = {
 		CHANGEVIEW: doc => showCalendar(doc),
 		PLAN: doc => showCalendar(doc),
 		EVENT: doc => showCalendar(doc),
-		LEFTLIST: doc => showCalendar(doc),
-
+		LEFTLIST: doc => {
+			let mainList = doc.getControl('mainList');
+			mainList.mainDocs = [];
+			for (let k in doc.register) {
+				if (k.startsWith('SELONE_'))
+					delete doc.register[k];
+			} 
+			showCalendar(doc);
+		},
 		SELECTALL: (doc, val) => {
 			let checked = false;
 			for (let k in doc.register) {
@@ -161,7 +175,7 @@ window.sovaActions.v_schedule = {
 		},
 		STATUS: (doc, value) => {
 			if (doc.getField('upList') === 2) {
-				doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeLLCP&group=${doc.getField('cPlus').partition('|')[1]}&status=${value}`)
+				doc.util.getJson(doc, `form=${doc.form}&cmd=changeLLCP&group=${doc.getField('cPlus').partition('|')[1]}&status=${value}`)
 					.then( leftList => doc.changeDropList('leftList', leftList, 0))
 					.catch( e => doc.msg.error(e.message) );
 			}
@@ -169,7 +183,7 @@ window.sovaActions.v_schedule = {
 				showCalendar(doc);
 		},
 		FILTER: (doc, value) => {
-			doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeLL&filter=${value}`)
+			doc.util.getJson(doc, `form=${doc.form}&cmd=changeLL&filter=${value}`)
 				.then( newList => doc.changeDropList('leftList', newList, 0))
 				.catch( e => doc.msg.error(e.message) );
 		},
@@ -178,7 +192,7 @@ window.sovaActions.v_schedule = {
 			let ll = doc.getControl('leftList');
 			ll.cn = value ? 'list3str' : 'list1str';
 			ll.cnItem = `${ll.cn}Item`; // className
-			doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeUp&uplist=${value}&filter=${doc.getField('filter')}`)
+			doc.util.getJson(doc, `form=${doc.form}&cmd=changeUp&uplist=${value}&filter=${doc.getField('filter')}`)
 				.then( newList => {
 					if (value !== 2)
 						doc.changeDropList('leftList', newList, 0);
@@ -190,7 +204,7 @@ window.sovaActions.v_schedule = {
 				.catch( e => doc.msg.error(e.message) );
 		},
 		CPLUS: (doc, value) => {
-			doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeLLCP&group=${doc.getField('cPlus').partition('|')[1]}&status=${doc.getField('status')}`)
+			doc.util.getJson(doc, `form=${doc.form}&cmd=changeLLCP&group=${value}&status=${doc.getField('status')}`)
 				.then( leftList => doc.changeDropList('leftList', leftList, 0))
 				.catch( e => doc.msg.error(e.message) );
 		},

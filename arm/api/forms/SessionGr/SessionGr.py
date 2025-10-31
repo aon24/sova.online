@@ -12,8 +12,18 @@ from arm.api.forms.SessionTmpl.SessionTmpl import queryOpenForGrSt
 
 # *** *** ***
 
-class SessionGr(Page):
 
+class SessionGr(Page):
+    '''
+    Сессия группы. Документ в БД. Таблица nv_SessionGr
+    SessionTmpl-SessionGr-SessionSt - три основные формы в ЛК
+    1. SessionTmpl - шаблон по которому создаются сессии групп и студентов.
+        содержит видео и другие материалы по конкретной сессии(лекции)
+    2. SessionGr - отображает(не хронит в себе) то, что есть в SessionTmpl,
+        хранит в себе привязку к шаблону и к группе и дату-время
+    3. SessionSt - отображает(не хронит в себе) то, что есть в SessionTmpl и в SessionGr,
+        хранит в себе привязку к сессии группы и к студенту, ответы на задания, обратную связь конкретного студня
+    '''
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js', ]
@@ -33,20 +43,13 @@ class SessionGr(Page):
 
         # ***
 
-        if self.noicons:
-            table = [
-                ('1️⃣', self.common(gr=True), 45, 'информация'),  # 🦉📓
-                ('Материалы', main, 100, 'учебные материалы'),
-                ('Задания', self.jobs(gr=True), 80, 'задания'),
-            ]
-        else:
-            table = [
-                ('/image/i.png', self.common(gr=True), 50, 'информация'),
-                ('/image/s_ummv.png', main, 50, 'учебные материалы'),
-                ('/image/s_dz.png', self.jobs(gr=True), 50, 'задания'),
+        table = [
+            ('/image/i.png', self.common(gr=True), 50, 'информация'),
+            ('/image/s_ummv.png', main, 50, 'учебные материалы'),
+            ('/image/s_dz.png', self.jobs(gr=True), 50, 'задания'),
             ]
 
-        return  self.docPage([_tabNew('SST_Table_FD', tabs=table)])
+        return self.docPage([_tabNew('SST_Table_FD', tabs=table)])
 
     # ***
 
@@ -77,4 +80,3 @@ class SessionGr(Page):
         queryOpenForGrSt(doc)
 
     # *** *** ***
-

@@ -15,6 +15,7 @@ import json
 
 # *** *** ***
 
+
 @checkBusy  # Декоратор, блокирующий повторный вызов функции до ее завершения.
 def runAgent(m):
     m.starting_time = now('-')
@@ -71,4 +72,3 @@ def runAgent(m):
         dc.save()
 
 # *** *** ***
-

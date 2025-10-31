@@ -1,0 +1,33 @@
+.review > div > div {
+	border: 1px solid #eee;
+}
+.arm_review .review {
+	margin: auto;
+	background: #fff;
+	display: inline-block;
+}
+.arm_review .headerStyle {
+        overflow: hidden;
+        height: 170px;
+        white-space: nowrap;
+        writing-mode: vertical-lr;
+}
+.arm_max .headerStyle {
+        overflow: hidden;
+        height: 250px;
+        white-space: nowrap;
+        writing-mode: vertical-lr;
+}
+.review-left-gr {
+	text-align: left;
+	width: 170px;
+}
+
+.arm_review .review-left-st {
+	text-align: left;
+	width: 170px;
+}
+.arm_max .review-left-st {
+	text-align: left;
+	width: 250px;
+}

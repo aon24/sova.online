@@ -2,7 +2,7 @@ window.sovaActions = window.sovaActions || {};
 window.sovaActions.v_more = {
     init2: doc => {
 		let key = doc.getField('key');
-		doc.util.jsonByUrl(doc, `/api/getData?form=v_more&cmd=getLeftList&key=${key}`)
+		doc.util.getJson(doc, `form=v_more&cmd=getLeftList&key=${key}`)
 			.then( prj => doc.changeDropList('leftList', prj, 0))
 			.catch( () => {});				
 	},
@@ -58,7 +58,7 @@ window.sovaActions.v_more = {
 
 	recalc: {
 		KEY: (doc, key) => {
-			doc.util.jsonByUrl(doc, `/api/getData?form=v_more&cmd=getLeftList&key=${key}`)
+			doc.util.getJson(doc, `form=v_more&cmd=getLeftList&key=${key}`)
 				.then( prj => doc.changeDropList('leftList', prj, 0))
 				.catch( () => {});				
 		},

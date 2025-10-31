@@ -12,6 +12,7 @@ window.sovaActions.a_colors = {
 		phoneB: doc => !doc.box || _d3d(doc) || !doc.box.parentBox,
 
 		gradient: doc => !doc.box || !doc.box.tuning.gradient,
+		filter: doc => !doc.box || !doc.box.tuning.filter,
 		bgColor: doc => !doc.box || doc.box.tuning.bgStyle !== 'color',
 		bgImage: doc => !doc.box || doc.box.tuning.bgStyle !== 'image',
 
@@ -91,7 +92,7 @@ let setColorFeature = (doc, feature, val, noHist, toHist, sl) => {
 
 for (let it of colorFeatures) {
 	let fi = it.split('|')[0];
-	let redraw = ['bgStyle', 'gradient'].includes(fi); // recalc  с перериcовкой settingPage (для chb/chb3)
+	let redraw = ['bgStyle', 'gradient', 'filter'].includes(fi); // recalc  с перериcовкой settingPage (для chb/chb3)
 	recalcColors[fi.toUpperCase()] = (doc, val, noHist, toHist, sl) => setColorFeature(doc, fi, val, noHist, toHist, sl) || (redraw && doc.forceUpdate());
 }
 for (let it of gridFeatures) {

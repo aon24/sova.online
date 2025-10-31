@@ -1,7 +1,10 @@
 import time
-import zlib, base64, json
+import zlib
+import base64
+import json
 
 # *** *** ***
+
 
 class DC(object):
 
@@ -27,7 +30,7 @@ class DC(object):
             if k:
                 try:
                     s += time.strftime('%d.%m.%Y\n', time.strptime(k.partition(' ')[0], '%Y-%m-%d'))
-                except:
+                except Exception:
                     s += k + '\n'
         return s[:-1] if s else ''
 
@@ -35,7 +38,7 @@ class DC(object):
         dt = self._f_.get(fieldName.upper(), '')
         try:
             return time.strftime('%d.%m.%Y %H:%M:%S', time.strptime(dt, '%Y-%m-%d %H:%M:%S'))
-        except:
+        except Exception:
             return ''
 
     def loadDoc(self):
@@ -109,13 +112,13 @@ class DCC(object):
             self.__dict__['_f_'][k.upper()] = v
 
     def __str__(self):
-        return 'DC: -----------\n' + '\n'.join(x for x in [f'{k} = {self._f_[k]}' for k in sorted(self._f_)])
+        return 'DCC: -----------\n' + '\n'.join(x for x in [f'{k} = {self._f_[k]} {type(self._f_[k])}' for k in sorted(self._f_)])
 
     def __getattr__(self, fieldName):
-        return self._f_.get(fieldName.upper(), '')
+        return self._f_.get(fieldName.upper())
 
     def __setattr__(self, fieldName, fieldValue):
-            self._f_[fieldName.upper()] = fieldValue
+        self._f_[fieldName.upper()] = fieldValue
 
     def __setitem__(self, key, value):
         self._f_[key.upper()] = value
@@ -148,8 +151,8 @@ class DCDump(json.JSONEncoder):
 
 def wellSize(s=None):
     import math
-    l = len(json.dumps(CLS if s else SCLS, cls=DCDump))
-    return f"{'CLS' if s else 'SCLS'}: {math.trunc((l+1023)/1024)}k"
+    ll = len(json.dumps(CLS if s else SCLS, cls=DCDump))
+    return f"{'CLS' if s else 'SCLS'}: {math.trunc((ll+1023)/1024)}k"
 
 
 def well(*keys):

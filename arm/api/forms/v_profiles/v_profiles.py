@@ -15,6 +15,10 @@ import json
 
 
 class v_profiles(Page):
+    '''
+    CRM вид Пользователи
+    '''
+
     title = 'Профайлы'
     dbAlias = 'nv_Profile'
     leftWidth = 105
@@ -44,7 +48,9 @@ class v_profiles(Page):
     def page(self, request):
         self.upField = self.upField = _div(children=[
             _div(className='toolbar',children=[toolbar.close_]),
-            _field('status', 'band', ['актив', 'архив', 'все'], recalcText=1, **style(margin='auto', display='table', width='auto'))
+            _field('status', 'band', ['актив', 'архив', 'все'],
+                className='radioBandNew',
+                recalcText=1, **style(width='auto'))
         ])
 
         self.viewbar = self.makeViewbar(

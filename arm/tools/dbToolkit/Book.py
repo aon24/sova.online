@@ -5,7 +5,8 @@ from arm.settings import DB_DIR
 
 
 import json
-import zlib, base64
+import zlib
+import base64
 from datetime import datetime
 import os
 import sqlite3 as sqldb
@@ -119,7 +120,7 @@ def lockupConnect(dbAlias):
         try:
             if dbAlias not in lockedCon or lockedCon[dbAlias].acquire(False):
                 return True
-        except:
+        except Exception:
             return True
         time.sleep(0.1)
 
@@ -130,14 +131,14 @@ def unlockCon(con, dbAlias):
     try:
         lockedCon[tableName(dbAlias)].release()
         del lockedCon[tableName(dbAlias)]
-    except:
+    except Exception:
         pass
 
 
 def unlockAll():
     global lockedCon
-    for l in lockedCon.items():
-        l.release()
+    for ll in lockedCon.items():
+        ll.release()
     lockedCon = {}
 
 # *** *** ***
@@ -248,7 +249,7 @@ def docSaveDB(dcUK):
         dcUK.doc.pageSize = le
         snd(f'{le} (doc {dcUK.doc.docNo} in "{dcUK.dbAlias}") press:{proc}%', cat='ROOT-size')
 
-    fi = {k:v.replace("'", "''") for k, v in dcUK.doc.items() if v and k != 'UNID'}
+    fi = {k: v.replace("'", "''") for k, v in dcUK.doc.items() if v and k != 'UNID'}
     xfi = json.dumps(fi, ensure_ascii=False)
 
     if dcUK.update or not dcUK.dbAlias.lower().endswith('draft'):  # делаем историю только для *DRAFT.sqlite
@@ -394,13 +395,13 @@ def setDocNo(dbAlias):
 
 
 def fff(doc, fn='FILES'):  # fields for files
-    return [ k for k, v in doc.items()
-                if k.startswith(fn) and ('_' in k) and v.count('|') == 5
-        ]
+    return [k for k, v in doc.items()
+            if k.startswith(fn) and ('_' in k) and v.count('|') == 5
+            ]
 
 
 def filines(doc, fn='FILES'):
-        return [f'{doc.F(k)}|{k}'.split('|') for k in fff(doc, fn)]
+    return [f'{doc.F(k)}|{k}'.split('|') for k in fff(doc, fn)]
 
 # *** *** **
 
@@ -441,6 +442,6 @@ def histFromDB(dcUK):
 
     return json.dumps(hist)
 
+
 if __name__ == '__main__':
     createDB('rf.qq/ogg')
-

@@ -5,7 +5,6 @@ window.sovaActions.login = {
 			let page = {
 				rsMode: 'new',
 				newForm: 'signup',
-				dbAlias: 'dba',
 				title: `Регистрация`,
 				frameStyle: {width: 500, maxHeight: 1000}
 			};

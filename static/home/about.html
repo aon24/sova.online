@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+<meta name="description" content="Sova.online — бесплатная платформа смешанного обучения с открытым исходным кодом. Полный контроль данных, безопасность, кастомизация и независимость от аренды. Работает даже на слабых серверах (1 CPU, 1 GB RAM). Подходит для студентов, преподавателей и организаций. Попробуйте без регистрации!">
+<meta name="og:description" content="Sova.online — бесплатная LMS с открытым кодом (Django/React). Развертывание на Ubuntu с Nginx+Gunicorn, поддержка HTTPS через Certbot. Полная документация и видеоинструкции. Сервер для 500 студентов — от 200 ₽/мес!">	
+<link rel="shortcut icon" href="/favicon.ico" sizes="any">
+<title>Бесплатная платформа смешанного обучения с открытым кодом</title>
+</head>
+<body style="text-align:center"><h2><br>Sova.online</h2><h3 style="text-align:center">
+<br>
+Сайт не содержит персональных данных и не требует регистрации.<br><br>
+<a href="https://sova.online/api/opendoc?dbAlias=draft&page=home-page&manifest=1">Начинаем</a><h3>
+	<div style="display: none"><br>
+<br>
+SOVA.ONLINE<br>
+Платформа смешанного обучения<br>
+Скачать<br>
+О нас<br>
+Попробовать<br>
+О проекте<br>
+Свой     сервер<br>
+Вы не платите за аренду владельцу платформы.<br>
+Полный контроль над всеми данными.<br>
+Возможность кастомизации.<br>
+Читать еще...<br>
+<br>
+Бесплатно.<br>
+Открытый код<br>
+Добавление новых функций и отчетов.<br>
+Возможность интеграции.<br>
+Прозрачность и безопасность.<br>
+<br>
+<br>
+Безопасность и   защищенность<br>
+Современные  методы защиты.<br>
+Ролевые ограничения.<br>
+Гибкий доступ к видеофайлам.<br>
+<br>
+<br>
+Профессионально. Удобно. Понятно.<br>
+Личные кабинеты:<br>
+ - студент<br>
+ - куратор<br>
+ - преподаватель<br>
+ - офис<br>
+<br>
+Сервер организации<br>
+<br>
+Цена<br>
+На разных платформах аренда для 500 студентов - это несколько сот тысяч рублей в год.<br>
+Сервер организации можно арендовать за менее, чем 200 рублей в месяц. Введите в поисковике "аренда vps vds".<br>
+Sova.online для 500 студентов прекрасно работает на сервере с характеристиками:<br>
+1 CPU<br>
+1 GB RAM<br>
+10 GB Disk<br>
+Linux Ubuntu<br>
+<br>
+Независимость<br>
+Владелец платформы может изменить условия аренды, и вы будете вынуждены их принять.<br>
+Разместив курсы на своей платформе, вы получаете полную свободу действий, включая выгрузку данных в нужном формате.<br>
+<br>
+Кастомизация<br>
+Возможность доработки платформы под свои задачи, добавление форм, отчетов, настройка взаимодействия с другими системами.<br>
+Встроенный редактор позволяет создавать материалы и задания в виде минисайтов из нескольких страниц (открыть home-page в редакторе).<br>
+<br>
+Администрирование<br>
+На сервере должны быть установлены:<br>
+Python3<br>
+(входит в состав ОС)<br>
+<br>
+Nginx<br>
+инструкция по установке<br>
+<br>
+Gunicorn<br>
+инструкция по настройке Gunicorn<br>
+<br>
+https://<br>
+Certbot: управление SSL-сертификатами от Let's Encrypt<br>
+<br>
+<br>
+NGINX<br>
+Nginx - быстрый и умный http сервер. Он ускорит и обезопасит работу портала по протоколам http/https.<br>
+Инсталляция<br>
+sudo apt update<br>
+sudo apt install nginx<br>
+Старт сервиса<br>
+sudo systemctl start nginx<br>
+Рестарт сервиса<br>
+sudo systemctl restart nginx<br>
+Старт при загрузке<br>
+sudo systemctl enable nginx<br>
+<br>
+Подробней на официальном сайте<br>
+http://nginx.org/ru/docs/install.html<br>
+<br>
+<br>
+В директории "/etc/nginx/sites-available" создайте файл "sova-online.conf" и перезапустите сервис (sudo systemctl restart nginx).<br>
+<br>
+server {<br>
+    server_name sova.online;<br>
+    server_tokens off;<br>
+<br>
+    location / {<br>
+        proxy_pass http://unix:/run/gunicorn.sock;<br>
+        proxy_set_header Host $host;<br>
+        proxy_set_header X-Real-IP $remote_addr;<br>
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;<br>
+        proxy_set_header X-Forwarded-Proto $scheme;<br>
+    }<br>
+<br>
+<br>
+    client_max_body_size 50m;<br>
+<br>
+<br>
+    location ~* \.(php|sh|env)$ {<br>
+      deny all;<br>
+      return 404;<br>
+    }<br>
+<br>
+<br>
+    location /static/doc/ {<br>
+      alias /www/sova-online/static/doc/;<br>
+      add_header X-Frame-Options SAMEORIGIN always;<br>
+    }<br>
+<br>
+<br>
+    location /static/ {<br>
+      alias /www/sova-online/static/;<br>
+      expires 4M;<br>
+      add_header Cache-Control public;<br>
+    }<br>
+<br>
+<br>
+    location /image/ {<br>
+      alias /www/sova-online/static/images/;<br>
+      expires 4M;<br>
+      add_header Cache-Control public;<br>
+    }<br>
+<br>
+<br>
+    location = /favicon.ico {<br>
+      alias /www/sova-online/static/favicon.ico;<br>
+    }<br>
+<br>
+<br>
+}<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+Gunicorn<br>
+Gunicorn - WSGI сервер. Устанавливается вместе с другими Python модулями при инсталляции основной программы.<br>
+Перед стартом в директории /etc/systemd необходимо создать 2 файла:<br>
+<br>
+/etc/systemd/gunicorn.service<br>
+[Unit]<br>
+Description=gunicorn daemon<br>
+Requires=gunicorn.socket<br>
+After=network.target<br>
+<br>
+[Service]<br>
+User=root<br>
+WorkingDirectory=/www/sova-online<br>
+ExecStart=/www/sova-online/venv/bin/gunicorn     --workers 1     --threads 20     --worker-class gthread     --log-file /www/sova-online/log/guni.log     --bind unix:/run/gunicorn.sock     arm.wsgi:application<br>
+<br>
+[Install]<br>
+WantedBy=multi-user.target<br>
+/etc/systemd/gunicorn.socket<br>
+[Unit]<br>
+Description=gunicorn socket<br>
+<br>
+[Socket]<br>
+ListenStream=/run/gunicorn.sock<br>
+<br>
+[Install]<br>
+WantedBy=sockets.target<br>
+<br>
+<br>
+При изменении описания служб требуется перезапуск демонов<br>
+sudo systemctl daemon-reload<br>
+<br>
+Старт сервиса<br>
+sudo systemctl start gunicorn.socket<br>
+<br>
+Старт сервиса при перезагрузки ОС<br>
+sudo systemctl enable gunicorn.socket<br>
+<br>
+<br>
+<br>
+HTTPS<br>
+Чтобы добавить протокол HTTPS на ваш сайте, вам необходимо получить сертификат из Центра сертификации.<br>
+Let’s Encrypt выдает сертификат бесплатно.<br>
+Программа Certbot автоматизирует выпуск, установку и автоматическое продление сертификата Let’s Encrypt без перерыва в работе.<br>
+Полная инструкция на сайте certbot<br>
+https://certbot.eff.org/<br>
+<br>
+Устанавливаем snap<br>
+sudo apt install snapd<br>
+<br>
+Устанавливаем certbot<br>
+sudo snap install --classic certbot<br>
+<br>
+Делаем ссылку в /usr/bin<br>
+sudo ln -s /snap/bin/certbot /usr/bin/certbot<br>
+<br>
+Привязываем certbot к нашему сайту<br>
+sudo certbot --nginx<br>
+<br>
+<br>
+<br>
+Открытый код<br>
+<br>
+FreeBSD license<br>
+Данная лицензия разрешает использование и распространение программного обеспечения без каких-либо ограничений.<br>
+<br>
+Платформа Sova.online<br>
+Серверная часть использует фреймворк Django, клиент реализован на ReactJS. Особенностью платформы является то, что весь дизайн сделан на Питоне и передается клиенту в json-формате. React распаковывает данные и формирует страницу.<br>
+Добавление и доработка форм делаются на  Питоне.<br>
+База данных имеет смешанную структуру: в реляционных таблицах хранятся json-поля. Это позволяет добавлять новые поля в формы без изменений структуры БД.<br>
+Исходный код и инструкции на Github.<br>
+<br>
+Версия для Windows<br>
+Не требует инсталляции, может запускаться с флэшки.<br>
+Версия представляет собой полноценный сервер с доступом по http://localhost:8081.<br>
+Безопасность<br>
+<br>
+Nginx<br>
+Сервер Nginx существенно повышает безопасность, защищая от различных атак:<br>
+<br>
+DDoS (Распределённые атаки на отказ в обслуживании).<br>
+Защита от Flood-атак (HTTP-запросы, SYN-flood).<br>
+Rate Limiting – ограничение запросов в секунду.<br>
+<br>
+Slowloris (атака на исчерпание соединений).<br>
+Таймауты (client_body_timeout, client_header_timeout) обрывают "висячие" соединения.<br>
+<br>
+Django<br>
+CSRF защита, надежная авторизация.<br>
+Защита от подмены в запросе id, формы, таблицы.<br>
+Защита от sql-инъекций.<br>
+<br>
+Ролевые ограничения<br>
+Доступ к данным контролируется сервером: запрещенные к показу поля не отправляются клиенту.<br>
+Например, поля обратной связи с оценкой студентом преподавателя может увидеть только сам студент и суперпользователь.<br>
+<br>
+Доступ к видео<br>
+Куратор может запретить доступ к видеоматериалам конкретным студентам или всей группе.<br>
+<br>
+Знакомимся с Sova.online<br>
+<br>
+Документация<br>
+Перед тем, как попробовать, советуем прочитать<br>
+Руководство пользователя.pdf<br>
+<br>
+<br>
+Видео<br>
+<br>
+Деморолик.<br>
+смотреть<br>
+7.5 мин<br>
+Программа обучения - это события. Знакомимся с календарем в личном кабинете.<br>
+смотреть<br>
+1 мин<br>
+Сотрудники тоже могут обучаться. Для группы "Сотрудники" могут создаваться лекции и другие события. Создаем для сотрудников обучающую видео лекцию.<br>
+смотреть<br>
+2.5 мин<br>
+Добавление видео лекций в расписание. Управление доступом к видео.<br>
+смотреть<br>
+2.5 мин<br>
+Создание лекции. Видео может находиться на любом видео хостинге. При размещении на Yandex диске можно разрешать и блокировать доступ к файлам без регистрации в Yandex. Yandex-api генерирует временную ссылку на файл с ограничением по времени.<br>
+смотреть<br>
+</div></body>
+
+</html>

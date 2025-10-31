@@ -13,6 +13,8 @@ from arm.tools.DC import swell
 
 class a_setting(Page):
     delay = 1000
+    _VIEW_ = 1
+    _PAGE_ = 1
 
     def __init__(self, request):
         self.title = 'Setting'
@@ -180,7 +182,7 @@ class a_setting(Page):
             _div(className='setting-line'),
             _div(className='setting-head', children=[
                 _span('Масштаб', className='setting-title'),
-                _field('hide33', 'chb', ['▼', '►'], title='сложить/показать', char=1, **style(float='right')),
+                _field('hide33', 'chb', ['▼', '►'], title='сложить/показать', chbView='change', **style(float='right')),
             ]),
             _field('scale3d', 'slip', [0.05, 2, 0.05, ' ', 10], name='hide33', digits=2, className='label', **style(margin='0 auto 7px'), delay=self.delay),
             _field('cm', 'chb3', ['размер в см|cm', 'размер в мм|mm'], name='hide33', noEmpty=1, **style(margin='0 auto')),
@@ -260,7 +262,7 @@ class a_setting(Page):
             # тень для 3д
             _div(className='setting-head', children=[
                 _span('Тень', className='setting-title'),
-                _field('hide31', 'chb', ['▼', '►'], title='сложить/показать', char=1, **style(float='right')),
+                _field('hide31', 'chb', ['▼', '►'], title='сложить/показать', chbView='change', **style(float='right')),
             ]),
 
             _div(name='shadow3', children=[
@@ -318,7 +320,7 @@ class a_setting(Page):
 
             _div(className='setting-head', children=[
                 _span('Масштаб', className='setting-title'),
-                _field('m3table_hide33', 'chb', ['▼', '►'], title='сложить/показать', char=1, **style(float='right')),
+                _field('m3table_hide33', 'chb', ['▼', '►'], title='сложить/показать', chbView='change', **style(float='right')),
             ]),
             _field('m3table_scale3d', 'slip', [0.05, 2, 0.05, ' ', 10], name='m3table_hide33', digits=2, className='label', **style(margin='0 auto 7px')),
             _field('m3table_cm', 'chb3', ['размер в см|cm', 'размер в мм|mm'], name='m3table_hide33', noEmpty=1, **style(margin='0 auto')),
@@ -378,7 +380,7 @@ class a_setting(Page):
         return [
             _div(**style(paddingTop=5, textAlign='center'), name='bricksOne2', children=[
                 _span('Масштаб', className='setting-title'),
-                _field('brick_hide35', 'chb', ['▼', '►'], title='сложить/показать', char=1, **style(float='right')),
+                _field('brick_hide35', 'chb', ['▼', '►'], title='сложить/показать', chbView='change', **style(float='right')),
 
                 _field('brick_scale3d', 'slip', [0.05, 2, 0.05, ' ', 10], name='brick_hide35', digits=2, className='label', **style(margin='0 auto 7px')),
                 _field('brick_cm', 'chb3', ['размер в см|cm', 'размер в мм|mm'], name='brick_hide35', noEmpty=1, **style(margin='0 auto')),
@@ -464,7 +466,7 @@ class a_setting(Page):
                     _field('m3t_is3dX', 'number', max=100000, digits=1, width=70, name='m3t_is3dX', className='labelc', delay=self.delay),
                     _field('m3t_is3dY', 'number', max=100000, digits=1, width=70, name='m3t_is3dY', className='labelc', delay=self.delay),
 
-                    _field('m3t_metric', 'chb', ['%', 'px'], **style(width=15), name='m3t_is3dZ', title='переключить', char=1, className='metric'),
+                    _field('m3t_metric', 'chb', ['%', 'px'], **style(width=15), name='m3t_is3dZ', title='переключить', chbView='change', className='metric'),
                     _div(**style(width=30)),
                     _field('m3t_is3dZ', 'number', max=100000, digits=1, width=70, name='m3t_is3dZ', className='labelc', delay=self.delay),
                 ],

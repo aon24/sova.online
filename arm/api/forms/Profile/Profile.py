@@ -6,7 +6,8 @@ Created on 2023
 
 from arm.tools.DC import well, swell
 from arm.tools.first import err
-from arm.api.forms.formTools import _fileShow, style, _div, _btnD, _field, _tabNew, label, labField, _span
+from arm.api.forms.formTools import _fileShow, style, _div, _btnD, _field, _tabNew, label, \
+    labField, _span, _teg
 from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
 
@@ -16,6 +17,11 @@ import json
 
 
 class Profile(Page):
+    '''
+    Форма отображает документ в бд nv_c (common.sqlite) таблица nv_c_Profile
+    CRM + ЛК
+    форма описание профайла
+    '''
     perdaFields = 'date_birth,address,passport,notes'.upper().split(',')  # perda
 
     def __init__(self, request):
@@ -28,7 +34,7 @@ class Profile(Page):
     # *** *** ***
 
     def page(self, request):
-        fd = not('куратор' in self._role or self._staff)
+        fd = not ('куратор' in self._role or self._staff)
         tMain = _div(className='tabBodyInner', children=[
 
             _div(**style(textAlign='center'), children=[
@@ -47,14 +53,13 @@ class Profile(Page):
             *labField('facebook', 'facebook', 'openLink'),
             label(),
             _field('status', 'lbsd', self.status, fd=fd,
-                **style(display='inline-block', width=120, float='right', textAlign='left'),
-                alias=1, placeholder='список',
-            ),
+                   **style(display='inline-block', width=120, float='right', textAlign='left'),
+                   alias=1, placeholder='список',
+                   ),
         ])
         tGroup = _div(className='tabBodyInner', children=[
-            *labField('Группы пользователя', 'student_groups', 'lbmd', '/api/well?clues=allGroups', common=1, fd=fd),
-            *labField('Группы, в которых он куратор', 'curator_groups', 'lbmd', '/api/well?clues=allGroups', name='cur_gr', fd=fd),
-            # *labField('Группы, в которых преподаватель ведет занятия', 'lector_groups', 'lbmd', '/api/well?clues=allGroups', name='lec_gr'),
+            *labField('Группы пользователя', 'student_groups', 'lbmd', 'cmd=well&clues=allGroups', common=1, fd=fd),
+            *labField('Группы, в которых он куратор', 'curator_groups', 'lbmd', 'cmd=well&clues=allGroups', name='cur_gr', fd=fd),
             _btnD('платежи', 'payList', **style(width=100, margin='10px auto', fd=fd)),
             _field('curators_FD', 'fd', br=1),
         ])
@@ -79,6 +84,10 @@ class Profile(Page):
             *labField('Тренинги', 'training', 'lbmd', [], fd=fd, **style(margin=5)),
             *labField('Фестивали', 'fest', 'lbmd', [], fd=fd),
             *labField('Озн.семинар', 'invite', 'lbmd', [], fd=fd),
+            _teg('hr'),
+            # labelc('Разрешить новую версию'),
+            # _field('cssTheme', 'band', ['Н Е Т|', 'на ПК|pc', 'на моб.|mobile', 'ПК+моб|all'],
+            #     recalcText=1, **style(width='auto', margin='auto'))
         ])
 
         # ***
@@ -88,7 +97,7 @@ class Profile(Page):
                 ('Фото', tPhoto, 55),
                 ('Группы', tGroup, 70),
                 ('Доп', tMore, 50),
-        ]
+                ]
 
         return self.docPage([_tabNew('PR_Table_FD', tabs=tabs)], request.dcUK.mode == 'read' and [toolbar.close_])
 
@@ -149,7 +158,7 @@ class Profile(Page):
                             textShadow='2px 2px 5px #004488, -2px -2px 5px #004488'
                         ))
                     ])
-            except:
+            except Exception:
                 err('json.loads', 'profile-photo')
                 pho = _div(doc.full_name)
         else:

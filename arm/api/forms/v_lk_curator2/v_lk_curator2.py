@@ -32,7 +32,7 @@ class v_lk_curator2(v_lk_curator):
                 _field('btnSgr', 'btn', className='toolbar-button armBtnRed'),
                 toolbar.close_
             ]),
-            _field('status', 'band', ['актив', 'архив', 'все'], recalcText=1, **style(margin='auto', display='table', width='auto'))
+            _field('status', 'band', ['актив', 'все'], **style(margin='auto', display='table', width='auto'))
         ])
 
         # self.viewbar = _div(className='viewbarRA', children=self.setButtons)
@@ -47,7 +47,7 @@ class v_lk_curator2(v_lk_curator):
         sgr = well('sessionGr_Id', dcUK.unid)
         group = well('groups_groupId',sgr.nvgroup_id).title
         dcUK.doc.sgrId = dcUK.unid
-        dcUK.doc.btnSgr = f"{sgr.title[:20]}|previewNew|form=SessionGr&title={group}&unid={dcUK.unid}&dbAlias=nv_SessionGr&rsMode=edit"
+        dcUK.doc.btnSgr = f"{sgr.title[:20]}|previewNew|form=SessionGr&title=Гр.{group}&unid={dcUK.unid}&dbAlias=nv_SessionGr&rsMode=edit"
 
     # *** *** ***
 

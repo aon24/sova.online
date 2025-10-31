@@ -3,10 +3,10 @@ let setDayTimeList = (doc, clr) => {
 	if (scheduled) {
 		let dt = doc.getControl('schedDay');
 		clr && dt.setValue('');
-		dt.changeDropList(`/api/well?clues=scheduled_${scheduled}_day`);
+		dt.changeDropList(`cmd=well&clues=scheduled_${scheduled}_day`);
 		dt = doc.getControl('schedTime');
 		clr && dt.setValue('');
-		dt.changeDropList(`/api/well?clues=scheduled_${scheduled}_time`);
+		dt.changeDropList(`cmd=well&clues=scheduled_${scheduled}_time`);
 	}
 };
 

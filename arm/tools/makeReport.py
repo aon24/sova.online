@@ -38,9 +38,9 @@ def makeReport(oneReport):
     report.docNo = snoDB(dcuk)
     dcuk.doc = report
     if dcuk.save():
-        snd(oneReport.report_title, cat='Report created')
+        snd(oneReport.report_title, cat='Report-job-now created')
     else:
-        err('Report-save-error', cat='Report NOT created')
+        err('Report-save-error', cat='Report-job-now NOT created')
 
 # *** *** ***
 
@@ -53,7 +53,7 @@ def startReport(agent):
     либо одноразовый отчет (form = 'Report' и scheduled=='now' and turn_on = 1)
     """
     cat = 'Report run'
-    path = f'nv_reports.{agent.domain}.{agent.module}'
+    path = f'nv_reports.{agent.domain}.{agent.module or agent.report_module}'
     snd(f'Start(import_module): "{path}"\nReport.title: "{agent.title}"', cat=cat)
 
     if agent.form == 'Module':
@@ -65,19 +65,20 @@ def startReport(agent):
                 report[r] = agent[k]
 
         report.form = 'Report'
+        report.domain = agent.domain
         report.title = agent.title
         report.status = 'active'
-        report.docNo = snoDB(report)
         report.starting_time = now('-')
         report.lmRef = agent.id
 
         # создаем пустой отчет
         dcuk = DC(dbAlias='nv_reports_Report', fullName=cat)
+        report.docNo = snoDB(dcuk)
         dcuk.doc = report
         try:
             report.id = dcuk.save().id
             snd(report.title, cat='Report created')
-        except:
+        except Exception:
             return err('Report-save-error', cat='Report NOT created')
 
     else:  # одноразовый отчет.Он уже создан и сохранен в makeReport
@@ -124,7 +125,7 @@ def startReport(agent):
 
     except Exception as ex:
         s = f'{report.title}(path:"{path}")\n{ex}\n{traceback.format_exc()}'
-        report._log += s
+        report.log += s
         err(s, cat=cat)
         dcuk = DC(dbAlias='nv_reports_Report', unid=report.id, fullName=cat)
         docFromDB(dcuk)

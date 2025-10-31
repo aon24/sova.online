@@ -5,7 +5,8 @@ AON 2020
 
 from arm.tools.first import err
 
-import re, os
+import re
+import os
 from datetime import datetime
 import traceback
 
@@ -15,7 +16,6 @@ import traceback
 busyFunc = {}
 
 # *** *** ***
-
 
 
 def checkBusy(func):
@@ -36,6 +36,7 @@ def checkBusy(func):
     return _wrapper
 
 # *** *** ***
+
 
 def cleanPhone(phone):
     phone = re.sub(r'[^\d]', '', phone or '')
@@ -66,7 +67,9 @@ def today(dlm='.'):
 
 # *** *** ***
 
+
 js_search = re.compile(r'((<script[\s]+src[\s]*)|(<link[\s]+rel[\s]*))=[\s]*[\'"][\s\S]+?(\.css"|\.js"|\.json")', re.IGNORECASE | re.M | re.U)
+
 
 def setVersionJS(bf, path):
     """
@@ -126,7 +129,7 @@ def setVersionFiles(ls, path):
                     stat = os.stat(fn)
                     v = datetime.fromtimestamp(stat.st_mtime).strftime('%d.%m.%Y-%H:%M:%S')
                     ols.append(s + '::' + v)
-                except:
+                except Exception:
                     err(f'"{fn}" not found', cat='setVersionFiles')
     return ols
 
@@ -150,4 +153,3 @@ def sndErr(func):
     return wrapper
 
 # *** *** ***
-

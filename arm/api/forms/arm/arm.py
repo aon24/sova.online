@@ -5,130 +5,195 @@ AON 2018
 '''
 from arm.tools.DC import well, swell, config
 from arm.tools.first import err
-from arm.api.forms.formTools import _btnEdit, _btnDel, _field, style, _div, _btnD
+from arm.api.forms.formTools import _btnEdit, _btnDel, _field, style, _div, _btnD, labelc, \
+    gridStyle, _tabNewSber
 from arm.api.forms.classPage import Page
-from arm.api.forms.lk_tools import showC, showCC, showLKphone, showLKpc, office, rightBtnLK, armButtom
-from arm.api.forms.arm.lk_student import getViewStudent, lk_student, showLKStudent
+from arm.api.forms.lk_tools import showC, showCC, showLKphone, showLKpc, office, \
+    rightBtnLK, armButtom
+from arm.api.forms.arm.lk_student import office_student, showLKStudent
+from arm.api.forms.arm.lk_curator import showLKCurator, getViewCL, getWorkerList, review
 from arm.api.forms.tables import paymentsList
 
 import json
-from datetime import datetime, timedelta
 
 # *** *** ***
 
-logoff = _div(className='page51', **style(textAlign='center', paddingTop=150), children=[
-    _btnD('Profile not found', 'logout', title='logout', **style(display='inline', padding=5, fontSize=30)),
-])
-
 
 class arm(Page):
+    '''
+    HomePage
+    Стартовая страница всех ЛК
+    В режиме office не кэшируется, т.к. может показывать ЛК любого пользователя
+    '''
     _PAGE_ = 1
     _VIEW_ = 1
     form = 'arm'
     title = config.orgName
 
     def __init__(self, request):
-        self.noCaching = request.dcUK._staff
+        dcUK = request.dcUK
+        self.noCaching = dcUK._staff
         self.dbAlias = 'arm'
+        self.jsCssUrl = ['/api/jsv?forms/arm/arm.css', ]
+        self.studentOnly = None
+
+        if dcUK._staff:
+            self.jsCssUrl += ['/api/jsv?forms/arm/arm.js']
+        elif 'куратор' in dcUK._role or 'преподаватель' in dcUK._role:
+            self.jsCssUrl += ['/api/jsv?forms/arm/armCL.js']
+        elif 'студент' in dcUK._role:
+            self.studentOnly = True
+            self.jsCssUrl += ['/api/jsv?forms/arm/armStMb.js']
         super().__init__(request)
 
 # *** *** ***
 
     def page(self, request):
+        if not self._staff:
+            return showLKStudent(self) if self.studentOnly else showLKCurator(self)
+
+        # ***
         curator = lector = student = None
-        if self._staff:
-            dcUK = request.dcUK
-            fioCLS = None
+        dcUK = request.dcUK
+        fioCLS = None
 
-            profile = dcUK.showLK
-            dc = profile and well('profiles', profile)
-            if dc:
-                curator = 'куратор' in dc.role and self.coratorSheet()
+        profile = dcUK.showLK
+        dc = profile and well('profiles', profile)
+        if dc:
+            curator = 'куратор' in dc.role and self.curatorSheet()
 
-                lector = 'преподаватель' in dc.role and self.lectorSheet()
+            lector = 'преподаватель' in dc.role and self.lectorSheet()
 
-                dcUK._studentProfilePK = dc.id  # чтобы показать офису плтежи студента
+            dcUK._studentProfilePK = dc.id  # чтобы показать офису плтежи студента
 
-                fio = dc.full_name.partition(' ')[0]
-                if 'студент' in dc.role:
-                    fioCLS = f' <Студ: {fio}>|{dc.id}'
-                    student = ('студент', lk_student(self), 80)
-                else:
-                    fioCLS = f' <Сотр: {fio}>|{dc.id}'
-                    student = ('сотрудник', lk_student(self), 100)
-
-            if self._userAgent == 'mobile':
-                tabs = [
-                    ('🦉', armButtom(dcUK._superUser), 50),
-                    ('офис', office(), 65),
-                    ('куратор', curator, 80),
-                    ('препод', lector, 80),
-                    student,
-                ]
-                return showLKphone(tabs, fioCLS=fioCLS)
+            fio = dc.full_name.partition(' ')[0]
+            if 'студент' in dc.role:
+                fioCLS = f' <Студ: {fio}>|{dc.id}'
+                student = ('студент', office_student(self), 80)
             else:
-                tabs = [
-                    ('офис', office(), 65),
-                    ('куратор', curator, 80),
-                    ('препод', lector, 80),
-                    student,
-                ]
-                return showLKpc(tabs, fioCLS=fioCLS, su=dcUK._superUser)
+                fioCLS = f' <Сотр: {fio}>|{dc.id}'
+                student = ('сотрудник', office_student(self), 100)
 
-        # *** *** ***
+        if self._userAgent == 'mobile':
+            tabs = [
+                ('🦉', armButtom(dcUK._superUser), 50),
+                ('офис', office(), 65),
+                ('куратор', curator, 80),
+                ('препод', lector, 80),
+                student,
+            ]
+            return showLKphone(tabs, fioCLS=fioCLS)
+        else:
+            tabs = [
+                ('офис', office(), 65),
+                ('куратор', curator, 80),
+                ('препод', lector, 80),
+                student,
+            ]
+            return showLKpc(tabs, fioCLS=fioCLS, superUser=dcUK._superUser)
 
-        if 'студент' in self._role and 'куратор' not in self._role and 'преподаватель' not in self._role:
-            return showLKStudent(self)  # для студня отдельная форма
+    # *** *** ***
 
-        if 'куратор' in self._role:
-            curator = self.coratorSheet()
-
-        if 'преподаватель' in self._role:
-            lector = self.lectorSheet()
-
-        tabs = [
-            ('куратор', curator, 80),
-            ('препод', lector, 80),
-            ('сотрудник', lk_student(self), 100),
-        ]
-
-        return showLKphone(tabs)
-
-        # *** *** *** '☰'
-
-    def coratorSheet(self):
+    def curatorSheet(self):
         # Curator
-        self.leftWidth = 105
-        self.upField = None
-
-        self.leftList = _div(children=[
-            _field('leftList', 'band', [], className='list1str', recalcText=1, rowLength=1),  # список групп
-            _div('* * *', **style(margin='10px 0', textAlign='center')),
-            _field('upList', 'band', [], noRecalc=1, recalcText=1, rowLength=1),  # it is buttons
+        divUL1 = _div(children=[
+            labelc('Расписание', **style(margin='10px 0')),
+            _field(
+                'leftList', 'band', [], className='newBand',
+                recalcText=1, rowLength=1,
+                **style(width=120, textAlign='center')),  # список групп
         ])
 
+        divUL2 = _div(children=[
+            labelc('Список сессий', **style(margin='10px 0')),
+            _field('upList', 'band', [], className='newBandRed',
+                   noRecalc=1, recalcText=1, rowLength=1, noAlias=1,
+                   **style(width=120, textAlign='center')),  # it is buttons
+        ])
+
+        if self._userAgent == 'mobile':
+            self.leftWidth = 0
+            self.leftList = None
+
+            self.upField = _div(**gridStyle('140px 2px 140px', margin='auto', background='#fff'), children=[
+                divUL1,
+                _div(**style(background='#555')),
+                divUL2,
+            ])
+        else:
+            self.leftWidth = 130
+            self.upField = None
+
+            self.leftList = _div(children=[
+                divUL1,
+                _div('* * *', **style(margin='10px 0', textAlign='center')),
+                divUL2,
+            ])
+
         self.viewbar = self.makeViewbar(
-            **style(gridTemplateColumns='1px 1fr', borderWidth='0 0 2px 0', background='transparent'),
-            rightBtn=rightBtnLK('', self._userAgent),
+            **style(gridTemplateColumns='1px 1fr', borderWidth='0 0 0px 0', background='transparent'),
+            rightBtn=rightBtnLK(''),
         )
 
-        url = '/api/getData?form=arm&cmd=getSelected&selected={leftList}&status={status}&view={changeView}&plan={plan}'
+        url = 'form=arm&cmd=getSelected&selected={leftList}&status={status}&view={changeView}&plan={plan}'
         previewUrl = 'dbAlias=nv_SessionGr'
         self.mainList = _div(**style(height='100%'), children=[
             _field('mainList', 'view', name='mainList', limit=100000, url=url, previewUrl=previewUrl, noMount=1),
-            _field('showCourse', 'json', **style(height='100%'), name='showCL')
+            _field('showCourse', 'json', **style(height='100%', background='#88440020'), name='showCL')
         ])
-        return self.sham()
+
+        return _tabNewSber('lk2_Table_FD', [  # сверху 2 иконки Расписание-LK
+                                ('/image/bands/scheduling.png', self.sham(), 'Расписание'),
+                                ('/image/bands/lk.png', review, 'ЛК'),
+                                # ('/image/bands/owl.png', contacts, 'Контакты'),
+                            ], 60)
+
+    # self.sham()
 
     # *** *** ***
 
     def getData(self, dcUK):
         # curator
-        #
         # для msgListBox выбрать сессию
         #
         if dcUK.cmd == 'getSessTemplList':
             data = swell('sessionTmpl_nve_band', dcUK.nve)  # для msgListBox выбрать сессию для группы
+
+        #
+        # stdent
+        # make Cube
+        elif dcUK.cmd == 'getEdges':
+            data = {}
+            dcUK.cmd = 'showC3'
+            dcUK.dateZ_id = 'dateZ_3'
+            view = dcUK.view  # view=k1k2(shiftMonth) or k1k2e(all edges)
+            if 'l' == view:
+                mainDocs = getWorkerList(dcUK)
+                mainDocs = [[x[0], x[1]] for x in sorted(mainDocs, key=lambda x: x[2])]
+                data = {'mainDocs': mainDocs, 'refsDocs': None}
+            else:
+                if 'k1' in view:
+                    dcUK.view = 'k1'
+                    data['calendar1m'] = showCC(dcUK)
+                if 'e' in view:
+                    data['images'] = showC(dcUK)
+                if 'k2' in view:
+                    dcUK.view = 'k2'
+                    data['calendar2m'] = showCC(dcUK)
+
+        # curator - lector - worker
+        #
+        elif dcUK.cmd == 'showCL':
+            if dcUK.view == 'l':
+                data = getViewCL(dcUK)
+            else:
+                dcUK.dateZ_id = 'dateZ_CL'
+                if dcUK.view == 'k1':  # 'к1', 'к2', 'эскиз', 'спис'
+                    data = showCC(dcUK)
+                elif dcUK.view == 'k2':
+                    data = showCC(dcUK)
+                else:
+                    data = showC(dcUK)
 
         # curator - lector
         #
@@ -143,9 +208,9 @@ class arm(Page):
         #
         elif dcUK.cmd == 'showC':
             dcUK.dateZ_id = 'dateZ_'
-            if dcUK.view == '0':  # 'к1', 'к2', 'эскиз', 'спис'
+            if dcUK.view == 'k1':  # 'к1', 'к2', 'эскиз', 'спис'
                 data = showCC(dcUK)
-            elif dcUK.view == '1':
+            elif dcUK.view == 'k2':
                 data = showCC(dcUK)
             else:
                 data = showC(dcUK)
@@ -153,9 +218,9 @@ class arm(Page):
         # lector
         elif dcUK.cmd == 'showC2':
             dcUK.dateZ_id = 'dateZ_2'
-            if dcUK.view == '0':  # 'к1', 'к2', 'эскиз', 'спис'
+            if dcUK.view == 'k1':  # 'к1', 'к2', 'эскиз', 'спис'
                 data = showCC(dcUK)
-            elif dcUK.view == '1':
+            elif dcUK.view == 'k2':
                 data = showCC(dcUK)
             else:
                 data = showC(dcUK)
@@ -164,9 +229,9 @@ class arm(Page):
         #
         elif dcUK.cmd == 'showC3':
             dcUK.dateZ_id = 'dateZ_3'
-            if dcUK.view == '0':  # 'к1', 'к2', 'эскиз', 'спис'
+            if dcUK.view == 'k1':  # 'к1', 'к2', 'эскиз', 'спис'
                 data = showCC(dcUK)
-            elif dcUK.view == '1':
+            elif dcUK.view == 'k2':
                 data = showCC(dcUK)
             else:
                 data = showC(dcUK)
@@ -174,9 +239,12 @@ class arm(Page):
         # stdent
         #
         elif dcUK.cmd == 'getSelected3':
-            data = getViewStudent(dcUK)
+            data = {'mainDocs': getWorkerList(dcUK), 'refsDocs': None}
+
         elif dcUK.cmd == 'getTable':
-            if dcUK.table == '0':
+            if dcUK.showLK_id and not (dcUK._staff or 'куратор' in dcUK._role):
+                data = [_div('Access denied')]  # чужие таблицы только куратору и админу
+            elif dcUK.table == 'payments':
                 data = paymentsList(dcUK)
             elif dcUK.table == '1':
                 data = [_div('')]
@@ -200,7 +268,7 @@ class arm(Page):
 
     def getView(self, dcUK):
         mainDocs = []
-        ls = dcUK.selected.partition('|')[2]
+        ls = dcUK.selected
 
         sgrLs = []
         for grId in ls.split('-'):
@@ -208,14 +276,16 @@ class arm(Page):
 
         sgrLs.sort(key=lambda dc: dc.title)
 
-        days = 1 if dcUK.plan == '0' else 100000
-        yesterday = datetime.now() - timedelta(days=days)
-        last = yesterday.strftime("%Y-%m-%d")
+        # plan закомментирован (всегда "")
+        # days = 1 if dcUK.plan == '0' else 100000
+        # yesterday = datetime.now() - timedelta(days=days)
+        # last = yesterday.strftime("%Y-%m-%d")
 
         for sgr in sgrLs:
-            dateEnd = sgr.date_end or sgr.date_begin
-            if dateEnd < last:  # не показ эскизы через 1 день после оконч or isEmpty
-                continue
+            # plan закомментирован (всегда "")
+            # dateEnd = sgr.date_end or sgr.date_begin
+            # if dateEnd < last:  # не показ эскизы через 1 день после оконч or isEmpty
+            #     continue
 
             if dcUK.status == '0' and sgr.status != 'active':  # кнопка работе
                 continue
@@ -235,37 +305,45 @@ class arm(Page):
             pk = sgr.id
 
             sst = well('sessionTmpl_id', sgr.sessionTmpl_id)
-            title = _div(f"{sst.title}\nс {d1} по {d2}",
-                className='mCell', s2=1, br=1, **style(width='100%', letterSpacing=1, textAlign='left'))
+            title = _div(
+                f"{sst.title}\nс {d1} по {d2}",
+                className='mCell', s2=1, br=1, **style(width='100%', letterSpacing=1, textAlign='left')
+            )
 
             if dcUK.cmd == 'getSelected':  # curator
-                row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto'),
-                    children=[title, _btnEdit('cmdEdit', pk), _btnDel('cmdDel', f'mainList|{pk}|nv_SessionGr')])
+                row = _div(
+                    **style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto'),
+                    children=[title, _btnEdit('cmdEdit', pk), _btnDel('cmdDel', f'mainList|{pk}|nv_SessionGr')]
+                )
             else:  # lector
-                row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto'),
-                    children=[title, _btnEdit('cmdEdit12', pk)])
+                row = _div(
+                    **style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto'),
+                    children=[title, _btnEdit('cmdEdit12', pk)]
+                )
 
             mainDocs.append([pk, row])
 
-        return {'mainDocs': mainDocs,'refsDocs': None}
+        return {'mainDocs': mainDocs, 'refsDocs': None}
 
     # *** *** ***
 
     def lectorSheet(self):
         # lector
         self.leftWidth = 105
-        self.upField = _btnD('Программа',
-                'previewArm', 'newForm=v_content&title=Программа',
-                className='btnArm', **style(padding=10, fontSize=18, margin='5px auto', display='block', width=200))
+        self.upField = _btnD(
+            'Программа',
+            'previewArm', 'newForm=v_content&title=Программа',
+            className='btnArm', **style(padding=10, fontSize=18, margin='5px auto', display='block', width=200)
+        )
 
         self.leftList = _field('leftList2', 'band', [])  # groups)
 
         self.viewbar = self.makeViewbar(
             **style(gridTemplateColumns='1px 1fr', borderWidth='0 0 2px 0', background='transparent'),
-            rightBtn=rightBtnLK('2', self._userAgent),
+            rightBtn=rightBtnLK('2'),
         )
 
-        url = '/api/getData?form=arm&cmd=getSelected2&showTutor={showTutor}&selected={leftList2}&status={status2}&view={changeView2}&plan={plan2}'
+        url = 'form=arm&cmd=getSelected2&showTutor={showTutor}&selected={leftList2}&status={status2}&view={changeView2}&plan={plan2}'
         previewUrl = 'dbAlias=nv_SessionGr'
 
         self.mainList = _div(**style(height='100%'), children=[
@@ -292,8 +370,30 @@ class arm(Page):
             if 'преподаватель' in prof.role:
                 dcUK.doc.lectorGroups = json.dumps(getLectorGroups(prof.full_Name), ensure_ascii=False)
 
+            # группы сотрудника
+            dcUK.doc.workerGroups = json.dumps(getStudentGroups(pk), ensure_ascii=False)
+
+            # слишком сложно: в гл. ленте _tabNewSber, в иконках 3 дива
+            if prof.FILES1_:
+                try:
+                    js = json.loads(prof.FILES1_)
+                    icon = _div(
+                        **style(height=70, width=60), children=[
+                            _div(
+                                **style(
+                                    height=60, backgroundSize='100% 100%',
+                                    backgroundImage=f'url("/api/xImage?path={js[0]["path"]}&type={js[0]["type"]}")')),
+                            _div('ЛК'),
+                            ])
+                    dcUK.doc.lkIcon = json.dumps(icon, ensure_ascii=False)
+                except Exception as ex:
+                    err(f'json.loads for "{prof.FULL_NAME}": {ex}', cat='profile-photo')
+
         dcUK.doc.fullName = dcUK.fullName
-        dcUK.doc.openProfile = f"{dcUK.fullName}|openProfile{'' if dcUK._profilePK else '|1'}"
+        l, _, r = dcUK.fullName.partition(' ')
+        fn = f'{l} {r[0]}.' if r else l
+        dcUK.doc.openProfile = f"{fn}|openProfile{'' if dcUK._profilePK else '|1'}"
+        dcUK.doc.studentOnly = self.studentOnly
 
 # *** *** ***
 
@@ -346,3 +446,18 @@ def getLectorGroups(full_name, status='0'):
         groups.insert(0, f"Все группы|{'-'.join(ls)}")
     return groups
 
+# *** *** ***
+
+
+def getStudentGroups(studId):
+    groups = set()  # У студня м.б. неск групп
+    sstArr = list(well('sessionSt_idPr', studId) or []) + well('sessionsGrCommon')
+    # !!! well('sessionsGrCommon') - здесь уже сессии общих групп
+    for sst in sstArr:
+        if sst.sessiongr_id:
+            sgr = well('sessionGr_Id', sst.sessiongr_id)
+        else:
+            sgr = sst  # она и есть сессия группы
+        groups.add(well('groups_groupId', sgr.NVGROUP).title)
+
+    return list(groups)

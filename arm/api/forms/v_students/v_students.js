@@ -28,7 +28,7 @@ window.sovaActions.v_students = {
 	},
 	recalc: {
 		UPLIST: (doc, i) => {
-	        doc.util.jsonByUrl(doc, `/api/getData?form=v_students&cmd=getGroups&status=${i}`)
+	        doc.util.getJson(doc, `form=v_students&cmd=getGroups&status=${i}`)
 	            .then( js => {
 					doc.changeDropList('LEFTLIST', js);
 					doc.loadView('mainList', true);

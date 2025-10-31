@@ -33,8 +33,8 @@ def loadWell(key, param=None):
                 with open(fn, encoding='utf-8') as f:
                     buf = f.read().replace('{% site %}', config.host)
                     toWell(buf, 'manifest.json')
-            except:
-                err(f'file "{fn}" not loaded', cat='loadWell')
+            except Exception as ex:
+                err(f'file "{fn}" not loaded: {ex}', cat='loadWell')
 
             if not loadCls():
                 err('Cls (and all...) not loaded', cat='loadWell')
@@ -145,15 +145,19 @@ def loadReport():
     from nv_reports.models import Report
 
     reports = []
+    reportsJobs = []
     turnOnReport = []
     for m in Report.docs.all().order_by('-id').values():
         dc = getBody(m)
         if dc.form in ['html', 'Report']:
             reports.append(dc)
+        elif dc.form == 'Module':
+            reportsJobs.append(dc)
         if dc.turn_on and dc.scheduled:
             turnOnReport.append(dc)
 
     toWell(reports, 'reports')
+    toWell(reportsJobs, 'reportsJobs')
     toWell(turnOnReport, 'turnOnReport')
 
 
@@ -174,7 +178,6 @@ def loadSessionGr():
             continue
 
         if dc.commonGroups:
-            dc.form = 'SessionGr'
             sessionsGrCommon.append(dc)
 
         nvgroup = dc.nvgroup_id  # title
@@ -223,7 +226,8 @@ def createSessionSt():
 
     tempSst = {}
     for sst in SessionSt.docs.values().all():
-        tempSst[f"{sst['pref']}|{sst['sessiongr_id']}"] = getBody(sst)
+        if sst['status'] == 'active':
+            tempSst[f"{sst['pref']}|{sst['sessiongr_id']}"] = getBody(sst)
 
     clearWell('other')
     sessionSt_idPr = {}
@@ -234,7 +238,7 @@ def createSessionSt():
     ggr = None
 
     def getSst(sgr, prf, stm, owner=None):
-        nonlocal sessionSt_idPr, sessionSt_sgrId, nvGrId, saved, ggr
+        nonlocal saved
         dc = tempSst.get(f'{prf}|{sgr}')
         noPr = noGr = None
         if dc:
@@ -321,7 +325,7 @@ def createSessionSt():
     for idPr, sessSt in sessionSt_idPr.items():
         toWell(sessSt, 'sessionSt_idPr', idPr)
 
-    for idGr,sessSt in sessionSt_sgrId.items():
+    for idGr, sessSt in sessionSt_sgrId.items():
         toWell(sessSt, 'sessionSt_sgrId', idGr)
 
     toWell(0, 'busy')
@@ -374,7 +378,7 @@ def loadSessionTmpl():
         if dc.status == 'deleted':
             continue
 
-        sessionTmpl_nve[dc.nvEvent] = sessionTmpl_nve.get(dc.nvEvent,[])
+        sessionTmpl_nve[dc.nvEvent] = sessionTmpl_nve.get(dc.nvEvent, [])
         sessionTmpl_nve[dc.nvEvent].append(dc)
         sessionTmpl_nve['all'].append(dc)
 
@@ -382,10 +386,10 @@ def loadSessionTmpl():
             sessionTmpl_nve_band[dc.nvEvent] = sessionTmpl_nve_band.get(dc.nvEvent, [])
             sessionTmpl_nve_band[dc.nvEvent].append(f'{dc.title}|{dc.id}')
 
-    for cu,te in sessionTmpl_nve.items():
+    for cu, te in sessionTmpl_nve.items():
         toWell(sorted(te, key=lambda x: x.title), 'sessionTmpl_nve', cu)
 
-    for cu,te in sessionTmpl_nve_band.items():
+    for cu, te in sessionTmpl_nve_band.items():
         toSwell(sorted(te), 'sessionTmpl_nve_band', cu)
 
 # *** *** ***
@@ -484,8 +488,8 @@ def loadProfiles():
     toWell(profilesByPhone, 'profilesByPhone')
 
     clearWell('students_grId')  # for students by group
-    for gr,stud in students_grId.items():
-        toWell(sorted(stud,key=lambda dc: dc.full_name),'students_grId',gr)
+    for gr, stud in students_grId.items():
+        toWell(sorted(stud, key=lambda dc: dc.full_name), 'students_grId', gr)
 
     clearSwell('more')
     toSwell(more, 'more')
@@ -493,6 +497,7 @@ def loadProfiles():
     snd(f'users: {i}', cat='all_users')
 
     # *** *** ***
+
 
 def loadPayments():
     from nv.models import Payment
@@ -532,4 +537,3 @@ def loadLanding():
     toWell(landingByPage, 'landingByPage')
     toWell(landingByKey, 'landingByKey')
     toWell(landing, 'landing')
-

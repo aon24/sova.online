@@ -16,7 +16,9 @@ from arm.tools.dbToolkit.DJ import docFromDB
 
 
 class NVGroup(Page):
-
+    '''
+    CRM - форма описание группа
+    '''
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js', ]
@@ -30,10 +32,10 @@ class NVGroup(Page):
     def page(self, request):
         fields = [
             labeldc('ПРОГРАММА'),
-            _div(**style(textAlign='center',font='bold 15px Arial',color='#036'),children=[
-                _field('programm','fd')
-            ]),
-            _h2('Группа',**style(textAlign='center',margin=0,letterSpacing=2)),
+            _div(**style(textAlign='center', font='bold 15px Arial', color='#036'),
+                 children=[_field('programm', 'fd')]
+                 ),
+            _h2('Группа', **style(textAlign='center', margin=0, letterSpacing=2)),
 
             *labField('Номер (сначала год, затем №)', 'title', 'tx'),
 
@@ -45,9 +47,9 @@ class NVGroup(Page):
 
             _div(children=[
                     labell('Куратор', name='curator'),
-                    _field('curator', 'lbsd', '/api/well?clues=куратор2', name='curator'),
+                    _field('curator', 'lbsd', 'cmd=well&clues=куратор2', name='curator'),
                     labeldc('В расписании группу видят'),
-                    _field('commonGroups', 'lbsd', '/api/well?clues=groupsCat', alias=1, **style(margin='auto', width=250)),
+                    _field('commonGroups', 'lbsd', 'cmd=well&clues=groupsCat', alias=1, **style(margin='auto', width=250)),
                 ],
                 **style(border='2px solid #fff', margin=5, padding=5, background='#e0F0ff50'),
             ),
@@ -93,11 +95,10 @@ class NVGroup(Page):
                 if oldGr != dc.doc.curator_groups:
                     dc.save()
 
-            except:
+            except Exception:
                 err(f'NVGroup. Profile get err for pk={pk}', cat='querySave')
                 return
 
         return True
 
     # ***
-

@@ -16,6 +16,9 @@ import json
 
 
 class v_classifiers(Page):
+    '''
+    CRM вид справочники
+    '''
     title = 'Справочники'
     dbAlias = 'nv_Classifier'
     leftList = None

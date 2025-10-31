@@ -15,6 +15,10 @@ import json
 
 
 class v_payments(Page):
+    '''
+    CRM вид Платежи
+    '''
+
     title = 'Платежи'
     dbAlias = 'nv_Payment'
     _VIEW_ = 1

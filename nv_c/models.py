@@ -8,6 +8,7 @@ from nv.models import PageManager, txf, _body, _status
 
 # *** *** ***
 
+
 class Profile(models.Model):
     docs = PageManager()  # Менеджер status != 'deleted'
     objects = models.Manager()  # Менеджер по умолчанию
@@ -38,4 +39,3 @@ class Profile(models.Model):
         return str(self.full_name)
 
 # *** *** ***
-

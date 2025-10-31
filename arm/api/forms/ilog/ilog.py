@@ -7,7 +7,9 @@ from arm.api.forms.formTools import gridStyle, style, _div, _field
 from arm.api.forms.classPage import Page
 from arm.tools.first import sovaLogger, err
 
-import re, os, json
+import re
+import os
+import json
 
 # *** *** ***
 
@@ -18,6 +20,10 @@ logList = []
 
 
 class ilog(Page):
+    '''
+    Журнал. Отображает ошибки и сообщения.
+    Файлы журналов формируются в arm.tools.first.py и хранятся в ./log/*.log
+    '''
     title = 'Log'
     noCaching = True
     _PAGE_ = 1
@@ -30,15 +36,16 @@ class ilog(Page):
         super().__init__(request)
 
     def page(self, request):
-        leftList = _div(**style(height='100vh', background='#44880030'),
+        leftList = _div(
+            **style(height='100vh', background='#44880030'),
             children=[
-            _field('cat', 'list', s_cats, alias=1, className='navBtn', listItemClassName='rsvTop'),
-            _field('subCat', 'list', f'CAT|||/api/get/getData?cmd=getSubCats&form=ilog&mode=new&cat={{FIELD}}',
-                **style(overflow='hidden auto', width='90%', margin='auto', height='calc(100vh - 185px'),
-                saveAlias=1, evenColor='#f4f8ff', default=-1)
-        ])
+                _field('cat', 'list', s_cats, alias=1, className='navBtn', listItemClassName='rsvTop'),
+                _field('subCat', 'list', 'CAT|||cmd=getSubCats&form=ilog&mode=new&cat={{FIELD}}',
+                       **style(overflow='hidden auto', width='90%', margin='auto', height='calc(100vh - 185px'),
+                       saveAlias=1, evenColor='#f4f8ff', default=-1)
+                ])
 
-        btns = [_div(f'{i+1}' , title='Системный журнал') for i in range(len(logList))]
+        btns = [_div(f'{i+1}', title='Системный журнал') for i in range(len(logList))]
 
         return _div(children=[
             _div(**style(overflow='hidden'), children=[
@@ -47,29 +54,28 @@ class ilog(Page):
 
                     _div(children=[
                         _div(**style(padding=3, background='#dfe', border='0 solid #eee', borderBottomWidth=2),
-                            children=[_field('log_0_6', 'band', btns, className='logband')]
-                        ),
+                             children=[_field('log_0_6', 'band', btns, className='logband')]
+                             ),
                         _div(**style(height='calc(100vh - 50px)', maxWidth='calc(100vw - 170px)', overflow='auto', background='#fff'),
-                            children=[_field('msg', 'fd', br=1, **style(font='normal 14px Courier'))]
-                        )
+                             children=[_field('msg', 'fd', br=1, **style(font='normal 14px Courier'))]
+                             )
                     ]),
                 ]),
             ]),
         ])
 
+    #  *** *** ***
 
-    # *** *** ***
-
-    def queryOpen(self, r):
+    def queryOpen(self, request):
         global s_subCats, logList
-        r.dcUK.doc.msg = 'загрузка...'
+        request.dcUK.doc.msg = 'загрузка...'
 
         logList = []
         for i in range(10):
             try:
                 f = sovaLogger.logPath % i
                 logList.append({'time': os.stat(f).st_mtime, 'file': f})
-            except:
+            except Exception:
                 pass
 
         logList.sort(key=lambda x: x['time'], reverse=True)
@@ -78,15 +84,15 @@ class ilog(Page):
             self.loadLog(0)
         except Exception as ex:
             err(f'queryOpen: {ex}', cat='classPage: log')
-            s_subCats = {k:[] for k in s_cats}
+            s_subCats = {k: [] for k in s_cats}
 
     # *** *** ***
 
     def loadLog(self, num):
-        global s_DBC, s_subCats, logList
+        global s_DBC, s_subCats
         ALL = '__Все__'
         s_DBC = {}
-        s_subCats = {k:[] for k in s_cats}
+        s_subCats = {k: [] for k in s_cats}
 
         with open(logList[int(num or 0)]['file'], 'rt', encoding='utf-8', errors='ignore') as f:
             lsMsg = f.read().split('¤')

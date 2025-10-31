@@ -14,7 +14,8 @@ from arm.api.forms.toolbars import toolbar
 
 WIDTH = 1200
 """
-форма для генерации html
+*** Landing-forms ***
+форма для генерации html "for ldc in well('landing') ..."
 генерит страницу в doc.html_FD из поля body с подстановкой 4-х шаблонов
 def queryOpen(self, r):
     ...
@@ -68,12 +69,11 @@ class a_html(Page):
             return _div(className='bg52', children=[
                 _div(className='page', children=prj),
                 _div(children=[toolbar.close_],
-                    ** style(display='flex', justifyContent='center', height=40, maxHeight=40,
-                            padding=3)),
+                     ** style(display='flex', justifyContent='center', height=40, maxHeight=40,
+                              padding=3)),
             ])
 
-
-    # ***
+    #  ***
 
     def getJsCssUrl(self, request):
         if request.dcUK.mode in ['read', 'preview']:
@@ -100,7 +100,7 @@ class a_html(Page):
                 for ldc in well('landing'):
                     if ldc.unid == dcUK.sourceDoc:
                         for k, v in ldc.items():
-                            if k not in ['UNID', 'CREATED' , 'CREATOR' , 'MODIFIED', 'MODIFIER', 'REF']:
+                            if k not in ['UNID', 'CREATED', 'CREATOR', 'MODIFIED', 'MODIFIER', 'REF']:
                                 doc[k] = v
 
     # *** *** ***

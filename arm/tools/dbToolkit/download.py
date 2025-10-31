@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from arm.tools.first import err
-# from arm.tools.checkRights import notReader
 from arm.tools.httpMisc import nvResponse
-from arm.tools.DC import well
 from arm.settings import DB_DIR
 
 import zlib
 import os
 
 # *** *** ***
+
 
 def downloadFile(request):
 
@@ -19,7 +18,7 @@ def downloadFile(request):
 
     dcUK = request.dcUK
     # if notReader(dcUK.dbAlias, dcUK.fullName):
-        # return _err(f'uploadFile: Access denied for user {dcUK.fullName}')
+    #     return _err(f'uploadFile: Access denied for user {dcUK.fullName}')
 
     try:
         fullname = os.path.join(DB_DIR, 'files', dcUK.path)

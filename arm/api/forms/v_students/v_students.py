@@ -15,7 +15,7 @@ import json
 
 class v_students(Page):
     '''
-    button "Студенты по гр."
+    CRM вид "Студенты по гр."
     '''
     title = 'Студенты'
     dbAlias = 'nv_Profile'
@@ -44,7 +44,6 @@ class v_students(Page):
             else:
                 data = swell('groups')
         else:
-            # '/api/well?clues=groups'
             data = f'invalid cmd: {dcUK.cmd}'
         return json.dumps(data, ensure_ascii=False)
 
@@ -66,7 +65,7 @@ class v_students(Page):
     # *** *** ***
 
     def getView(self, dcUK):
-        grId = (dcUK.selected + '|').split('|')[1]  # 2022-6/Дн|65|active
+        grId = dcUK.selected.partition('|')[0]  # 65|active
         mainDocs = []
 
         for dc in well('students_grId', grId):

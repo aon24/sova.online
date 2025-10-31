@@ -104,7 +104,7 @@ class wsgiRH(BaseHTTPRequestHandler):
     # *** *** ***
 
     def handle_one_request(self):
-        if 1:#try:
+        try:
             self.raw_requestline = self.rfile.readline(65537)
             if len(self.raw_requestline) > 65536:
                 self.requestline = ''
@@ -122,12 +122,13 @@ class wsgiRH(BaseHTTPRequestHandler):
             if result_iter:
                 for data in result_iter:
                     if data:
+                        self.wfile.flush()
                         self.wfile.write(data)
                         self.wfile.flush()
 
-#        except Exception as ex:
-#            self.log_error('svServer.py.handle_one_request: %r', ex)
-#            self.close_connection = True
+        except Exception as ex:
+            self.log_error('svServer.py.handle_one_request: %r', ex)
+            self.close_connection = True
 
     # *** *** ***
 
@@ -152,29 +153,28 @@ if __name__ == '__main__':
     from pathlib import Path
 
     baseDir = Path(__file__).resolve().parent
-    if sys.platform == 'win32':
-        sys.path.insert(0, str(baseDir / 'libForUSB'))
-    else:
-        venvLib = baseDir / 'venv' / 'lib'
-        try:
-            py = [f for f in os.listdir(venvLib) if f.lower().startswith('python3')][0]
-            venv = venvLib / py / 'site-packages'
-            sys.path.insert(0, str(venv))
-        except:
-            pass
+    venvLib = baseDir / 'venv' / 'lib'
+    try:
+        py = [f for f in os.listdir(venvLib) if f.lower().startswith('python3')][0]
+        venv = venvLib / py / 'site-packages'
+        sys.path.insert(0, str(venv))
+    except:
+        pass
 
-    import arm.wsgi
-    wsgiApplication = arm.wsgi.application
+    import importlib
+    wsgiApplication = importlib.import_module('arm.wsgi').application
 
-    port = 8081
+    try:
+        with open('httpport.txt', 'rt') as f:
+            port = int(f.read())
+    except:
+        port = 8081
 
     server = SovaHttpServer(('', port), wsgiRH)
     threading.Thread(target=server.serve_forever).start()
+    print(f'HTTP WSGI server started (port {port}')
     log.snd(f'''
-=== === === HTTP WSGI server started (port {port})
-=== === === {versionStr}
-=== === === Application: "DJANGO.application"
-=== === === logLevel: INFO''', cat='Start')
+=== === === HTTP WSGI server started (port {port}) === === === {versionStr}''', cat='Start')
 
 # *** *** ***
 

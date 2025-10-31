@@ -45,6 +45,19 @@ let rotate = p3d => {
 
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.a_design = {
+	init: doc => {
+		let m = parseFloat(localStorage.getItem('nvScale') || 1);
+		let sca = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5];
+		if (!sca.includes(m)) {
+			m = 1;
+			localStorage.setItem('nvScale', 1);
+		}
+        doc.m = m;
+
+		for (let it of ['eMovePl_etc', 'eSavePl_etc', 'noIcons_etc']) {
+			doc[it] = localStorage.getItem(it);
+        }		
+	},
 	init2: doc => {
 		let findTurnOn = p3d => {
 			if (p3d.tuning.turnOn) {
@@ -71,12 +84,27 @@ window.sovaActions.a_design = {
 	
 	recalc: {},
 	cmd: {
+		previewArm: (doc, url, ctrlKey, shift) => doc.previewNew(url, ctrlKey, shift),
 		close2d: doc => doc.cmdClose(),
+		showMD: (doc, param, ctrlKey, shiftKey) => {
+			let [title, fileName] = doc.util.partition(param, '|');
+			let page = {
+				dbAlias: 'no',
+				title: title || 'О системе',
+				newForm: 'DeepSeekMD',
+				addUrl: `&fileName=${fileName}`,
+				rsMode: 'read',
+				pageName: `md-${param}`,
+			};
+			doc.previewNew(page, ctrlKey, shiftKey);
+		},
+		
 		more: (doc, param, ctrlKey, shiftKey) => {
+			let [pageName, title] = doc.util.partition(param, '|');
 			let page = {
 				dbAlias: 'draft',
-				title: 'О системе',
-				addUrl: `&page=${param}`,
+				title: title || 'О системе',
+				addUrl: `&page=${pageName}`,
 				rsMode: 'read',
 				pageName: `more-${param}`,
 			};

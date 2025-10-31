@@ -1,7 +1,6 @@
 from arm.tools.DC import DCC
-from arm.api.forms.formTools import labField, style, label, _div, _field, gridStyle, docTitle
+from arm.api.forms.formTools import label, _div, gridStyle
 
-import time
 
 def main(rpc):
     dcls = []

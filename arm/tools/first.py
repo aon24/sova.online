@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-import os, time, sys
+import os
+import time
+import sys
 from datetime import datetime
 
 from arm.settings import LOG_DIR, DEBUG
@@ -30,7 +32,7 @@ class SvLogger(object):
             try:
                 if os.stat(self.logFileName).st_size < self.maxLogSize:
                     return
-            except:
+            except Exception:
                 pass
 
         self.fileHandler and self.fileHandler.close()
@@ -40,17 +42,17 @@ class SvLogger(object):
         for i in range(self.maxLogFiles):
             try:
                 ls[i] = {'time': os.stat(self.logPath % i).st_mtime, 'size': os.stat(self.logPath % i).st_size}
-            except:
+            except Exception:
                 ls[i] = {'time': 0}
 
         i = sorted(ls.keys(), key=lambda x: ls[x]['time'], reverse=True)[0]  # номер последнего журнала
         if ls[i]['time'] == 0:  # список журналов пуст
             i = 0
         elif ls[i]['size'] > self.maxLogSize:  # размер файла больше допустимого
-                logFileMode = 'w'
-                i += 1
-                if i >= self.maxLogFiles:
-                    i = 0
+            logFileMode = 'w'
+            i += 1
+            if i >= self.maxLogFiles:
+                i = 0
         self.logFileName = self.logPath % i
         self.fileHandler = open(self.logFileName, mode=logFileMode, encoding='utf-8', errors='ignore')
 
@@ -97,4 +99,3 @@ def err(*msg, cat='all'):
 
 
 sovaLogger = SvLogger()
-

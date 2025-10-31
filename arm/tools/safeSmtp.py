@@ -29,4 +29,3 @@ class SafeSMTPEmailBackend(EmailBackend):
         except Exception as ex:
             err(f"SMTP Error: {ex}", cat='smtp')
             return False
-

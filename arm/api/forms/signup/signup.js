@@ -6,8 +6,8 @@ window.sovaActions.signup = {
 			if (!phone)
 				return doc.msg.ok('Регистрация только для студентов и сотрудников','Регистрация|Телефон не указан');
 			
-			fetch(`/api/getData?form=login&cmd=checkPhone&phone=${phone}`, {method: 'get', credentials: 'include'})
-				.then( response => response.text() )
+			doc.util.getJson(doc, `form=signup&cmd=checkPhone&phone=${phone}`, true)
+//				.then( response => response.text() )
 				.then( tx => {
 					if (tx === 'not found')
 						return doc.msg.ok('Регистрация только для студентов и сотрудников','Регистрация|Телефон не найден');

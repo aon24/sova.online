@@ -2,6 +2,8 @@ from arm.tools.loadWell import loadWell
 from arm.tools.DC import getBody, well
 
 from django.db import models
+from django.contrib import admin
+from django.contrib.sessions.models import Session
 
 # *** *** ***
 
@@ -18,6 +20,7 @@ def txf(tx=None, **kv): return models.TextField(tx, blank=True, *kv)
 
 
 def _body(): return txf()
+
 
 def _status(): return txf('Состояние')
 
@@ -148,8 +151,6 @@ class Payment(models.Model):
 # *** *** ***
 
 
-from django.contrib import admin
-from django.contrib.sessions.models import Session
 admin.site.register(Session)
 
 # admin.site.register(SessionTmpl)
@@ -164,4 +165,3 @@ class SessionTmplAdmin(admin.ModelAdmin):
 @admin.register(SessionGr)
 class SessionGrAdmin(admin.ModelAdmin):
     list_display = ['id', 'status']
-

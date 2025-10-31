@@ -16,6 +16,10 @@ import json
 
 
 class v_groups(Page):
+    '''
+    CRM вид группы
+    '''
+
     title = 'Группы'
     dbAlias = 'nv_NVGroup'
     leftList = None

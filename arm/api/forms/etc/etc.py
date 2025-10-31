@@ -9,8 +9,20 @@ from arm.api.forms.toolbars import toolbar
 
 # *** *** ***
 
+scale = _div(**style(textAlign='center'), children=[
+    _lc('Установите удобный для глаз масштаб'),
+    _field('scale_ETC', 'band', ['75%', '90%', '100%', '110%', '125%'],
+           **style(maxWidth=300, margin='auto')
+           ),
+])
+
 
 class etc(Page):
+    '''
+    CRM открывается по иконки "инструменты" в правом верхнем углу
+    Настройки интерфейса пользователя: масштаб etc
+    Кнопки 3DL, Life, Log, admin
+    '''
     title = 'Настройки'
 
     def __init__(self, request):
@@ -23,33 +35,29 @@ class etc(Page):
 
     def office(self):
         return _div(
-            children=[
+          children=[
             _div(**style(margin='10px auto', height=1, width=250, border='0 solid #036', borderTopWidth=1)),
 
             _btnD('Р А С С Ы Л К И', 'exportEmail', className='rsvTop',
-                **style(width=150, margin='10px auto')),
+                  **style(width=150, margin='10px auto')),
             _btnD('3 D L', 'previewArm', 'newForm=v_more&title=Лендинговые страницы',
-                title='Лендинговые страницы', className='rsvTop',
-                **style(width=150, margin='10px auto')),
+                  title='Лендинговые страницы', className='rsvTop',
+                  **style(width=150, margin='10px auto')),
 
             _div(**style(margin='4px auto', height=1, width=250, border='0 solid #036', borderTopWidth=1)),
 
             _btnD('Life', 'loadWell', **style(width=150, margin='10px auto'), title='Перезагрузка справочников', className='rsvTop'),
             _btnD('Log', 'xopen', '/api/new?form=ilog', **style(width=150, margin='10px auto'), title='syslog', className='rsvTop'),
             _a('Admin', href='/admin/', **style(margin='10px auto')),
-        ])
+            ])
 
     def page(self, request):
         _etc = [
             _div(**style(height='100%', overflow='auto', textAlign='center'), children=[
-                _lc('Размер'),
-                _field('scale_ETC', 'band', ['50%', '75%', '90%', '100%', '110%', '125%', '150%', ],
-                    **style(maxWidth=300, margin='auto')
-                ),
+                scale,
                 _div(**style(maxWidth=300, margin='auto', gap='10px', display='grid', gridTemplateColumns='1fr 100px'),
-                    children=[
-                        *labField('Показать текст вместо иконок', 'noicons_etc', 'chb', ['да'], edit=1),
-                        *labField('Изменять размер окна окна', 'eMovePl_etc', 'chb', ['да'], edit=1),
+                     children=[
+                        *labField('Изменять размер окна', 'eMovePl_etc', 'chb', ['да'], edit=1),
                         *labField('Автоматически сохранять положение окон', 'eSavePl_etc', 'chb', ['да'], edit=1),
                 ]),
 
@@ -61,8 +69,7 @@ class etc(Page):
                 self._staff and self.office()
             ])
         ]
-        
+
         return self.docPage(_etc, tool=[toolbar.close_])
 
 # *** *** ***
-

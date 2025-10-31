@@ -17,6 +17,10 @@ import os
 
 
 class img(Page):
+    '''
+    Форма для загрузки картинок
+    Используется там, где есть картинки, напр. в шаблоне сессии (SessionTmpl)
+    '''
     title = 'Pictures'
     noCaching = True
     dbAlias = 'arm'
@@ -85,15 +89,17 @@ class img(Page):
             fil = os.path.join(path, k)
             if os.path.isfile(fil) and what(fil):
                 if request.dcUK.list == '1':
-                    item = _btnD('', 'oneImg', f'/{self.pictures}/{subDir}{k}', className='chDir',
+                    item = _btnD(
+                        '', 'oneImg', f'/{self.pictures}/{subDir}{k}', className='chDir',
                         title=f'Выбрать файл "{k}"',
                         **style(margin=5, display='flex'),
-                         children=[
+                        children=[
                             labell(k, **style(width=200)),
                             _img(src=f'/{self.pictures}/{subDir}{k}', alt=k, **style(width=100, height=100))
                         ],)
                 else:
-                    item = _btnD('', 'oneImg', f'/{self.pictures}/{subDir}{k}', className='chDir',
+                    item = _btnD(
+                        '', 'oneImg', f'/{self.pictures}/{subDir}{k}', className='chDir',
                         title=f'Выбрать файл "{k}"',
                         **style(margin=5),
                         children=[
@@ -104,10 +110,10 @@ class img(Page):
             elif os.path.isdir(fil):
                 btn.append(
                     _btnD('', 'chDir', f'{subDir}{k}', className='chDir', title='открыть',
-                        children=[
-                            _img(src=f'/image/folder.png'),
+                          children=[
+                            _img(src='/image/folder.png'),
                             _div(k, **style(padding='0 10px'))
-                    ])
+                            ])
                 )
         if btn:
             ls = [_div(children=btn, **style(textAlign='center', margin=5))] + \
@@ -123,4 +129,3 @@ class img(Page):
         dcUK.doc.btnlist = 1 if dcUK.list == '1' else ''
 
     # *** *** ***
-

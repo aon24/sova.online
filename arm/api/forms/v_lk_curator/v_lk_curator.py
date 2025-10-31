@@ -11,7 +11,7 @@ from arm.api.forms.formTools import style, _div, _btnD, _field, _btnEdit, _btnPr
 from arm.api.forms.classPage import Page
 from arm.tools.dbToolkit.DJ import docFromDB
 from arm.api.forms.toolbars import toolbar
-from arm.api.forms.lk_tools import sstButtons
+from arm.api.forms.sstButtons import sstButtons
 
 from django.http import HttpResponse
 
@@ -33,45 +33,43 @@ class v_lk_curator(Page):
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
         self.jsCssUrl = [f'/api/jsv?forms/v_lk_curator/v_lk_curator.js']
-        self.leftWidth = 105
+        self.leftWidth = 150
 
         super().__init__(request)
 
-    def putData(self, dcUK, buf):
-        if not (dcUK.cmd == 'setField' and buf and (dcUK._staff or 'куратор' in dcUK._role)):
-            err(f'Unknown cmd: {dcUK.cmd}', cat=self.form)
-            return HttpResponse(f'PutData for {self.form}. Unknown cmd: {dcUK.cmd}', None, 200)
-
-        # import time
-        # time.sleep(1)
-        try:
-            ls = buf.split('¤')
-            l = len(ls) - 1
-            toWell(1, 'busy')
-            for i, ch in enumerate(ls):
-                if ch:
-                    pk, _, val = ch.partition('=')
-                    dc = DC(unid=pk, dbAlias='nv_SessionSt', fullName=dcUK.fullName, _superUser=dcUK._superUser)
-                    if docFromDB(dc) and dc.form != 'SessionGr':  # в списке могут быть сиссии группы(commonSessGr)
-                        if dc.doc[dcUK['field']] != val:
-                            dc.doc[dcUK['field']] = val
-                            dc.save()
-                    if i >= l:
-                        toWell(0, 'busy')
-                        sgr = well('sessionGr_Id', dc.doc.sessionGr)
-                        loadWell('SessionSt', sgr.nvgroup_id)
-            return HttpResponse('OK')
-
-        except Exception as ex:
-            toWell(0,'busy')
-            loadWell('SessionSt')
-            err(f'PutData (cmd={dcUK.cmd}):{ex}', cat=self.form)
-            return HttpResponse(f'PutData for {self.form}(cmd={dcUK.cmd}): {ex}', None, 200)
-
-    # *** *** ***
-
     def getData(self, dcUK):
-        if dcUK.cmd == 'getSelected':
+        if not (dcUK._staff or 'куратор' in dcUK._role):
+            return '""'
+        if dcUK.cmd == 'setField':
+            try:
+                flag = None
+                toWell(1, 'busy')
+                i = 0
+                for ch in dcUK.buf.split('¤'):
+                    if ch:
+                        pk, _, val = ch.partition('=')
+                        dc = DC(unid=pk, dbAlias='nv_SessionSt', fullName=dcUK.fullName, _superUser=dcUK._superUser)
+                        i += 1
+                        if docFromDB(dc) and dc.form != 'SessionGr':  # в списке могут быть сиссии группы(commonSessGr)
+                            if dc.doc[dcUK['field']] != val:
+                                dc.doc[dcUK['field']] = val
+                                dc.save()
+                                flag = True
+                toWell(0, 'busy')
+                if flag:
+                    sgr = well('sessionGr_Id', dc.doc.sessionGr)
+                    loadWell('SessionSt', sgr.nvgroup_id)
+                return HttpResponse('OK')
+
+            except Exception as ex:
+                toWell(0, 'busy')
+                loadWell('SessionSt')
+                err(f'getData (cmd={dcUK.cmd}):{ex}', cat=self.form)
+                return HttpResponse(f'getData for {self.form}(cmd={dcUK.cmd}): {ex}', None, 200)
+
+        # ***
+
+        elif dcUK.cmd == 'getSelected':
             data = self.getView(dcUK)
 
         # CH GROUP
@@ -79,6 +77,13 @@ class v_lk_curator(Page):
             data = swell('sessionsGr_GrId_band', dcUK.groupdId) or []
             if dcUK.status != '1':
                 data = [s for s in data if s.endswith('|active')]
+
+        elif dcUK.cmd == 'getSgr':
+                if dcUK.event:
+                    ls = well('sessionsGr_GrId', dcUK.group)
+                    data = [f'{dc.title}|{dc.id}' for dc in ls if dc.nvEvent == dcUK.event]
+                else:  # v_lk_curator2
+                    data = swell('sessionsGr_GrId_band', dcUK.group) or []
         else:
             data = [f'invalid cmd: {dcUK.cmd}']
 
@@ -86,25 +91,44 @@ class v_lk_curator(Page):
 
     # *** *** ***
     setButtons = [
-                _field('selectAll', 'chb', [''], nv=1, edit=1, className='chbVN'),
+                _field('selectAll', 'chb', [''], chbView='nv', edit=1, className='chbVN'),
                 _div(**style(width=10), name='viewbar'),
                 _btnD('Допуск+', 'cmdSet', 'allow_s', name='viewbar'),
                 _div(**style(width=10), name='viewbar'),
-                _btnD('Допуск-', 'cmdSet', 'allow_r', name='viewbar'),
+                _btnD('Доп.-', 'cmdSet', 'allow_r', name='viewbar'),
                 _div(**style(width=10), name='viewbar'),
                 _btnD('Был', 'cmdSet', 'was_s', name='viewbar'),
                 _div(**style(width=10), name='viewbar'),
                 _btnD('Не был', 'cmdSet', 'was_r', name='viewbar'),
-                _div(**style(width=10), name='viewbar'),
-                _btnD('Зачёт+', 'cmdSet', 'test_s', name='viewbar'),
+                # _div(**style(width=10), name='viewbar'),
+                # _btnD('Зачёт+', 'cmdSet', 'test_s', name='viewbar'),
     ]
 
     def page(self, request):
+        if self._userAgent == 'mobile':
+            event = _field(f'event', 'lbsd', list(['Все|'] + swell('events')),
+                alias=1, edit=1, xValue='Все',
+                title='выберите событие',
+                name=f'event',
+                **style(width=230, margin='auto'),
+            )
+        else:
+            event = _field(f'event', 'band', swell('shortEvents'), recalcText=1,
+                className='radioBand',
+                **style(margin='auto'),
+                title='выберите событие',
+                name=f'event')
+
+        status = _div(
+            **style(margin='auto',),
+            children=[_field('status', 'band', ['актив', 'все'],)
+        ])
+
         self.upField = _div(children=[
             _div(className='toolbar', children=[toolbar.close_]),
-            _field('status', 'band', ['актив', 'архив', 'все'], recalcText=1, **style(margin='auto', display='table', width='auto'))
+            event,
         ])
-        self.viewbar = self.makeViewbar(rightBtn=self.setButtons)
+        self.viewbar = self.makeViewbar(leftBtn=[status], rightBtn=self.setButtons)
         self.leftList = _field('leftList', 'band', [], className='list3str')
         return self.shamrock(addUrl='&status={status}')
 
@@ -112,26 +136,21 @@ class v_lk_curator(Page):
 
     def getView(self, dcUK):
         mainDocs = []
-        topStatus = dcUK.status
 
         if dcUK.selected:
-            sgrId = dcUK.selected.split('|')[1]
+            sgrId = dcUK.selected.partition('|')[0]
         else:  # v_lk_curator2
             sgrId = dcUK.sgrId
 
         sessArr = well('sessionSt_sgrId', sgrId)
-
         if not sessArr:
             return {'mainDocs': [('1', 'Сессии для студентов не созданы (нет даты начала)'), ]}
 
         sgr = well('sessionGr_Id',sgrId)
         gridStr = ''
         for sst in sessArr:
-            if topStatus != 'все':
-                if topStatus == 'актив' and sst.status != 'active':
-                    continue
-                if topStatus == 'архив' and sst.status != 'closed':
-                    continue
+            if dcUK.status == '0' and sst.status != 'active':
+                continue
 
             prof = well('profiles', sst.pref)
             if prof.status != 'active':
@@ -151,13 +170,21 @@ class v_lk_curator(Page):
                 s2=1, br=1, **style(letterSpacing=1, paddingLeft=2, color=color))
 
             pk = sst.id
-            chb = _field(f'selOne_{pk}', 'chb', [''], cmd='selOne', nv=1, className='checkboxFV')
+            chb = _field(f'selOne_{pk}', 'chb', [''], cmd='selOne', chbView='nv', className='checkboxFV')
             btnE = _btnEdit('cmdEdit', pk)
             btnP = _btnPref('cmdPref', f'{sst.pref}|{pk}')
 
-            gridStr = gridStr or f'32px 1fr{" auto"*len(sstButtons(sst, sgr))} auto auto'
-            row = _div(**gridStyle(gridStr, placeItems='center start'),
-                children=[chb, title, *sstButtons(sst, sgr), btnE, btnP])
+            div1 = _div(children=[chb, title])
+
+            sstBtn = sstButtons(sst, sgr, curator=True)
+            gridStr = gridStr or f'{"32px "*(len(sstBtn)+2)}'
+            div2 = _div(**gridStyle(gridStr),
+                children=[*sstBtn, btnE, btnP])
+
+            row = _div(className='lk_row', children=[
+                _div(className='lk_left', children=[div1]),
+                _div(className='lk_right', children=[div2])
+            ])
 
             mainDocs.append([pk, row, prof and prof.full_name])
 

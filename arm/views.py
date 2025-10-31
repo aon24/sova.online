@@ -7,7 +7,7 @@ from arm.settings import LOGIN_INVALID_URL
 from arm.tools.DC import well
 from arm.tools.common import cleanPhone
 from arm.api.doGet import _login
-from arm.tools.first import err, snd
+from arm.tools.first import err, snd, dbg
 from arm.api.doGet import apiDoGet, _apiGetList
 from arm.api.doPost import doPost
 from arm.tools.dbToolkit.upload import uploadFile
@@ -24,10 +24,13 @@ from django.http import HttpResponse, FileResponse, HttpResponseNotAllowed
 from django.conf import settings
 
 from urllib.parse import unquote
-import os
 from mimetypes import guess_type
+import json
+import os
+import traceback
 
 # *** *** ***
+
 
 def rsApi(request):
     if request.method == 'GET':
@@ -39,7 +42,22 @@ def rsApi(request):
         if request.path.startswith('/api/upload'):
             return uploadFile(request)
         else:
-            return doPost(request)
+            try:
+                param = ''
+                ln = int(request.META.get('CONTENT_LENGTH', -1))
+                s = request.META['wsgi.input'].read(ln)
+                param, buf = json.loads(s.decode())
+                dbg(f'{request.path} ({param})', cat='POST')
+                for p in param.split('&'):
+                    if '=' in p:
+                        l, _, r = p.partition('=')
+                        request.dcUK[l.strip()] = r.strip()
+
+                return doPost(request, buf)
+
+            except Exception as ex:
+                err(f'POST error for "{param or s.decode()}"\n{traceback.format_exc()}', cat='doPost')
+                return HttpResponse(f'POST error for "{param or s.decode()}": {ex}', status=500)
 
     elif request.method == 'HEAD':
         if request.dcUK._path in _apiGetList:
@@ -53,6 +71,7 @@ def rsApi(request):
 
 # *** *** ***
 
+
 def custom_404_view(request, exception):
     ip = request.META.get('HTTP_X_FORWARDED_FOR')
     if ip:
@@ -64,6 +83,7 @@ def custom_404_view(request, exception):
     return HttpResponse(' ', status=404)
 
 # *** *** ***
+
 
 class CustomSignupForm(SignupForm):
     last_name = forms.CharField(required=True, max_length=150)
@@ -87,6 +107,7 @@ class CustomSignupForm(SignupForm):
 
 # *** *** ***
 
+
 class CustomSignupView(SignupView):
     form_class = CustomSignupForm
 
@@ -94,6 +115,7 @@ class CustomSignupView(SignupView):
         return _login(request)
 
 # *** *** ***
+
 
 class CustomLoginView(LoginView):
 
@@ -139,8 +161,11 @@ def staticFiles(request, fileName=None):
                 ip = request.META.get('HTTP_X_FORWARDED_FOR')
                 ip = ip.split(',')[0] if ip else request.META.get('REMOTE_ADDR')
                 snd(f"{request.user.username} ({ip}) {fileName}", cat='home')
-                return HttpResponse(f.read(), guess_type(filePath)[0], headers=[('X-Frame-Options', 'SAMEORIGIN'), ('Cache-Control', f'max-age={60 * 60 * 24 * 30}')])
-    except:
+                return HttpResponse(
+                    f.read(), guess_type(filePath)[0],
+                    headers=[('X-Frame-Options', 'SAMEORIGIN'),
+                             ('Cache-Control', f'max-age={60 * 60 * 24 * 30}')])
+    except Exception:
         pass
 
     return custom_404_view(request, None)

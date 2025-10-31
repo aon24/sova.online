@@ -17,6 +17,10 @@ import os
 
 
 class html(Page):
+    '''
+    Форма из 1 поля и кнопки "Закрыть" для показа отчетов
+    Отчеты формируются в бд nv_reports(reports.sqlite3) таблица nv_reports.report
+    '''
     _VIEW_ = 1
 
     def __init__(self, request):
@@ -37,5 +41,3 @@ class html(Page):
         return self.jsCssUrlRead + setVersionFiles(fn, '')
 
 # *** *** ***
-
-

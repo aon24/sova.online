@@ -5,14 +5,14 @@ Created on 24 apr 2020
 '''
 
 # *** *** ***
+
 from arm.settings import BASE_DIR, DEBUG
 from arm.tools.common import setVersionFiles
 from arm.tools.first import err, versionString
 from arm.tools.DC import DC, well, toWell, swell
-from arm.api.forms.formTools import infoPage, infoQueryOpen, _btnNew, _teg, _btnD, _fileShow, style, _div, _field, labell, labeldc, gridStyle, labField, label
+from arm.api.forms.formTools import infoPage, infoQueryOpen, _btnNew, _teg, _btnD, \
+    _fileShow, style, _div, _field, labell, labeldc, gridStyle, labField, label
 from arm.api.forms.toolbars import toolbar
-
-from django.http import HttpResponse
 
 import os
 import json
@@ -23,6 +23,7 @@ import traceback
 
 # *** *** ***
 
+
 def getPageObj(request):
     '''
     у документа из БД форма, у страницы page
@@ -32,7 +33,7 @@ def getPageObj(request):
     page = dcUK.form or (dcUK.doc and dcUK.doc.form) or dcUK.page
 
     if page:
-        key = f"{page}-{dcUK.mode or 'read'}-{dcUK._userAgent}-{dcUK._role}-{dcUK._staff}-{dcUK.noicons}"
+        key = f"{page}-{dcUK.mode or 'read'}-{dcUK._userAgent}-{dcUK._role}-{dcUK._staff}-{dcUK._cssTheme}"
         opg = well('forms', key)
         if opg:
             return opg
@@ -53,21 +54,31 @@ def getPageObj(request):
 
 # *** *** ***
 
+
 class Page(object):
     '''
-    urlForms - словарь в форме, хранит url для форм. КЛЮЧ: form+mode+.., возвращает "api/getc?loadForm&outlet.gru::2113546371"
-    form-json - в глобальном словаре готовый json. КЛЮЧ: 'form::CRC-СУММА'
+    self.urlForm - url для формы: f'/api/getс/loadForm?form={self.form}::{crc32}'
+    При открытии докумета клиенту передаются значения полей и url формы.
+    JS по url загружает и распаковывает форму и передает на прорисовку React.
+
+    Сами формы хранятся в глобальном словаре в виде json-строк.
+    Получить форму: js = well('form-json', КЛЮЧ), где КЛЮЧ - 'ИМЯ_ФОРМЫ::CRC_СУММА'
+    Т.о. форма кэшируется с обеих сторон.
+    В редких случаях, когла форма зависит от данных, в форме задается self.noCaching = True.
+    Url без кэширования: f'/api/get/loadForm?form={self.form}::{crc32}'
+    Клиент каждый раз будет лезть на сервер, а сервер будет каждый раз парсить
     '''
     styles = '<link href="/static/fonts/home.css" rel="stylesheet">\n'
+    sep = _div(**style(height=2, margin='5px 0', background='#fff'))
 
     def __init__(self, request):
         dcUK = request.dcUK
-        self.urlForms = ''
+        self.urlForm = ''
         self.mode = dcUK.mode
         self._userAgent = dcUK._userAgent
         self._role = dcUK._role
         self._staff = dcUK._staff
-        self.noicons = dcUK.noicons
+        self._cssTheme = dcUK._cssTheme
 
         for a in ['_VIEW_', '_PAGE_', 'jsCssUrl', 'jsCssUrlRead', 'jsCssUrlEdit', 'dbAlias', 'noCaching', 'styles']:
             not getattr(self, a, None) and setattr(self, a, '')
@@ -93,7 +104,7 @@ class Page(object):
         dcUK = request.dcUK
         if dcUK.doc:  # доступ к конкретному документу
             if dcUK.dbAlias.startswith('nv_') and dcUK.unid:  # django
-                if dcUK.dbAlias.rpartition('_')[2] != self.form and self.form not in ['info', 'html']:
+                if dcUK.dbAlias.rpartition('_')[2] != self.form and self.form not in ['info', 'html', 'Module']:
                     return '{}'  # защита от подмены form=qqq в url "/api/opendoc?dbAlias=nv_SessionSt&unid=5481&form=SessionGr&mode=edit"
 
             dcUK.doc.form = dcUK.doc.form or self.form
@@ -119,7 +130,7 @@ class Page(object):
                     dbAlias=dcUK.dbAlias or self.dbAlias,
                     fullName=dcUK.fullName,
                     unid=dcUK.unid,
-                    urlForm=self.getUrl(request),
+                    urlForm=self._getUrl(request),
                     cssJsUrl=self.getJsCssUrl(request),
                     version=f'{versionString}',
                     fd=dcUK.fd
@@ -130,6 +141,8 @@ class Page(object):
                 ds['_PAGE_'] = 1
             if coocieBtn:  # наш сайт использует файлы cookie
                 ds['coocieButton'] = 1
+            if dcUK._userAgent == 'mobile':
+                ds['mobile'] = 1
 
             if self.mode == 'new':
                 ds['oldValues'] = {k: '' for k in fv}
@@ -146,7 +159,7 @@ class Page(object):
             if ex == 'Access denied':
                 dcUK.doc = DC()
             else:
-                dcUK.doc['3_Fields'] = str(dcUK.doc)
+                dcUK.doc['3_Fields'] = str(dcUK.doc)  # показать значение всех полей
 
             dcUK.doc['0_Exception'] = ex
             dcUK.doc['1_Traceback'] = tr
@@ -155,10 +168,10 @@ class Page(object):
             dcUK.key = 'Exception'
 
             ds = dict(
-                fieldValues=dcUK.doc._KV_,
+                fieldValues=dcUK.doc._KV_,  # _KV_ - словарь объекта DC (в данном случае значения полей из БД)
                 rsMode='read',
-                urlForm=self.getUrl(request),
-                cssJsUrl=[f'/api/jsv?forms/info/info.js'],
+                urlForm=self._getUrl(request),
+                cssJsUrl=['/api/jsv?forms/info/info.js'],
                 version=f'{versionString}',
                 fd='1',
                 _view_='1'
@@ -177,9 +190,7 @@ class Page(object):
 
     def afterSave(self, dcUK, pk=None): return True
 
-    def getData(self, dcUK): return  # вызывется из GET-xhr для загрузки каких-либо данных
-
-    def putData(self, dcUK, buf): return HttpResponse(status=400)  # вызывется из PUT-xhr для загрузки каких-либо данных
+    def getData(self, dcUK): return  # вызывется из xhr api/post/getJson
 
     def getJsCssUrl(self, request):
         if request.dcUK.mode in ['read', 'preview']:
@@ -189,7 +200,7 @@ class Page(object):
 
     # *** *** ***
 
-    def getUrl(self, request):
+    def _getUrl(self, request):
         '''
         возвращает url для загрузки формы
         сама форма хранится в глоб. словаре 'form-json', в url ключ для этого словаря
@@ -201,15 +212,12 @@ class Page(object):
                 toWell(jsPage, 'form-json', 'info::Exception')
             return '/api/get/loadForm?form=info::Exception'
 
-        if self.urlForms and not self.noCaching:
-            return self.urlForms
+        if self.urlForm and not self.noCaching:
+            return self.urlForm
 
         try:
-            pag = self.page(request)
             jsCss = str(self.getJsCssUrl(request))  # чтобы изменение js-css сбрасывали кэш
-
-            pg = deepcopy(pag)
-            pg = self.parseCell(pg)
+            pg = self._parseCell(self.page(request))  # рекурсивно прокручивает страницу
             jsPage = json.dumps(pg, ensure_ascii=False, sort_keys=True)
             crc = crc32((jsPage + jsCss).encode(), 0)
             if self.noCaching:  # кэширование естанавливается на кленте на 30 дней
@@ -218,26 +226,32 @@ class Page(object):
                 self.urlForm = f'/api/getc/loadForm?form={self.form}::{crc}'
             toWell(jsPage, 'form-json', f'{self.form}::{crc}')
             return self.urlForm
-        except:
-            err(f'{self.form}\n{traceback.format_exc()}', cat='classPage.getUrl')
-            return f'error-{self.form}-classPage.getUrl'
+        except Exception:
+            err(f'{self.form}\n{traceback.format_exc()}', cat='classPage._getUrl')
+            return f'error-{self.form}-classPage._getUrl'
 
     # *** *** ***
 
-    def parseCell(self, cell):
-        if type(cell) is str:
-            return cell
-        if not (type(cell) is dict and not cell.get('skip')):
-            return None
-
+    def _parseCell(self, cell):
+        '''
+        проверяет форму и убирает лишние элемнты
+        '''
         row = cell.get('children')
         if 'fieldProps' in cell and not cell['fieldProps']:
-            del cell['fieldProps']
+            del cell['fieldProps']  # удалить пустое свойство
         if row:
             ls = []
             for it in row:
-                c = self.parseCell(it)
-                c and ls.append(c)
+                if type(it) is str:
+                    it and ls.append(it)
+                elif type(it) is dict:
+                    if not cell.get('skip'):  # удалить лишнее
+                        c = self._parseCell(it)
+                        c and ls.append(c)
+                elif it is not None:
+                    s = f'Ошибка в описании формы "{self.form}". Ожидалось "str" или "dict", получен "{type(it)}"'
+                    err(s, cat='classPage._parseCell')
+                    ls.append(s)
             cell['children'] = ls
 
         return cell
@@ -245,6 +259,10 @@ class Page(object):
     # *** *** ***
 
     def shamrock(self, *, addUrl='', refs=1, expand=None, previewUrl=None, focus='upList'):
+        '''
+        self.upField - область сверху (может включать self.upList - см v_content)
+        self.upList - список, при рекалке обновляется mainList
+        '''
         if not self.form:
             raise Exception('self.form')
         sh = self.sham(addUrl=addUrl, refs=refs, expand=expand, previewUrl=previewUrl)
@@ -252,21 +270,23 @@ class Page(object):
         return _div(focus=focus, className='bg51',
                     **style(overflow='hidden', position='absolute', inset=0),
                     children=[
-                        _div(focus=focus,
+                        _div(
+                            focus=focus,
                             **style(height='100%', background='linear-gradient(0deg, #ffFFff30, #f4fffaff)', overflow='hidden', maxWidth=1200, margin='auto'),
                             children=[sh])
-                ])
-            
+                    ])
+
     def sham(self, *, addUrl='', refs=1, expand=None, previewUrl=None):
         # 2 внизу экрана список тем
         previewUrl = previewUrl or f'dbAlias={self.dbAlias}'
         ls = '{leftList}' if self.leftList else '{upList}'  # js разберется
-        url = f'/api/getData?form={self.form}&cmd=getSelected&selected={ls}' + addUrl
+        url = f'form={self.form}&cmd=getSelected&selected={ls}' + addUrl
         mainList = getattr(self, 'mainList', None) or _field('mainList', 'view', expand=expand, refs=refs, limit=100000, url=url, previewUrl=previewUrl)
 
         if self.leftList:
             self.leftList['attributes'] = self.leftList.get('attributes', {})
-            self.leftList['attributes']['style'] = dict(overflow='hidden auto', height='100%',
+            self.leftList['attributes']['style'] = dict(
+                overflow='hidden auto', height='100%',
                 background='#fff', width=self.leftWidth,)
             self.leftList['attributes']['name'] = 'shamrock1'
             if 'field' in self.leftList:
@@ -284,8 +304,9 @@ class Page(object):
                 _div(**style(overflow='hidden'), children=[  # 2.внизу
                     _div(**gridStyle(colGrid, height='100%'), children=[
                         self.leftList,  # 2.1 слева экрана список групп для курса
-                        _div(children=[mainList], id='mainList',  # 2.2 справа экрана список тем
-                            ** style(height='100%', overflow='hidden auto'),
+                        _div(
+                            **style(height='100%', overflow='hidden auto'),
+                            children=[mainList],  # 2.2 справа экрана список тем
                         ),
                     ]),
                 ]),
@@ -295,42 +316,89 @@ class Page(object):
 
     def makeViewbar(self, leftBtn=None, rightBtn=None, name=None, expand=None, style=None):
         if expand and rightBtn:
-            rightBtn.append(_field('expand', 'chb', ['▼', '►'],
-                title='сложить/показать', char=1, name=expand,
-                style=dict(fontSize=24, width=10, position='absolute', top=0, right=10)))
-        
+            rightBtn.append(
+                _field(
+                    'expand', 'chb', ['▼', '►'],
+                    title='сложить/показать', chbView='change', name=expand,
+                    style=dict(fontSize=24, width=10, position='absolute', top=0, right=10)
+                )
+            )
+
         if style:
             style['height'] = 40
         else:
             style = dict(height=40)
-        return _div(name=name,
-                className='viewbar',
-                style=style,
-                children=[
-                    _div(children=(leftBtn or [])),
-                    _div(children=(rightBtn or [])),
-                ]
-            )
-    
+        left = getattr(self, 'leftWidth', None) or 120
+        style['gridTemplateColumns'] = style.get('gridTemplateColumns', f'{left}px auto')
+        return _div(
+                    name=name,
+                    className='viewbar',
+                    style=style,
+                    children=[
+                        _div(children=(leftBtn or [])),
+                        _div(children=(rightBtn or [])),
+                    ]
+                )
+
     # *** *** ***
 
     # ***
 
     def materials(self, tmpl=None):
+        if tmpl:
+            mtx = _field(
+                'mtx', 'tx', name='mtx', className='h3',
+                **style(border='1px solid #aaa', textAlign='center'))
+            hides = _field('hides', 'chb3', ['rtf|rtf', 'text|text'], **style(marginTop=5))
+            text = _div(
+                name='text',
+                **style(
+                    position='relative', width='100%', height='calc(100% - 10px)', marginTop=5,
+                    border='2px solid #888', background='#fff'),
+                children=[_field('text', 'tx')]
+            )
+
+            fileNotes = _div(children=labField('описание файлов', 'fileNotes'))
+            files = _fileShow('fm', label='добавить файлы')
+
+        else:
+            mtx = _field('mtx', 'fd', fd=1, className='h3')
+            hides = None
+            text = _div(
+                        name='text',
+                        **style(
+                            position='relative', width='100%', height='calc(100% - 10px)',
+                            marginTop=5, overflowY='auto', border='2px solid #888', background='#fff'),
+                        children=[
+                            _field(
+                                'text', 'fd', br='p', s2=1, fd=1,
+                                **style(font='normal 20px/1.2 Verdana', padding=5, textIndent=20)
+                            )
+                        ]
+                    )
+            fileNotes = _field('fileNotes', 'fd', className='label labelc')
+            files = _fileShow('fm', short=1, className='short', fd=1)
+
         return _div(**style(margin='0 5px', paddingTop=5, height='100%', overflow='auto',
-                    display='grid', gridTemplateRows='auto 1fr'), children=[
+                    display='grid', gridTemplateRows='auto auto 1fr'), children=[
             _div(children=[
-                labell('Краткое описание (если поле пустое, материал скрыт)', skip=not tmpl, name='mtxLabel'),
-                _field('mtx', 'tx', fd=not tmpl, name='mtx', **style(margin=10, fontSize=20, textAlign='center')),
-                _fileShow('fm', label='файлы', fd=not tmpl),
+                tmpl and labell('Заголовок'),
+                mtx,
+                fileNotes,
+                files,
                 labell('Ссылки', name='href'),
                 _field('href', 'links', **style(width='100%'), fd=not tmpl, name='href'),
             ]),
 
-            _div(name='rtf', children=[_field('rtf', 'rtf', readOnly=not tmpl, fd=not tmpl)],
-                **style(position='relative', width='100%', height='calc(100% - 10px)', marginTop=5,
-                    border='2px solid #888', background='#fff')
+            hides,
+            _div(
+                name='rtf', **style(
+                    position='relative', width='100%',
+                    height='calc(100% - 10px)', marginTop=5,
+                    border='2px solid #888', background='#fff'),
+                children=[_field('rtf', 'rtf', readOnly=not tmpl, fd=not tmpl)],
             ),
+            text,
             _field('COLORSTYLEMAP', 'fd', skip=tmpl, **style(display='none'))  # fd - not save!
         ])
 
@@ -350,7 +418,7 @@ class Page(object):
                         labell('Ссылка'),
                         _field(f'hrefo{i}', 'links', **style(width='100%')),
                     ]),
-                    labell(f'Оценка', skip=not st),
+                    labell('Оценка', skip=not st),
                     _field(f'estimate{i}', 'tx', skip=not st, name='student'),
                     _div(**style(margin=10, height=2, background='#036')),
                 ])
@@ -365,7 +433,8 @@ class Page(object):
         '''
         return _div(**style(margin='0 5px', paddingTop=5, height='100%', overflow='auto'), children=[
 
-            _field('nvEvent', 'lbsd', '/api/well?clues=events', alias=1, fd=not tmpl,
+            _field(
+                'nvEvent', 'lbsd', 'cmd=well&clues=events', alias=1, fd=not tmpl,
                 **style(color='#03', fontWeight=700, margin='0 auto 10px', width=230, textAlign='center')
             ),
 
@@ -390,26 +459,46 @@ class Page(object):
                 _field('owner_fd', 'fd', fd=1, className='label labelc'),
             ], skip=not st, name='other'),
 
-            _teg('fieldset', className='btnGroup',
+            _teg(
+                'fieldset', className='btnGroup',
                 skip=not st, name='student',
                 children=[
                     _div(
-                        **gridStyle('auto  auto'), children=[
+                        **gridStyle('1fr  auto'), children=[
                             _div(children=[_field('allow_s', 'chb', ['Допуск'], className='label')]),
-                            _div(children=[_field('test_s', 'chb', ['Зачет'], className='label')]),
-                    ]),
+                            _div(children=[_field('was_s', 'chb', ['Посетил'], className='label')]),
+                        ]
+                    ),
                     _div(
-                        **gridStyle('120px 120px 40px', marginTop=8, paddingTop=5,
+                        **style(
+                            marginTop=5, border='0 solid #aaa', borderTopWidth=1), children=[
+                            _div(children=[_field('consultant_s', 'chb', ['Консультант'],)]),
+                            # _div(children=[_field('test_s', 'chb', ['Зачет'],)]),
+                        ]),
+
+                    # _div(
+                    #     **gridStyle('50%  50%', marginTop=5), children=[
+                    #         _div(children=[_field('consultant_s', 'chb', ['Консультант'], className='label')]),
+                    #         _div(children=[_field('test_s', 'chb', ['Зачет'], className='label')]),
+                    # ]),
+                    _div(
+                        **gridStyle(
+                            '120px 120px 40px', marginTop=8, paddingTop=5,
                             border='0 solid #aaa', borderTopWidth=1),
                         children=[
                             _div(children=[_field('pay_s', 'chb', ['Оплата'], className='label')]),
                             _div(children=[_btnD('платежи', 'payList')]),
-                            _div(name='adminOnly', children=[ _btnNew(cmd='newPay', style=dict(height=32, left=235, top=1))]),
+                            _div(name='adminOnly', children=[_btnNew(cmd='newPay', style=dict(height=32, left=235, top=1))]),
 
-                    ]),
-            ]),
+                        ]),
+                ]),
 
-            # _field('semester', 'lbsd', '/api/well?clues=semester', alias=1, fd=st, skip=tmpl, name='semester',
+            # _field('consultant_s', 'chb', ['Консультант'],
+            #      **style(width=260, margin='auto', textAlign='center'), className='labe-l', skip=not st, name='student',),
+            # _div(**style(height=10, border='0 solid #555', borderBottomWidth=1, width=260, margin='auto', textAlign='center'),
+            #     className='labe-l', skip=not st, name='student',),
+
+            # _field('semester', 'lbsd', 'cmd=well&clues=semester', alias=1, fd=st, skip=tmpl, name='semester',
             #     **style(margin='5px auto 10px', width=310, textAlign='left')
             # ),
 
@@ -420,14 +509,16 @@ class Page(object):
                 fd=st,
                 skip=tmpl  # убрать в шаблоне, только чтение у студента
             ),
-            _field('duration', 'lbse', '/api/well?clues=duration', **style(width=130, margin='auto', paddingTop=5),
-                placeholder='время',fd=st,skip=tmpl),  # убрать в шаблоне, только чтение у студента
+            _field(
+                'duration', 'lbse', 'cmd=well&clues=duration',
+                **style(width=130, margin='auto', paddingTop=5),
+                placeholder='время', fd=st, skip=tmpl),  # убрать в шаблоне, только чтение у студента
 
             _div(children=[
                     label('Куратор', skip=tmpl),
-                    _field('curator', 'lbsd', '/api/well?clues=куратор2', **style(marginLeft=5) , common='clsCurator', skip=tmpl),
+                    _field('curator', 'lbsd', 'cmd=well&clues=куратор2', **style(marginLeft=5), common='clsCurator', skip=tmpl),
                     label('Преподаватель'),
-                    _field('lector', 'lbmd', '/api/well?clues=преподаватель2', **style(marginLeft=5), common='clsLector'),
+                    _field('lector', 'lbmd', 'cmd=well&clues=преподаватель2', **style(marginLeft=5), common='clsLector'),
                 ],
                 fd=st,
                 **style(margin='5px 0', padding=0),
@@ -461,7 +552,7 @@ class Page(object):
             else:
                 tool = [toolbar.close_]
         return _div(className='bg52', focus=focus, **kv,
-            children=[
-                _div(className='toolbar', children=tool),
-                _div(className='page', children=fields),
-            ])
+                    children=[
+                        _div(className='toolbar', children=tool),
+                        _div(className='page', children=fields),
+                    ])

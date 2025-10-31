@@ -5,7 +5,7 @@ Created on 2024
 '''
 
 from arm.settings import MEDIA_ROOT
-from arm.tools.DC import DC, well, config
+from arm.tools.DC import well, config
 from arm.tools.first import snd, err
 from arm.tools.common import sndErr
 
@@ -15,14 +15,31 @@ from yadisk.exceptions import PathNotFoundError, ForbiddenError
 import os
 
 # *** *** ***
+'''
+Функции для управления Я-диском
+В открытой(общей) папке для сессии автоматически создается подпапка,
+куда преподаватель загружает видео.
+По кнопке "Засекртить" видео копируется с помощью АПИ в скрытую папку,
+к которой есть доступ только у суперпользователя.
+Студент(если у него есть разрешение на просмотр видеолекции) получит от сервера
+временную одноразовую ссылку на это видео и насладится.
+Янекс-апи это позволяет: дать временный доступ к скрытому файлу
+'''
+
 
 @sndErr
 def getVideoUrlY(dcUK):
+    '''
+    вызывается по команде getVideoUrlY
+    let sessId = this.doc.fieldValues['SESSIONGR_ID'] || this.doc.fieldValues['SESSIONTMPL_ID'] || this.doc.fieldValues['ID'];
+    let fileName = url;
+    let u = `form=SessionTmpl&fromForm=${this.doc.form}&cmd=getVideoUrlY&id=${sessId}&file=${fileName}`;
+    '''
+    # у сессии студня есть sgr_id, у сессии группы есть tmpl_id, у шаблона есть id. Питон разберется
+
     y, _, hide = getYDisk()
 
     stmplId = None
-    # //у сессии студня есть sgr_id, у сессии группы есть tmpl_id, у шаблона есть id. Питон разберется
-    # let sessId = this.doc.fieldValues['SESSIONGR_ID'] || this.doc.fieldValues['SESSIONTMPL_ID'] || this.doc.fieldValues['ID'];
     if dcUK.fromForm == 'SessionSt':
         sgr = well('sessionGr_Id', dcUK.id)
         if not sgr:
@@ -32,7 +49,7 @@ def getVideoUrlY(dcUK):
 
     stm = well('sessionTmpl_id', stmplId or dcUK.id)
     if not stm:
-        err(f'session_Tmpl not found. idTmpl="{stmplId or dcUK.id}"', cat='Y-error')
+        err(f'session_Tmpl not found. idTmpl="{stmplId or dcUK.id}" fromForm="{dcUK.fromForm}"', cat='Y-error')
         return f'File "{dcUK.file}" not found'
 
     nveText = well('eventsByCode', stm.nvEvent)
@@ -124,7 +141,7 @@ def getYDisk():
 # *** *** ***
 
 @sndErr
-def testYDFolder(doc):
+def testYDFolder(doc, r):
     y, serviceName, hide = getYDisk()
     nveText = well('eventsByCode', doc.nvEvent)
     alias = doc.title.strip()
@@ -136,7 +153,7 @@ def testYDFolder(doc):
             rc = y.get_type(f'{hide}/{nveText}/{doc.id}')
             return rc == 'dir'
     except Exception as ex:
-        return err(f'path="{path}" {ex}', cat='testYDFolder') or ''
+        return err(f'path="{path}" {ex} UN="{r.dcUK.userName}"', cat='testYDFolder') or ''
 
 # *** *** ***
 

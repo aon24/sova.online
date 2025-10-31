@@ -3,20 +3,17 @@
 AON 2020
 """
 from arm.tools.httpMisc import notFound, accessDenied, nvResponse
-from arm.settings import BASE_DIR
-from arm.tools.loadWell import loadWell
+from arm.settings import BASE_DIR, DB_DIR
 from arm.tools.first import err
 from arm.tools.imgHeader import what
-from arm.tools.DC import DC, well, swell, config
+from arm.tools.DC import DC, well, config
 from arm.api.forms.classPage import getPageObj
 from arm.tools.dbToolkit import DJ, Book
 
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.shortcuts import redirect
-from django.contrib.auth import logout
 
 import os
-import json
 from mimetypes import guess_type
 
 # *** *** ***
@@ -34,7 +31,7 @@ def apiDoGet(request):
         if right == 'all':
             return handler(request)
         if right == 'dbAlias':
-            if request.dcUK.dbAlias in ['draft', 'dba']:
+            if request.dcUK.dbAlias in ['draft', 'dba', 'etc']:
                 return handler(request)
         if right == 'form':
             if request.dcUK.form in ['login']:
@@ -44,11 +41,12 @@ def apiDoGet(request):
             if listName in ['q']:
                 return handler(request)
 
-        return redirect(f'/api/login/')
+        return redirect('/api/login/')
 
     return notFound(request)
 
 # *** *** ***
+
 
 def _openDoc(request):
     '''
@@ -92,7 +90,7 @@ def _openDoc(request):
             err(s, cat='openDoc')
             dcUK.form = 'info'
             dcUK.mode = 'read'
-            dcUK.doc = DC({'FORM':'info', 'ERROR': s})
+            dcUK.doc = DC({'FORM': 'info', 'ERROR': s})
     return returnPageOrDoc(request, dcUK.manifest)
 
 
@@ -118,6 +116,7 @@ pwa = '''
 <link rel="manifest" type="application/json" href="/manifest.json">
 '''
 
+
 def returnPageOrDoc(request, manifest=None):
     opg = getPageObj(request)
     if not opg:
@@ -139,18 +138,7 @@ def returnPageOrDoc(request, manifest=None):
 @ensure_csrf_cookie
 def _loadForm(request):  # при перезагрузкe форма может исчезнуть
     js = well('form-json', request.dcUK.form)
-    return nvResponse (js or '"{}"', 'application/json')
-
-# *** *** ***
-
-def _newForm(request):  # возможно для отладки React-form
-    '''
-    url: /api/get/newForm?form=myform & dbAlias=draft
-    '''
-    opg = getPageObj(request)
-    if not opg:
-        return notFound(request, content_type='application/json')
-    return nvResponse(opg.getJsDoc(request), 'application/json')
+    return nvResponse(js or '"{}"', 'application/json')
 
 # *** *** ***
 
@@ -190,7 +178,7 @@ def jsv(request):
     try:
         with open(fn, 'rb') as f:
             mimeType = f'{guess_type(fn, False)[0]}; charset=utf-8'
-            return nvResponse('' or f.read(), mimeType, request=request)
+            return nvResponse(f.read(), mimeType, request=request)
     except Exception as ex:
         err(f'jsv-path: {request.dcUK._path}\n{ex}', cat='doGet.py')
         return notFound(request)
@@ -201,7 +189,7 @@ def jsv(request):
 def xImage(request):
     try:
         dcUK = request.dcUK
-        store = os.path.join(BASE_DIR, 'DB', 'files')
+        store = os.path.join(DB_DIR, 'files')
         path = os.path.join(store, dcUK.path)
         mimeType = dcUK.type
 
@@ -218,97 +206,6 @@ def xImage(request):
 # *** *** ***
 
 
-def _well(request):
-    dcUK = request.dcUK
-    listName = request.dcUK.clues.partition('::')[0]
-    if listName:
-        k = listName.split('|')
-        if not k[0].endswith('2') or dcUK._staff or 'куратор' in dcUK._role or 'преподаватель' in dcUK._role:  # студент2, etc
-            ls = swell(*k)
-            if type(ls) is dict:
-                ls = list(ls.keys())
-
-            return nvResponse(json.dumps(ls, ensure_ascii=False), 'application/json')
-
-    return nvResponse('[]', 'application/json')
-
-# *** *** ***
-
-def _loadDoc(request):
-    '''
-    вызывется из xhr для показа в pageFrame
-    '''
-    dcUK = request.dcUK
-    if dcUK.dbAlias == 'nv_Profile':
-        if not (dcUK._staff or 'куратор' in dcUK._role):
-            dcUK.unid = dcUK._profilePK  # cmd: openProfile withuot pk
-        dcUK.unid = dcUK.unid or dcUK._profilePK
-
-    if dcUK.dbAlias.startswith('nv_'):
-        doc = DJ.docFromDB(dcUK)
-    else:
-        doc = Book.docFromDB(dcUK)
-
-    if doc:
-        if dcUK.dbAlias == 'nv_SessionSt':
-            if not (dcUK._staff or 'куратор' in dcUK._role):
-                if dcUK._profilePK != doc.pref or not dcUK.doc.allow_s:
-                    return nvResponse(b'', status=403)
-
-        opg = getPageObj(request)
-        if opg:
-            return nvResponse(opg.getJsDoc(request), 'application/json')
-
-        err(f'form not found\n{dcUK}', cat='_loadDoc')
-        return nvResponse(f'form not found\n{dcUK}', status=400)
-
-    s = f'Документ не найден ({dcUK._path}?{dcUK._QUERY})'
-    err(s, cat='_loadDoc')
-    dcUK.form = 'info'
-    dcUK.mode = 'read'
-    dcUK.doc = DC({'FORM':'info', 'ERROR': s})
-    opg = getPageObj(request)
-    return nvResponse(opg.getJsDoc(request), 'application/json')
-
-# *** *** ***
-
-
-def _getData(request):
-    '''
-    вызывется из xhr для загрузки каких-либо данных
-    '''
-    opg = getPageObj(request)
-    if opg:
-        s = opg.getData(request.dcUK)
-        if s:  # s м.б. HttpResponse
-            return nvResponse(s, 'application/json') if type(s) is str else s
-        err(f'Invalid data for URL:"{request.path}?{request.dcUK._query}"', cat='_getData')
-        return nvResponse('Error', status=400)
-
-    s = f'form "{request.dcUK.form}" not found'
-    err(s, cat='_getData')
-    return nvResponse(json.dumps(s), 'application/json', status=400)
-
-
-# *** *** ***
-
-@ensure_csrf_cookie
-def apiRunCmd(request):
-    dcUK = request.dcUK
-
-    if dcUK.cmd == 'logout':
-        logout(request)
-        redirect('/')
-
-    elif request.dcUK._staff:
-        if dcUK.cmd == 'loadWell':
-            loadWell('all')
-
-    return nvResponse('"ok"', 'application/json')
-
-# *** *** ***
-
-
 _apiGetList = {
     # no authenticated
     'xImage': ('all', xImage),
@@ -318,13 +215,6 @@ _apiGetList = {
     # no authenticated for draft/dba
     'opendoc': ('dbAlias', _openDoc),
     'new': ('dbAlias', _new),
-    'newForm': ('dbAlias', _newForm),
-    'loadDoc': ('dbAlias', _loadDoc),
-    # no authenticated only for ...
-    'well': ('well', _well),
-    'getData': ('form', _getData),
-    # authenticated need
-    'runCmd': (None, apiRunCmd),
 }
 
 # *** *** ***

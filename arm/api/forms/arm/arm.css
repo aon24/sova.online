@@ -1,0 +1,434 @@
+.page51 { /* main */
+	background-color: #f8f8f8;
+	overflow: hidden;
+	position: absolute;
+    inset: 0;
+}
+.bg51 { /* clouds */
+    background-color: white;
+}
+.bg52 { /* tild */
+	background-color: white;
+}
+.page {
+    margin: auto;
+    height: calc(100% - 40px);
+    width: 99%;
+    max-width: 1200px;
+    padding: 3px 2px 5px;
+    overflow: auto;
+}
+
+.reportBtn {
+	font: normal 10px Verdana;
+    text-align: center;
+}
+.reportBtn:focus > div {
+	font-weight: bold;
+}
+.reportBtn:focus > img {
+	border-color: #069706;
+}
+.reportBtn > img {
+	border: 3px solid #d1e32d;
+	border-radius: 50%;
+	height: 40px;
+	width: 40px;
+}
+
+
+.filterBtn {
+	border: 0px solid #084;
+	border-bottom-width: 1px;
+	top: 1px;
+	position: fixed;
+	background: #fff000;
+}
+.filterBtn2 {
+	border: 0px solid #084;
+	border-bottom-width: 1px;
+	background: #fff000;
+	font: normal 16px Verdana;
+}
+.btnR40 {
+	top: 35px;
+	position: fixed;
+	height: 40px;
+	width: 40px;
+}
+.btnR40:hover {
+	background: #00884480;
+	color: #fff;
+}
+.btnR40  path, .btnR40 circle {
+	fill: #dfe;
+}
+.shamrock {
+    margin: auto;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    max-width: 1200px;
+    height: 100%;
+}
+.shamrock2 {
+    margin: auto;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100%;
+}
+
+.armPcBtn {
+    height: inherit;
+    overflow: auto;
+}
+
+.redBut {
+	text-align: center;
+	font: normal 16px Verdana;
+	cursor: pointer;
+	overflow: hidden;
+	border: 1px solid #840;
+	border-radius: 30px;
+	padding: 7px 0;
+	margin: 5px auto;
+	background-color: #fff;
+}
+.redBut:hover {
+	background-color: #840;
+	color: #fff;
+}
+
+.grenBut {
+	font: normal 14px Verdana;
+	padding: 5px;
+	letter-spacing: 2px;
+	cursor: pointer;
+	overflow: hidden;
+	border: 1px solid #480;
+	border-radius: 30px;
+	background-color: #480;
+	color: #fff;
+}
+.grenBut:hover {
+	background-color: #000;
+}
+
+.redRedBut {
+	font: normal 14px Verdana;
+	padding: 5px;
+	letter-spacing: 2px;
+	cursor: pointer;
+	overflow: hidden;
+	border: 1px solid #840;
+	border-radius: 30px;
+	background-color: #840;
+	color: #fff;
+}
+.redRedBut:hover {
+	background-color: #000;
+}
+
+
+.newBand, .newBandRed {
+	margin: auto;
+}
+.newBandItem, .newBandRedItem {
+	font: normal 16px Verdana;
+	cursor: pointer;
+	overflow: hidden;
+	border: 1px solid #084;
+	border-radius: 30px;
+	padding: 7px 0;
+	margin: 5px auto;
+	background-color: #fff;
+}
+
+
+
+.toolbar-new-green {
+	font: normal 16px Verdana;
+	background-color: white;
+	border: 1px solid #084;
+	border-radius: 30px;
+	color: black;
+	padding: 7px 10px;
+	letter-spacing: 2px;
+	margin: 5px 0;
+	text-align: center;
+}
+
+.btnGreen {
+	font: normal 16px Verdana;
+	background-color: #084;
+	color: #fff;
+	border-radius: 30px;
+	padding: 7px 10px;
+	letter-spacing: 2px;
+	margin: 3px 10px;
+	text-align: center;
+}
+.toolbar-new-green:hover, .toolbar-new-green:focus, .toolbar-new-green[select] {
+	background-color: #084;
+	color: #fff;
+}
+.btnClose {
+	font: normal 16px Verdana;
+	background-color: #084;
+	border: 1px solid #fff;
+	border-radius: 30px;
+	color: #fff;
+	padding: 7px 10px;
+	letter-spacing: 2px;
+	margin: 3px 10px;
+	text-align: center;
+}
+.btnClose:hover {
+	background-color: #000;
+	color: #fff;
+}
+.toolbar-new-green:hover, .toolbar-new-green:focus, .toolbar-new-green[select] {
+	background-color: #084;
+	color: #fff;
+}
+
+.newBandRedItem {
+	border: 1px solid #840;
+}
+.newBandItem-sel, .newBandItem:hover {
+	background-color: #084;
+	color: #fff;
+}
+.newBandRedItem-sel, .newBandRedItem:hover {
+	background-color: #840;
+	color: #fff;
+}
+.list3str, .list1str {
+    font: normal 14px Arial;
+    padding: 0px;
+	overflow: hidden auto;
+	margin: 0;
+}
+
+.list3strItem, .list33strItem {
+	position: relative;
+	width: inherit;
+    border: 0 solid #aaa;
+    border-bottom-width: 1px;
+    font: normal 14px Arial;
+    padding-left: 2px;
+    cursor: pointer;
+	height: 3.6em;
+	overflow: hidden;
+	user-select: none;
+}
+
+.list1strItem {
+	position: relative;
+	width: inherit;
+    border: 0 solid #aaa;
+    border-bottom-width: 1px;
+    font: normal 14px Arial;
+    padding: 2px;
+    cursor: pointer;
+	height: 2.0em;
+	overflow: hidden;
+}
+.list1strItem > div, .list3strItem > div {
+	position: relative;
+	height: inherit;
+}
+.list1strItem-sel, .list3strItem-sel, .list33strItem-sel,
+.list1strItem-sel > div, .list3strItem-sel > div,
+.list1strItem-sel > div > div, .list3strItem-sel > div > div {
+	background-color: #d96;
+	border-color: #fff;
+    color: white;
+}
+
+.list3str > div, .list1str > div {
+	width: inherit;
+	background: #fff;
+}
+
+
+.radioBandNew { /* лента из дивов */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	margin: 3px 0;
+}
+
+.radioBandNew > div:last-child {
+	border-radius: 0 30px 30px 0;
+}
+.radioBandNew > div:first-child {
+    border-radius: 30px 0 0 30px;
+}
+
+.radioBandNewItem {
+	font: normal 16px Verdana;
+	cursor: pointer;
+	overflow: hidden;
+	border: 1px solid #840;
+	padding: 7px;
+	background-color: #fff;
+	white-space: nowrap;
+}
+.radioBandNewItem-sel {
+	color: #fff;
+	background: #840;
+}
+
+
+.propfile {
+  height: 30px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: start;
+  gap: 10px;
+}
+
+.propBtn {
+    z-index: 120;
+    font-size: 18px;
+    position: absolute;
+    top: 0;
+    width: 21px;
+    height: 21px;
+}
+.exit {
+    z-index: 120;
+    font: normal 14px Verdana;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    text-align: right;
+    letter-spacing: 1px;
+    text-decoration: underline;
+}
+.short {
+	text-align: center;
+}
+.short > div {
+	display: inline;
+	font: normal 16px Verdana, Arial;
+	color: #048;
+	text-decoration: underline;
+	letter-spacing: 1px;
+}
+
+
+.tabNew {
+    max-width: 1400px;
+    width: 99.5%;
+    margin: auto;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100%;
+    overflow: hidden;
+}
+
+.tnBand {
+    display: block;
+}
+.tnBandItem {
+	display: table-cell;
+	font: normal 16px Arial;
+	padding: 4px 0px;
+	border: 2px solid #888888aa;
+	border-bottom-color: #888;
+	border-radius: 7px 7px 0 0;
+	background: #fff;
+	text-align: center;
+	vertical-align: middle;
+	cursor: pointer;
+}
+.tnBandItem-sel {
+	border-bottom-width: 0;
+	border-radius: 7px 7px 0 0;
+	background: #ffd;
+  font-weight: bold;
+}
+.tnLast {
+	border: 0 solid #888;
+	border-bottom-width: 2px;
+	background: transparent;
+}
+
+.tnBody {
+    overflow: hidden;
+}
+
+.tnBody > div {
+	border: 2px solid #888;
+	border-top-width: 0;
+  /* background: linear-gradient(0deg, #ffFFff30, #ffffaaFF); */
+  background-color: #ffd;
+  height: 100%;
+  overflow: auto;
+}
+
+
+.tabBodyInner {
+    padding: 4px;
+    height: 100%;
+    overflow: hidden auto;
+}
+.scaleEtc {
+	max-width: 380px;
+	text-align: center;
+	margin: 5px auto 15px;
+	background: #efd;
+	border: 1px solid #ccc;
+}
+
+.chbChange {
+    font: normal 18px Verdana, Arial;
+    letter-spacing: 2px;
+    text-decoration: underline;
+    color: #00f;
+}
+.htmlHelp {
+    max-width: 800px;
+    margin: auto;
+    text-align: center;
+    font: normal 16px Verdana, Arial;
+    letter-spacing: 2px;
+    border: 1px solid #aaa;
+}
+
+/* заголовок поля */
+.htmlHelp1 {
+    font: normal 14px Verdana, Arial;
+    text-decoration: underline;
+    background: #eee;
+    color: #00f;
+    display: block;
+    padding: 5px 0;
+    margin: 5px 0;
+}
+
+/* html-field */
+.htmlHelp2 {
+    font: normal 14px Verdana, Arial;
+    padding-top: 10px;
+}
+.htmlHelp2 > h2 {
+    font-size: 25px;
+    text-align: center;
+}
+.htmlHelp2 img {
+    border: solid 2px #def;
+    margin: auto;
+    width: 99%; /* Занимает всю ширину родителя */
+    height: auto; /* Высота подстраивается пропорционально */    
+}
+.htmlHelp2 hr {
+    border: none;
+    background-color: #000;
+    height: 2px;
+   }

@@ -7,26 +7,28 @@ from arm.tools.DC import well
 from arm.tools.imgHeader import what
 from arm.settings import DB_DIR, BASE_DIR, DEMO_MODE
 
-import zlib, uuid, os
+import zlib
+import uuid
+import os
 
 _noCompress = 'compressed|.jpg|.jpeg|.gif|.pdf|.png|.arj|octet-stream|.zip|.rar|.7z|.dll|.exe|.avi|.mkv|.mp3|.mp4'.split('|')
 
 # *** *** ***
 
 
-def _err(s):
-    err(s, cat='error-upload.py')
-    return nvResponse(s, status=400)
-
-
 def uploadFile(request):
+
+    def _err(s):
+        err(f'{s}(UN:{request.dcUK.fullName})', cat='error-upload.py')
+        return nvResponse(s, status=400)
+
     if DEMO_MODE and not request.dcUK._superUser:
-        return _err(f'uploadFile: read only for {request.dcUK.fullName}')
+        return _err(f'uploadFile: read only for {request.dcUK.fullName}', cat='upload.py')
 
     defaultStore = os.path.join(DB_DIR, 'files')
 
     try:
-        if not request._files:
+        if not hasattr(request, '_files'):
             return _err('no _files')
 
         fi = request._files.get('bgFile')  # background image
@@ -49,7 +51,7 @@ def uploadFile(request):
         fi = request._files.get('nvFile')  # filine field
         if not fi:
             return _err('unknown _files')
-        
+
         buf = fi.read()
         if any(c in fi.name for c in _noCompress) or not (100 < fi.size < 10000000):
             fzip = ''
@@ -72,6 +74,7 @@ def uploadFile(request):
 
         with open(os.path.join(fullPath, fileName), 'bw') as f:
             f.write(buf)
+        snd(f'{s}(UN:{request.dcUK.fullName})', cat='upload')
         return nvResponse(s)
 
     except Exception as ex:

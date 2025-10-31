@@ -16,7 +16,8 @@ import json
 
 class v_invite(Page):
     '''
-    view for Pofiles with fields 'fest', 'training', 'invite'
+    CRV: view for Pofiles with fields 'fest', 'training', 'invite'
+    показывает: кто был приглашен, кто участвовал в феститвалях и т.д.
     '''
     title = 'Дополнительно'
     dbAlias = 'nv_Profile'
@@ -79,7 +80,7 @@ class v_invite(Page):
             return sorted(left)
 
     def getView(self, dcUK):
-        top = dcUK.upList.partition('|')[2]  # training|fest|invite
+        top = dcUK.upList  # training|fest|invite
         left = dcUK.selected
         mainDocs = []
 

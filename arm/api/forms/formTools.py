@@ -7,7 +7,10 @@ import json
 
 # *** *** ***
 
-fieldProps = ['btnD', 'blocking', 'addBtn', 'common', 'onDrop', 'onChange', 'onDrag', 'contextMenuCmdList', 'fd', 'xValue', 'br', 's2', 'classic', 'readOnly', 'edit', 'alias', 'saveAlias', 'sep', 'noPreview']
+fieldProps = ['_cmd', '_param', 'fileName', 'short', 'noAlias', 'rowLength', 'recalcText',
+              'btnD', 'blocking', 'addBtn', 'common', 'onDrop', 'onChange', 'onDrag',
+              'contextMenuCmdList', 'fd', 'xValue', 'br', 's2', 'chbView', 'readOnly',
+              'edit', 'alias', 'saveAlias', 'sep', 'noPreview']
 
 
 def log():
@@ -49,20 +52,23 @@ def infoQueryOpen(r):
         i += 1
         bg = '#f0f8ff' if i % 2 else '#f0fff8'
         if fi.startswith('FILES'):
-            field = _div(**style(backgroundColor=bg, border='1px solid #aaa', borderTopWidth=0, padding=3),
+            field = _div(
+                **style(backgroundColor=bg, border='1px solid #aaa', borderTopWidth=0, padding=3),
                 children=[
                     _div(fi, className='label', **style(font='bold 12pt Courier')),
                     _field(fi, **style(font='bold 12pt Courier', color='#036'))]
                 )
         elif fi in ['ROOT', 'RTF']:
-            field = _div(**style(display='table', width='100%', backgroundColor=bg, border='1px solid #aaa', borderTopWidth=0, padding=3),
+            field = _div(
+                **style(display='table', width='100%', backgroundColor=bg, border='1px solid #aaa', borderTopWidth=0, padding=3),
                 children=[
                     _div(f'{fi}:{str(len(dcUK.doc[fi]))}', className='label', **style(display='table-cell', font='bold 12pt Courier', width=200)),
                     _div(),
                 ]
             )
         else:
-            field = _div(**style(display='table', width='100%', backgroundColor=bg, border='1px solid #aaa', borderTopWidth=0, padding=3),
+            field = _div(
+                **style(display='table', width='100%', backgroundColor=bg, border='1px solid #aaa', borderTopWidth=0, padding=3),
                 children=[
                     _div(fi, className='label', **style(display='table-cell', font='bold 12pt Courier', width=130)),
                     _field(fi, **style(display='table-cell', font='bold 12pt Courier'))]
@@ -76,27 +82,19 @@ def infoQueryOpen(r):
 def _search():
     return [
             _btnD('×', 'reset', className='reset', title='сбросить результаты '),
-            _field('search', 'tx', edit=1, placeholder='поиск', kbEnter='search', skipEnter=1,
-                    **style(width=150, maxHeight=35, overflow='hidden', margin='0 2px')),
+            _field(
+                'search', 'tx', edit=1, placeholder='поиск', kbEnter='search', skipEnter=1,
+                **style(width=150, maxHeight=35, overflow='hidden', margin='0 2px')),
             _btnD('►', 'search', className='_', title='искать (Enter) '),
     ]
 
-def _chbVFM(pk):
-    return _div(children=[
-        _teg('input', type='checkbox', id=f'chb_{pk}', className='chbVN'),
-        _teg('label', _for=f'chb_{pk}')
-    ])
-
-
-def _chbVF(pk):
-    return  (_teg('input', type='checkbox', id=f'chb_{pk}', name='chbFV', className='checkboxFV'),
-        _teg('label', _for=f'chb_{pk}'))
-            
 
 def _btn1(letter, cmd, right=None, left=None, title=''):
     styl = None
-    if right: styl = dict(right=right)
-    if left: styl = dict(left=left)
+    if right:
+        styl = dict(right=right)
+    if left:
+        styl = dict(left=left)
 
     return _btnD(letter, cmd, title=title, className='mBtn fv1', style=styl)
 
@@ -104,16 +102,19 @@ def _btn1(letter, cmd, right=None, left=None, title=''):
 def _btn2(letter, cmd, param, right=None, left=None, title='', yes='', name=None):
     styl = None
     yes = yes and 'fv2yes'
-    if right: styl = dict(right=right)
-    if left: styl = dict(left=left)
+    if right:
+        styl = dict(right=right)
+    if left:
+        styl = dict(left=left)
 
     return _btnD(letter, cmd, param, name=name, title=title, className=f'mBtn2 fv2 {yes}', style=styl)
 
 
 def _btnNew(dbAlias='', style=None, cmd=None, name=None):
     style = (style and dict(style)) or {}
-    return _btnD('', cmd or 'cmdNew', dbAlias, className=' ', style=style, name=name,
-        children=[_img(title=f'создать новый документ', style=dict(height='100%', width=28), src='/image/new.png')])
+    return _btnD(
+        '', cmd or 'cmdNew', dbAlias, className=' ', style=style, name=name,
+        children=[_img(title='создать новый документ', style=dict(height='100%', width=28), src='/image/new.png')])
 
 
 def _btnCopyRing(cmd, pk):
@@ -137,7 +138,7 @@ def _btnPref(cmd, pk):
 
 
 def _btnView(cmd, pk):
-    return _btnD('\xa0', cmd, pk, title='превью', className='btnIcon btnView')
+    return _btnD('\xa0', cmd, pk, title='просмотр', className='btnIcon btnView')
 
 
 def _btnPreview(cmd, pk):
@@ -229,6 +230,43 @@ def _teg(teg, text=None, **kv):
     return tg
 
 
+def btnSvg(cmd, param, wh, r, d, **kv):
+    atr = {}
+    for k, v in kv.items():
+        if v:
+            atr[k] = v
+    atr['style'] = atr.get('style', {'width': wh})
+
+    fieldProps = {'btnD': 1, '_cmd': cmd, 'param': param} if cmd else None
+
+    return dict(_teg='div', children=[
+            _teg('svg', width=wh, height=wh, viewBox=f"0 0 {wh} {wh}", children=[
+                _teg('circle', cx=f'{wh/2}', cy=f'{wh/2}', r=r, fill="#fff", stroke="#ccc", strokeWidth=1),
+                _teg('path', d=d, stroke="#666", strokeWidth=2, fill="none", strokeLinecap="round")
+            ])
+        ], fieldProps=fieldProps, attributes=atr)
+
+
+def _btnR30(cmd, param=None, **kv):
+    if not kv.get('skip'):
+        return btnSvg(cmd, param, 30, 15, 'M11 7 L22 15 L11 23', **kv)
+
+
+def _btnL30(cmd, param=None, **kv):
+    if not kv.get('skip'):
+        return btnSvg(cmd, param, 30, 15, 'M19 7 L9 15 L19 23', **kv)
+
+
+def _btnL40(cmd, param=None, **kv):
+    if not kv.get('skip'):
+        return btnSvg(cmd, param, 40, 18, 'M24 12 L14 20 L24 28', **kv)
+
+
+def _btnR40(cmd, param=None, **kv):
+    if not kv.get('skip'):
+        return btnSvg(cmd, param, 40, 18, 'M16 12 L26 20 L16 28', **kv)
+
+
 def _btnD(*p, **kv):
     if kv.get('skip'):
         return
@@ -251,7 +289,10 @@ def _btnD(*p, **kv):
                 atr[k] = v
 
     if atr:
+        atr['className'] = atr.get('className', 'rsvTop')
         tg['attributes'] = atr
+    else:
+        tg['attributes'] = {'className': 'rsvTop'}
     return tg
 
 
@@ -278,7 +319,7 @@ def _button(*p, **kv):
 
 
 def _img(**attr):
-    return {'_teg': 'img', 'attributes': {**attr} }
+    return {'_teg': 'img', 'attributes': {**attr}}
 
 
 def _h2(tx, **attr):
@@ -297,9 +338,9 @@ def _table(*tables, rowStyle=None, skip=None):  # создает несколь�
     if skip:
         return None
 
-    ls = [] # список таблиц
+    ls = []  # список таблиц
     for t in tables:
-        tabl = dict(r=[], rowStyle=None) # создаем таблиц, где r-ряды, rowStyle-ее стиль
+        tabl = dict(r=[], rowStyle=None)  # создаем таблиц, где r-ряды, rowStyle-ее стиль
         for row in t:
             if type(row) is dict and row.get('rowStyle'):
                 tabl['rowStyle'] = row.get('rowStyle')
@@ -314,7 +355,7 @@ def _table_1(*rows, style=None, rowStyle={}, skip=None, **par):  # создае�
     if skip:
         return None
 
-    ls = [] # список tr
+    ls = []  # список tr
     for r in rows:
         for cell in r:
             cell['attributes'] = cell.get('attributes', {})
@@ -334,36 +375,40 @@ def gridStyle(s, **kv):
     return {'style': dict(display='grid', gridTemplateColumns=s, **kv)}
 
 
-def labeldc(l=None, **kv):
+def gridStyleRows(s, **kv):
+    return {'style': dict(display='grid', gridTemplateRows=s, **kv)}
+
+
+def labeldc(lab=None, **kv):
     att = dict(className='labeldc')
     for k, v in kv.items():
         att[k] = v
-    return _div(l or '\xa0', **att)
+    return _div(lab or '\xa0', **att)
 
 
-def label(l=None, **kv):
+def label(lab=None, **kv):
     att = dict(className='label')
     for k, v in kv.items():
         att[k] = v
-    return _div(l or '\xa0', **att)
+    return _div(lab or '\xa0', **att)
 
 
-def label_(l=None, **kv):
+def label_(lab=None, **kv):
     atr = dict(**kv)
     atr['className'] = 'label_ label'
-    return label(l, **atr)
+    return label(lab, **atr)
 
 
-def labell(l=None, **kv):
+def labell(lab=None, **kv):
     atr = dict(**kv)
     atr['className'] = 'labell label'
-    return label(l, **atr)
+    return label(lab, **atr)
 
 
-def labelc(l=None, **kv):
+def labelc(lab=None, **kv):
     atr = dict(**kv)
     atr['className'] = 'labelc label'
-    return label(l, **atr)
+    return label(lab, **atr)
 
 
 def _lf(lab, *p, **pp):
@@ -372,16 +417,16 @@ def _lf(lab, *p, **pp):
     return _div(children=[labell(lab), _field(*p, **pp)])
 
 
-def labField(l, fname, ftype='tx', flab=None, **par):
+def labField(lab, fname, ftype='tx', flab=None, **par):
     if par.get('skip'):
         return None
-    return [label(l, name=par.get('name')), _lbf(fname, ftype, flab, **par)]
+    return [label(lab, name=par.get('name')), _lbf(fname, ftype, flab, **par)]
 
 
-def labField_(l, fname, ftype='tx', flab=None, **par):
+def labField_(lab, fname, ftype='tx', flab=None, **par):
     if par.get('skip'):
         return None
-    return [label_(l, name=par.get('name')), _lbf(fname, ftype, flab, **par)]
+    return [label_(lab, name=par.get('name')), _lbf(fname, ftype, flab, **par)]
 
 
 def _lbf(fname, ftype='tx', flab=None, **kv):
@@ -418,7 +463,7 @@ def _field(*p, **dp):
 
 
 def _fileShow(fname, **kv):
-    return None if kv.get('skip') else _lbf(fname, 'fileShow', **kv)
+    return _field(fname, 'fileShow', **kv)
 
 # *** *** ***
 
@@ -449,16 +494,53 @@ def _tabNew(xName, tabs, center=None):
                     header.append(f'{hStr}:{wit}')
                 body.append(_div(name=f'{xName}_{i}', children=[bodyIt]))
                 i += 1
+    grisStr = '1fr auto 1fr' if center else 'auto 1fr'
+    return _div(
+                className='tabNew',
+                children=[
+                    _div(
+                        **gridStyle(grisStr),
+                        children=[
+                            _div(className='tnLast') if center else None,
+                            _field(xName, 'band', header, **style(width='auto'), className='tnBand'),
+                            _div(className='tnLast')
+                        ]),
+                    _div(className='tnBody', children=body)
+                ])
 
-    return  _div(className='tabNew', children=[
-                _div(className='tnHeaderC' if center else 'tnHeader', children=[
-                    _div(className='tnLast') if center else None,
-                    _field(xName, 'band', header, **style(width='auto'), className='tnBand'),
-                    _div(className='tnLast')
-                ]),
-                _div(className='tnBody', children=body)
-            ])
 
+def _tabNewSber(xName, tabs, size):
+    '''
+    tabs: [ [label or url_icon, body_div, label-width, title-icon], ...]
+    in js add:
+
+        for (let i=0; i < 10; i++)
+            window.sovaActions.<form>.hide[`<xName>_${i}`] = doc => i !== doc.getField(`<xName>`);
+    '''
+
+    header = []
+    body = []
+    i = 0
+    headerWidth = 0
+    for it in tabs:
+        if it:
+            hStr, bodyIt, title = it[:3]
+            if bodyIt:
+                headerWidth += size + 10
+                icon = _div(**style(height=size + 10, width=size), children=[
+                    _div(**style(height=size, backgroundSize='100% 100%', backgroundImage=f'url("{hStr}")')),
+                    _div(title),
+                ])
+                header.append(icon)
+                body.append(_div(name=f'{xName}_{i}', children=[bodyIt]))
+                i += 1
+
+    return _div(
+                className='tabNew',
+                children=[
+                    _field(xName, 'band', header, **style(width=headerWidth), className='tnBandSber'),
+                    _div(className='tnBodySber', children=body),
+                ])
 
 # *** *** ***
 

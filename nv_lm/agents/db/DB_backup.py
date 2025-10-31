@@ -34,11 +34,11 @@ def main(m):
         # Проверяем результат
         if result.returncode == 0:
             s = f"Архив успешно создан: {os.path.join(folder_b, archive_name)}"
-            m.log=s
-            snd(s,cat=cat)
+            m.log = s
+            snd(s, cat=cat)
         else:
             s = f"Ошибка при создании архива: {result.stderr.decode('utf-8')}"
-            m.log=s
+            m.log = s
             err(s, cat=cat)
     except Exception as ex:
         m.log = ex

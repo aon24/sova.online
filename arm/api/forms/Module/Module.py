@@ -3,21 +3,25 @@ Created on 2024
 
 @author: aon24
 '''
-from arm.tools.DC import well, swell
+from arm.tools.DC import swell
 from arm.tools.first import err
 from arm.api.forms.classPage import Page
 from arm.api.forms.formTools import labField, style, labell, _div, _field, gridStyle, docTitle
 
 # *** *** ***
 
+
 def sw(w):
     return {'style': {'width': w}}
 
 
 class Module(Page):
-
+    '''
+    Форма открывается из вида "отчеты и аналитика" (обратная связь) - кнопка агенты
+    Ф. описывает агента, запускаемого по расписанию: имя pyhon-модуля и правила старта
+    '''
     def __init__(self, request):
-        self.form = getattr(self, '__module__', '').rpartition('.')[2]
+        self.form = 'Module'
         self.jsCssUrl = f'/api/jsv?forms/{self.form}/{self.form}.js'
         self.title = 'LM'
         super().__init__(request)
@@ -25,9 +29,9 @@ class Module(Page):
 # *** *** ***
     def page(self, request):
         o = _div(**style(width=785, margin='auto'), children=[
-    
+
             docTitle('Загружаемый модуль', left=['turn_on', 'включен'], right=['runFD', 'выполняется', 'readOnly']),
- 
+
             _div(className='cellbg-lite', children=[
                 _div(**gridStyle('100px 1fr'), children=labField('Назначение', 'title')),
                 _div(**gridStyle('100px 1fr 50px 140px 60px 180px'), children=[
@@ -77,4 +81,3 @@ class Module(Page):
             err(f'Access denied for {dcUK.fullName}', cat='querySave')
 
 # *** *** ***
-

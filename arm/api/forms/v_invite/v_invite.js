@@ -1,8 +1,8 @@
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.v_invite = {
 	init2: doc => {
-		let more = doc.getField('upList').partition()[1]
-		doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeUp&uplist=${more}`)
+		let more = doc.getField('upList')
+		doc.util.getJson(doc, `form=${doc.form}&cmd=changeUp&uplist=${more}`)
 			.then( newList => doc.changeDropList('leftList', newList, 0))
 			.catch( e => {} );
 		},
@@ -53,8 +53,7 @@ window.sovaActions.v_invite = {
 		LEFTLIST: doc => doc.loadView('mainList', true),
 
 		UPLIST: (doc, more) => {
-			more = more.partition()[1]
-			doc.util.jsonByUrl(doc, `/api/getData?form=${doc.form}&cmd=changeUp&uplist=${more}`)
+			doc.util.getJson(doc, `form=${doc.form}&cmd=changeUp&uplist=${more}`)
 				.then( newList => doc.changeDropList('leftList', newList, 0))
 				.catch( e => {} );
 		},

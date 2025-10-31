@@ -36,8 +36,8 @@ def main(m):
     стартует раз в месяц и сдвигает расписание на 1 месяц
     запоминает в сессиях групп дату(гггг-мм) последнего обновления
     '''
-    if not config.demo_mode:
-        raise Exception('AAAAAAAAAA')
+    # if not config.demo_mode:
+    #     raise Exception('AAAAAAAAAA')
 
     i = j = 0
     for p in SessionGr.objects.values().all():

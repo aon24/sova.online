@@ -54,7 +54,7 @@ var mmmM3T = [ // общее для блоков, кирпичей и табли
 	'm3table_wed|0', 'm3table_cm', 'm3table_hide33',
 	'm3table_fixed', 'm3table_insideOnly',
 ];
-var colorFeatures = ['bgStyle', 'gradient', // recalc With Redraw
+var colorFeatures = ['bgStyle', 'gradient', 'filter', 'filterVal|0', // recalc With Redraw
 	'backgroundColor', 'gradientColor', 'gradientDeg|0',
 	'backgroundImage', 'bgiSizeX|100', 'bgiSizeY|100', 'repeatX', 'repeatY', 'bgiSizeXMetric', 'bgiSizeYMetric'
 ];
@@ -166,25 +166,6 @@ window.sovaActions.a_design = {
 			newForm: `a_setting${ ['rooms','cases'].includes(doc.fieldValues['KEY']) ? '&key=d3' : ''}`,
 			frameStyle: {width: 300, top: 0, right:15}
 		};
-/*
-		let pagePlus = {
-			hide: true, // при закрытии не удалять, а скрывать
-			dbAlias: doc.dbAlias,
-			unid: doc.unid,
-			pageName: 'plus',
-			rsMode: 'read',
-			fieldValues: {_page_: '1', form: 'plus'},
-			min: true,
-			pont: true,
-			smallCls: 'leftTop',
-			frameStyle: {top: 0, left: 0, width: 295, height: 1, minHeight: 375, display: doc.getField('preview') ? 'block':'none'},
-			children: [
-				{ _teg: 'div', attributes: {className: 'pagePlus'}, children: [{_teg: 'div'}] },
-				{field: [ 'pgDown', 'band', ['','','','','','','',''] ], attributes: {className: 'pageDown'} }
-			],
-		};
-		doc.util.addChildPage(doc, pagePlus);
-*/
 		doc.util.addChildPage(doc, setting);
 		doc.util.addChildPage(doc, settingColors);
 	},
@@ -212,8 +193,8 @@ window.sovaActions.a_design = {
 	
     cmd: {
 		tbHist: doc => {
-			url = `/api/getData?form=a_design&dbAlias=${doc.dbAlias}&unid=${doc.unid}`;
-			doc.util.jsonByUrl(doc, url)
+			url = `cmd=histFromDB&form=a_design&dbAlias=${doc.dbAlias}&unid=${doc.unid}`;
+			doc.util.getJson(doc, url)
 				.then( jsn => {
 					items = jsn || [];
 					if (items.length) {
@@ -223,19 +204,21 @@ window.sovaActions.a_design = {
 							.then(it => { // it: '045__2022-09-21 13:58:00.702492 (Николай Сергеевич/SV, size:24169->2568)'
 								let mdf = doc.util.partition(it, ' (')[0];
 								mdf = doc.util.partition(mdf, '__')[1];
-								let loadDocUrl = `api.get/loadDoc?dbAlias=${doc.dbAlias}&unid=${doc.unid}&mode=${doc.rsMode}&form=a_design&xmdf=${mdf}`;
-								doc.util.jsonByUrl(doc, loadDocUrl)
+								let loadDocUrl = `cmd=loadDoc&dbAlias=${doc.dbAlias}&unid=${doc.unid}&mode=${doc.rsMode}&form=a_design&xmdf=${mdf}`;
+								doc.util.getJson(doc, loadDocUrl)
 									.then( jsn => {
 										doc.hideNewValues = mdf ? {'FROMHIST': 1} : {}; // док из истории всегда даст конфликт
 										doc.setDocProps(jsn);
-									
 										for (let xName in doc.fieldValues) { // повторная инициализация после пересчитывания данных с сервера
 											if ( xName in doc.register && doc.register[xName].setValue )
 												doc.register[xName].setValue(doc.fieldValues[xName]);
 										}
-
 										doc.forceUpdate();
 										setTimeout( () => doc.forceUpdate(), 1);
+										setTimeout(() => {
+											doc.fieldValues['ROOT'] = ''
+											window.sovaActions.a_design.setting(doc);
+										}, 500); 
 									})
 									.catch(e => console.log(e));
 							})

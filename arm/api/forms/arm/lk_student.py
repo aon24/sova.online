@@ -4,134 +4,158 @@ Created on 2024
 @author: aon24
 '''
 
-from arm.tools.DC import well, config
-from arm.api.forms.formTools import _tabNew, _btnEdit, _field, style, _div, gridStyle
-from arm.api.forms.lk_tools import getSessStByProfId, sstButtons, rightBtnLK3, btnLogout, btnSetting, btnProfile
-
-from datetime import datetime, timedelta
+from arm.api.forms.formTools import _btnL40, _btnR40, _btnD, _field, style, \
+    _teg, _div, gridStyle, _tabNewSber, _img
+from arm.api.forms.lk_tools import scaleEtc, manuals, contacts, btnProfile
 
 # *** *** ***
 
 
-def studentTabNew(arm):
-    reports = _div(children=[
-        _field('tables', 'band', ['Платежи', 'Программа', 'Хвосты'], **style(margin='auto', display='table', width='auto')),
-        _div(**style(border='0 solid #036', padding=5, borderWidth='2px 0 0 0', overflow='auto'),
-            children=[_field('dataTable', 'json')]
-        )
-    ])
-    contacts = _div(config.contacts, **style(height='auto', overflow='auto', padding=10), br=1)
-    return [
-        ('Расписание', studentSheet(arm), 105),
-        ('Отчеты', reports, 80),
-        ('Контакты', contacts, 85),
-    ]
+def studentTabNew(arm, center=None):
+    '''
+    table wi sber
+    сверху 3 иконки Расписание-LK-Контакты
+    внизу 3 боди
+    '''
+    if arm.studentOnly:
+        LK = _div(**style(height='100%', overflowY='auto', position='relative'), children=[
+                _div(**style(display='flex', justifyContent='center', paddingTop=5),
+                     children=[btnProfile]),
+                _btnD('Выйти', 'exitLK', className='exit', title='Logoff'),  # ➡️⇒
 
+                _div(btnD=1, _cmd='reportSt3', **style(marginTop=5), className='reportBtn', children=[  # иконки отчетов
+                        _img(src='/image/bands/report-2.png'),  # , _div(), 'Контакты'),
+                        _div('Отчет'),
+                    ]),
+
+                scaleEtc,
+                _teg('hr'),
+                _div(**style(textAlign='center', margin='10px 0 15px 0'), children=[
+                    _field('payments', 'chb', ['Платежи ▼', 'Платежи ►'],
+                           className='chbChange', title='сложить/показать', chbView='change'),
+                ]),
+                _field('paymentsList', 'json', name='paymentsList',
+                       **style(border='1px solid #ccc')),
+                manuals,
+            ])
+    else:
+        LK = _div(**style(height='100%', overflowY='auto', position='relative'), children=[
+                _div(**style(textAlign='center', margin='10px 0 15px 0'), children=[
+                    _field('payments', 'chb', ['Платежи ▼', 'Платежи ►'],
+                           className='chbChange', title='сложить/показать', chbView='change'),
+                ]),
+                _field('paymentsList', 'json', name='paymentsList',
+                       **style(border='1px solid #ccc')),
+            ])
+
+    return _tabNewSber('lks_Table_FD', [
+        ('/image/bands/scheduling.png', studentSheet(arm), 'Расписание'),
+        ('/image/bands/lk.png', LK, 'ЛК'),
+        ('/image/bands/owl.png', contacts, 'Контакты'),
+    ], 60)
 
 # *** *** ***
 
 
 def showLKStudent(arm):
-    return _div(
-        className='page51',
-        children=[
-            btnLogout,
-            btnSetting,
-
-            _div(**style(maxWidth=1200, margin='auto'),
-                children=[
-                    _div(className='propfile', children=[btnProfile]),
-                    _div(**style(overflow='hidden', height='calc(100vh - 32px)'),
-                        children=[_tabNew('lks_Table_FD', tabs=studentTabNew(arm))]
-                    )
-            ])
-    ])
+    '''
+    Главное окна студента
+    вызывается только из арм и только для студента
+    "для студня отдельная форма"
+    '''
+    # if arm.studentNewThema:
+    if arm.studentOnly:
+        return _div(className='page51', children=[
+                    _div(**style(maxWidth=1200, margin='auto', height='100%', position='relative'),
+                         children=[
+                            _btnD('▼ Ф ▼', 'showFilter', **style(right=0), title='Фильтр', name='filterBtn', className='filterBtn'),
+                            _btnR40('btnR40', className='btnR40', **style(right=0), name='filterBtn'),
+                            _btnL40('btnL40', className='btnR40', **style(left=0), name='filterBtn'),
+                            _field('fieldR40', 'btn', xValue='эскиз|btnR40', className='btnR40',
+                                   **style(font='normal 12px Verdana', right=0, padding='11px 25px 0 0', width=60, textAlign='right'),
+                                   name='filterBtn'),
+                            _field('fieldL40', 'btn', xValue='спис|btnL40', className='btnR40',
+                                   **style(font='normal 12px Verdana', left=0, padding='11px 0 0 25px', width=60, textAlign='left'),
+                                   name='filterBtn'),
+                            studentTabNew(arm)
+                        ])
+                    ])
+    else:
+        return _div(className='page51', children=[
+            _div(**style(maxWidth=1200, margin='auto', height='100%',
+                         display='grid', gridTemplateRows='auto 1fr',
+                         ),
+                 children=[
+                    _div(**style(overflow='hidden'),
+                         children=[studentTabNew(arm)]
+                         )
+                    ])
+                ]
+            )
 
 # *** *** ***
 
-def lk_student(arm):
-    return _div(**style(height='100%', paddingTop=5),  # background='url("/image/nvbg.jpeg")'),
+
+def office_student(arm):
+    '''
+    Вкладка "сотрудник" или "студент"
+    center=True
+    вызывается из арм в режиме "офис" для создания вкладки "сотрудник" или "студент",
+    '''
+    return _div(
+        **style(height='100%', paddingTop=5),  # background='url("/image/nvbg.jpeg")'),
         children=[
-            _div(**style(width=250, margin='auto', boxShadow='0px 17px 5px 20px #88aa0080')),
-            _tabNew(xName='lks_Table_FD', tabs=studentTabNew(arm), center=True)
-    ])
+            # _div(**style(width=250, margin='auto', boxShadow='0px 17px 5px 20px #fff')),
+            studentTabNew(arm, center=True),
+        ])
 
 # *** *** ***
 
 
 def studentSheet(arm):
+    '''
+    вкладка "Расписание"
+    обеспечивает доступ к сст
+    содержит календарь/эскизы/список сст
+    '''
+
+    url = 'form=arm&cmd=getEdges&view=l\
+&FILTERALLOW3={FILTERALLOW3}\
+&FILTERPLAN3={FILTERPLAN3}\
+&FILTERWAS3={FILTERWAS3}\
+&FILTERPAYMENT3={FILTERPAYMENT3}\
+&FILTEREC3={FILTEREC3}\
+&FILTERFEEDBACK3={FILTERFEEDBACK3}\
+&FILTEREVENT3={FILTEREVENT3}'
+
+    if arm.studentOnly:
+        edges = dict(
+            face=_field('calendar1m', 'json', **style(height='100%', overflow='auto')),
+            right=_field('images', 'json', **style(height='100%',)),
+            far=_field('calendar2m', 'json', **style(height='100%',)),
+            left=_field('mainList3', 'view', limit=100000, url=url, noMount=1),
+        )
+        return _field('cube', 'cube', readOnly=1, xyz=['100%', '100%', 'x'], perspective=700, edges=edges)
+
+    # ***
+
     arm.leftList = arm.leftWidth = arm.upField = None
     arm.viewbar = arm.makeViewbar(
-        **gridStyle('1px 1fr', borderWidth='0 0 2px 0', background='transparent'),
-        rightBtn=rightBtnLK3(),
+        **gridStyle('1px 1fr', borderWidth='0 0 0px 0', background='transparent'),
+        rightBtn=[
+            _field('changeView3', 'band', ['календ|k1', 'события|e', 'спис|l'],  # , 'к2|k2'
+                   recalcText=1, className='radioBandNew', title='календарь/эскизы'),
+            _div(**style(flex=1)),
+            _btnD('▼ Фильтры ▼', 'showFilter', title='Фильтр', className='filterBtn2'),
+        ],
     )
 
-    url = '/api/getData?form=arm&cmd=getSelected3&showLK_id={showLK_id}&status={status3}&plan={plan3}'
-    previewUrl = ''  # 'dbAlias=nv_SessionSt'
     arm.mainList = _div(**style(height='100%'), children=[
-        _field('mainList3', 'view', name='mainList3', limit=100000, url=url, previewUrl=previewUrl, noMount=1),
-        _field('showCourse3', 'json', **style(height='100%'), name='showCL3'),
+        _field('mainList3', 'view', name='mainList3', limit=100000, url=url + '&showLK_id={showLK_id}', noMount=1),
+        _field('showCourse3', 'json', **style(height='100%',), name='showCL3'),
     ])
     sh = arm.sham()
 
     return sh
 
 # *** *** ***
-
-
-def getViewStudent(dcUK):
-    sessStArr = getSessStByProfId(dcUK)[0]
-
-    forSort = []
-
-    days = 1 if dcUK.plan == '0' else 100000  # не показ эскизы через 1 день после оконч or isEmpty
-    yesterday = datetime.now() - timedelta(days=days)
-    last = yesterday.strftime("%Y-%m-%d")
-    gridStr = ''
-
-    for sst in sessStArr:
-        if sst.form == 'SessionGr':
-            sgr = sst
-            dateEnd = sgr.date_end or sgr.date_begin
-            if dateEnd < last:
-                continue
-
-            color = '#55f'
-            s = 'Общая группа'
-        else:
-            sgr = well('sessionGr_Id', sst.SESSIONGR_ID)
-            dateEnd = sgr.date_end or sgr.date_begin
-            if dateEnd < last:
-                continue
-
-            if sst.other_group:
-                color = '#888'
-                s = f"(подмена в {well('groups_groupId', sst.other_group).title})"
-            elif sst.owner:
-                color = '#f55'
-                s = f"(подмена из {well('groups_groupId', sst.owner).title})"
-            else:
-                color = '#000'
-                s = ''
-
-
-        grTitle = well('groups_groupId', sgr.nvgroup_id).title
-        title = _div(f"{sgr.title} ({grTitle}){sst.form}\n{sgr.d2}({sgr.duration}) {s}",
-            s2=1, br=1, **style(letterSpacing=1, paddingLeft=2, color=color))
-
-
-        pk = f"unid={sst.id}&form={sst.form or 'SessionSt'}"
-        gridStr = gridStr or f'32px 1fr{" auto"*len(sstButtons(sst, sgr))} auto'
-        row = _div(**gridStyle(gridStr, placeItems='center start'),
-            children=[title, *sstButtons(sst, sgr), _btnEdit('cmdEdit3', pk)])
-
-        forSort.append((sgr.title, [pk, row]))
-
-    forSort.sort(key=lambda t: t[0])
-    mainDocs = [x[1] for x in forSort]
-
-    return {'mainDocs': mainDocs, 'refsDocs': None}
-
-# *** *** ***
-
-

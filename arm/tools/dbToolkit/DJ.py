@@ -6,7 +6,8 @@ from arm.tools.DC import DC, getRoot
 from nv.admin import getModel, all_ml, model_names, model_fields
 
 import json
-import zlib, base64
+import zlib
+import base64
 import datetime
 
 # *** *** ***
@@ -14,6 +15,7 @@ import datetime
 ZIPLEN = 5000
 
 # *** *** ***
+
 
 def docFromDB(dcUK):
     """
@@ -23,7 +25,7 @@ def docFromDB(dcUK):
 
     cat = 'docFromDB'
     if not dcUK.unid:
-        return err(f'empty unid', cat=cat)
+        return err('empty unid', cat=cat)
 
     mmm, mmmName = getModel(dcUK, cat)
     if not mmm:
@@ -34,7 +36,7 @@ def docFromDB(dcUK):
     try:
         dbDoc = mmm.docs.get(pk=int(dcUK.unid))
         # dbDoc = mmm.docs.values().get(pk=int(dcUK.unid))
-    except:
+    except Exception:
         err(f'doc not found: {dcUK.dbAlias}:{dcUK.unid}', cat=cat)
         return
 
@@ -42,7 +44,7 @@ def docFromDB(dcUK):
     try:
         dbFields = model_fields[mmmName][0]
         for fn in dbFields:
-            value = getattr(dbDoc,fn,None)
+            value = getattr(dbDoc, fn, None)
             if not value:
                 continue
 

@@ -2,7 +2,7 @@ window.sovaActions = window.sovaActions || {};
 window.sovaActions.SessionSt = {
 	init: doc => {
 		doc.videoList = JSON.parse(doc.getField('VIDEOLIST_FD') || '[]');
-		doc.videoList.sort((a, b) => (a.name || '') > (b.name || '') ? 1 : -1);
+		doc.videoList.sort((a, b) => `${a.name||''}-${a.url||''}` > `${b.name||''}-${b.url||''}` ? 1 : -1);
 		for (let i=0; i < 10; i++) {
 // не исп.	doc.sova.hide[`UM_Table_FD_${i}`] = doc => i !== doc.getField('UM_Table_FD');
 //			doc.sova.hide[`sst_Table_FD_${i}`] = doc => i !== doc.getField('sst_Table_FD');
@@ -12,20 +12,24 @@ window.sovaActions.SessionSt = {
 	,
 	init2: doc => {
 		// учебные материалы будут удалены, если doc.mtx == '' and doc.videoList_FD == ''
+		let ii = 0;
+		if (!doc.getField('student_FD')) // форму открыл курато, у него "И" сначала
+			ii = 1;
+			
 		let mainTabs = doc.getControl('sst_Table_FD');
 		let items = [...mainTabs.items];
 		if (!doc.getField('mtx') && !doc.getField('videoList_FD'))
-			items[0] = null; // учебные материалы
+			items[ii] = null; // учебные материалы
 			
 		// задания будут удалены, если все doc.job{i} == '' (i: 1-10)
 		let ever;
 		for (let i=1; i <= 10; i++)
 			ever = ever || doc.getField(`job${i}`);
 		if (!ever)
-			items[1] = null; // задания
+			items[ii+1] = null; // задания
 
 		if (doc.getField('hideAss_FD'))
-			items[2] = null; // обратная связь
+			items[ii+2] = null; // обратная связь
 
 		mainTabs.items = [];
 		
@@ -76,15 +80,19 @@ window.sovaActions.SessionSt = {
 		saved: doc => {
 			if (doc.mainDoc !== doc) {
 				let parentDoc = doc.page.owner;
-				let view = parentDoc.getControl('mainList3') || parentDoc.getControl('mainList')
-	    		view && view.loadView(true, doc.unid);
+                let view = parentDoc.getControl('mainList3') || parentDoc.getControl('mainList');
+                view && view.loadView(true, doc.unid);
+                view = parentDoc.getControl('mainListCL');
+                view && view.loadView(true, doc.unid);
+	    		// for Cube:
+	    		parentDoc.getControl('cube') && getEdges(parentDoc, '', 'e');
+	    		parentDoc.sovaPagesByName['arm_filter'] && getEdgesCL(parentDoc);
 			}
 		},
 
 
 		changeGroup: doc => {
-			let url = `/api/well?clues=allGroups`;
-			doc.util.jsonByUrl(doc, url)
+			doc.util.getJson(doc, 'cmd=well&clues=allGroups')
 				.then( jsn => {
 					let items = jsn || [];
 					doc.msg.list(items, 'Выберите группу')
@@ -111,21 +119,24 @@ window.sovaActions.SessionSt = {
 		forceUpdate: doc => doc.forceUpdate(),
 	},
 	recalc: {
+		HIDES: doc => doc.forceUpdate(),
 		SST_TABLE_FD: doc => doc.forceUpdate(),
 	},
 	readOnly: {
 		student: doc => doc.getField('STUDENT_FD'),
 	},
 	hide: {
-		rtf: doc => !doc.getField('mtx'),
+		mtx: doc => !doc.getField('mtx'),
+		rtf: doc => doc.getField('hides') !== 'rtf',
+		text: doc => !doc.getField('text'),
 		video: doc => !doc.getField('videoList_FD'),
+		href: doc => !doc.getField('href'),
+		
 		ass: doc => doc.getField('noAss_fd'),
 		delGr: doc => !doc.getField('other_group_FD') || doc.getField('STUDENT_FD'),
 		chGr: doc =>   doc.getField('other_group_FD') || doc.getField('STUDENT_FD'),
 		chGrTx: doc =>  !doc.getField('STUDENT_FD'),
 		adminOnly: doc =>  doc.getField('STUDENT_FD'),
-		href: doc => !doc.getControl('href') || (!doc.getField('href') && doc.getControl('href').props.readOnly),
-		mtx: doc => !doc.getControl('mtx') || (!doc.getField('mtx') && doc.getControl('mtx').props.readOnly),
 		other: doc => !doc.getField('owner'),
 		owner: doc => doc.getField('owner'),
 		semester: doc => !doc.getControl('semester') || (!doc.getField('semester') && doc.getControl('semester').props.readOnly),

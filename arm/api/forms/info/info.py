@@ -7,11 +7,14 @@ AON 20 apr 2017
 from ..formTools import infoPage, infoQueryOpen
 from ..classPage import Page
 
-import json
-
 # *** *** ***
 
+
 class info(Page):
+    '''
+    Форма позволяет посмотреть поля документа(если есть права офиса или суперп.)
+    Форму можно вызвать заменив в урл значение ключа form на info или значение ключа mode на info
+    '''
     title = 'Info'
     dbAlias = 'no'
 
@@ -30,4 +33,3 @@ class info(Page):
         infoQueryOpen(r)
 
 # *** *** ***
-

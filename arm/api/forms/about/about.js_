@@ -1,0 +1,39 @@
+
+
+window.sovaActions = window.sovaActions || {};
+window.sovaActions.about = {
+    init2: doc => {
+		let m = parseFloat(localStorage.getItem('nvScale') || 1);
+		let sca = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5];
+		if (sca.includes(m))
+			doc.setField('scale_etc', sca.indexOf(m));
+		else {
+			doc.setField('scale_etc', 3);
+			doc.mainDoc.m = 1;
+			localStorage.setItem('nvScale', 1);
+			doc.mainDoc.forceUpdate();
+		}
+		let _cube = doc.getControl('_cube');
+		//console.log(doc.register)
+		_cube.rebuild = 'resize';
+		_cube.forceUpdate();
+	},
+	cmd: {
+		save_etc: doc => {
+			localStorage.setItem('nvScale', doc.mainDoc.m);
+			doc.mainDoc.msg.ok('Сохранено в локальной памяти браузера');
+		},
+		
+	},
+	recalc: {
+		SCALE_ETC: (doc, val) => {
+			doc.mainDoc.m = [0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5][val];
+			doc.mainDoc.forceUpdate();
+		},		
+	},
+	hide: {
+		href: doc => !doc.getField('href') && doc.readOnly,
+		mtx: doc => !doc.getField('mtx') && doc.readOnly,
+		mtxLabel: doc => doc.readOnly,
+	},
+};

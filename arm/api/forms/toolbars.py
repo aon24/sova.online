@@ -3,9 +3,10 @@
 AON 19 jan 2018
 
 '''
-from arm.api.forms.formTools import style, _div, _btnD, _img, _teg
+from arm.api.forms.formTools import style, _div, _btnD, _teg
 
 # *** *** ***
+
 
 class Toolbar(object):
 
@@ -27,21 +28,28 @@ class Toolbar(object):
         self.toolbar = _div(className='toolbar', children=self.buttons)
         return self
 
-    save = _btnD('СОХРАНИТЬ','save',title='Ctrl+S',className='toolbar-button')
-    publish = _btnD('ОПУБЛИКОВАТЬ','publish',title='выложить на сайт',className='toolbar-button')
-    close_ = _btnD('ЗАКРЫТЬ', 'close', title='[Esc] - закрыть окно', className='toolbar-button')
+    save = _btnD('СОХРАНИТЬ', 'save', title='Ctrl+S', className='toolbar-button')
+    publish = _btnD('ОПУБЛИКОВАТЬ', 'publish', title='выложить на сайт', className='toolbar-button')
+    close_ = _btnD(
+        'ЗАКРЫТЬ', 'close', title='[Esc] - закрыть окно',
+        select=1, className='btnClose')
+    #   select=1, className='toolbar-new-green')
 
-    close = _btnD('ЗАКРЫТЬ','close',title='[Esc] - закрыть окно',className='toolbar-button',**style(width='67mm'))
-    close2 = _btnD('CLOSE','close',title='Esc',className='toolbar-button')
-    saveClose = _btnD('СОХРАНИТЬ  И  ЗАКРЫТЬ','saveClose',
-        title='[Shift+Esc] - сохранить и закрыть, [Ctrl-S] - только сохранить',className='toolbar-button')
+    close = _btnD('ЗАКРЫТЬ', 'close', title='[Esc] - закрыть окно', className='toolbar-button', **style(width='67mm'))
+    close2 = _btnD('CLOSE', 'close', title='Esc', className='toolbar-button')
+    saveClose = _btnD(
+        'СОХРАНИТЬ  И  ЗАКРЫТЬ', 'saveClose',
+        title='[Shift+Esc] - сохранить и закрыть, [Ctrl-S] - только сохранить',
+        className='toolbar-new-green')
 
-    saveClose2 = _btnD('SAVE  AND  CLOSE'.replace(' ','\xa0'),'saveClose',title='Shift+Esc',className='toolbar-button')
+    saveClose2 = _btnD('SAVE  AND  CLOSE'.replace(' ', '\xa0'), 'saveClose', title='Shift+Esc', className='toolbar-button')
 
-    save2 = _btnD('SAVE','save',title='Ctrl+S',className='toolbar-button')
+    save2 = _btnD('SAVE', 'save', title='Ctrl+S', className='toolbar-button')
     prn = _btnD('', 'prn', title='Ctrl+P', className='tb-prn')
-    edit = _btnD('Р Е Д А К Т И Р О В А Т Ь'.replace(' ', '\xa0'), 'edit', title='[Ctrl-Enter] - перейти в режим редактирования', className='toolbar-button', **style(width='67mm'))
-    docSN = _btnD('\u2116 п/п', 'docSN', title='[Alt-1] Присвоить очередной № (для настройки нажмите кнопку при заполненном поле номера)', className='toolbar-button', **style(width='16mm'))
+    edit = _btnD('Р Е Д А К Т И Р О В А Т Ь'.replace(' ', '\xa0'), 'edit', title='[Ctrl-Enter] - перейти в режим редактирования',
+                 className='toolbar-button', **style(width='67mm'))
+    docSN = _btnD('\u2116 п/п', 'docSN', title='[Alt-1] Присвоить очередной № (для настройки нажмите кнопку при заполненном поле номера)',
+                  className='toolbar-button', **style(width='16mm'))
     searchByCorr = _btnD('Поиск', 'searchByCorr', title='Поиск обращений по заявителю и району', className='toolbar-button', **style(width='16mm'))
 
     red = _btnD('\xa0', 'setRed', **style(background='red', width=20), className='toolbar-button')
@@ -59,25 +67,28 @@ class Toolbar(object):
 
     def info(self, mode):
         if mode in ['edit', 'new']:
-            buttons = [self.saveClose, self.close]
+            buttons = [self.saveClose, self.close_]
         else:
-            buttons = [self.close]
+            buttons = [self.close_]
         return _div(className='toolbar', children=buttons)
 
     # *** *** ***
 
     def undo_redo(self, cmd, title):
         return _btnD('', cmd, title=title, className='toolbar-button',
-                children=[
-                    _div(className=f'{cmd}-circ', **style(borderRadius='50%', boxShadow='none', width=20, minWidth=20, height=20), children=[_div()]),
-                    _div(name=cmd, className='tb-disable')
-                ])
+                     children=[
+                        _div(className=f'{cmd}-circ', **style(borderRadius='50%', boxShadow='none', width=20, minWidth=20, height=20), children=[_div()]),
+                        _div(name=cmd, className='tb-disable')
+                     ])
 
-    cir9 = 'c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2'.join(['M4,6', 'M10,18', 'M4,18', 'M4,12', 'M10,12', 'M16,6', 'M10,6', 'M16,12', 'M16,18', 'z'])
-    setting = _btnD('', 'setting', title='свойства страницы', className='toolbar-button',
+    cir9 = 'c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2'.join(
+        ['M4,6', 'M10,18', 'M4,18', 'M4,12', 'M10,12', 'M16,6', 'M10,6', 'M16,12', 'M16,18', 'z'])
+    setting = _btnD(
+        '', 'setting', title='свойства страницы', className='toolbar-button',
         children=[
             _teg('svg', className='tb-props', focusable='false', viewBox='0 0 100 100', children=[_teg('path', d=cir9)]
-        )])
+                 )
+            ])
 
     # *** *** ***
 
@@ -90,7 +101,7 @@ class Toolbar(object):
                    self.setting,
                    self.tuning,
                    self.hist,
-                ]
+                   ]
 
         if mode in ['edit', 'new']:
             return _div(id='mainToolbar', className='rtf-toolbar', children=[
@@ -151,7 +162,9 @@ class Toolbar(object):
 
 # *** *** ***
 
+
 toolbar = Toolbar()
+
 
 def saveClose():
     return _div(className='toolbar', children=[Toolbar.saveClose, Toolbar.close])

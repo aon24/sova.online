@@ -17,6 +17,7 @@ import json
 '''
 Разработка лендинга и страниц для сайта
 создание форм a_design, a_html, a_more
+Открывается по кнопке 3DL в форме etc (настройки)
 '''
 
 
@@ -82,7 +83,7 @@ class v_more(Page):
             if key != 'все' and key != cls.key:
                 continue
 
-            title = _div(f"{cls.key} -- {cls.project} -- {cls.pageName}\n{cls.pageSize} ({cls.modified or cls.created})",
+            title = _div(f"{cls.key} -- {cls.project} -- {cls.pageName}({cls.form})\n{cls.pageSize} ({cls.modified or cls.created})",
                 className='mCell', s2=1, br=1, **style(width='100%', paddingLeft=2, letterSpacing=1))
 
             btnV = _btnView('cmdView', f'pk={pk}&title={cls.PAGENAME}')

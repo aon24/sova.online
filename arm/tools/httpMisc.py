@@ -4,15 +4,12 @@ AON 2023
 
 """
 
-from arm.tools.first import err, snd
-from arm.tools.DC import DC
+from arm.tools.first import err
 
 from django.http import HttpResponse
 
-import traceback, time
-from urllib.parse import unquote
-
-from user_agents import parse
+import traceback
+import time
 import gzip
 import email.utils
 
@@ -25,14 +22,14 @@ def nvResponse(body, content_type='text/html; charset=UTF-8', status=200, reques
     if type(body) is str:
         try:
             body = body.encode()
-        except:
+        except Exception:
             return HttpResponse(b'nvResponsee: encode-error', content_type=None, status=500)
 
     if len(body) > 100 and any(c in content_type for c in ['/json', '/html', '/javascript', '/css']):
         body = gzip.compress(body)
         headers.append(('Content-Encoding', 'gzip'))
 
-    if request and request.dcUK._path in ['image', 'jsv']:
+    if request and request.dcUK._path in ['image', 'jsv', 'xImage']:
         days = 30
         maxAge = 60 * 60 * 24 * days
         headers.append(('Expires', email.utils.formatdate(time.time() + maxAge, usegmt=True)))
@@ -47,6 +44,7 @@ def nvResponse(body, content_type='text/html; charset=UTF-8', status=200, reques
     #
 
     return HttpResponse(body, status=status, headers=headers)
+
 
 def notFound(request, content_type='text/html; charset=UTF-8'):
     ip = request.META.get('HTTP_X_FORWARDED_FOR')

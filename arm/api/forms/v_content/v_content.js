@@ -1,12 +1,12 @@
 const showCourse = doc => {
-	doc.util.jsonByUrl(doc, `/api/getData?form=v_content&cmd=getLectors&nve=${doc.getField('upList')}`)
+	doc.util.getJson(doc, `form=v_content&cmd=getLectors&nve=${doc.getField('upList')}`)
 		.then( sgr => { 
 			doc.changeDropList('leftList', sgr, 0);
 
 			if (doc.getField('view') !== 1)
 				doc.loadView('mainList', true);
 			else
-				doc.util.jsonByUrl(doc, `/api/getData?form=v_content&cmd=showC&lector=${doc.getField('leftList')}&nve=${doc.getField('upList')}&status=${doc.getField('status')}`)
+				doc.util.getJson(doc, `form=v_content&cmd=showC&lector=${doc.getField('leftList')}&nve=${doc.getField('upList')}&status=${doc.getField('status')}`)
 					.then( js => doc.setField('showCourse', js) )
 					.catch( e => doc.msg.error(e) );
 		})
@@ -16,7 +16,7 @@ const showCourse = doc => {
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.v_content = {
 	init2: doc => {
-			doc.util.jsonByUrl(doc, `/api/well?clues=events`)
+			doc.util.getJson(doc, `cmd=well&clues=events`)
 				.then( sgr => { 
 					doc.changeDropList('upList', sgr, 0);
 					showCourse(doc);
@@ -65,7 +65,7 @@ window.sovaActions.v_content = {
 			if (doc.getField('view') !== 1)
 				doc.loadView('mainList', true);
 			else
-				doc.util.jsonByUrl(doc, `/api/getData?form=v_content&cmd=showC&lector=${doc.getField('leftList')}&nve=${doc.getField('upList')}&status=${doc.getField('status')}`)
+				doc.util.getJson(doc, `form=v_content&cmd=showC&lector=${doc.getField('leftList')}&nve=${doc.getField('upList')}&status=${doc.getField('status')}`)
 					.then( js => doc.setField('showCourse', js) )
 					.catch( e => doc.msg.error(e) );
 			
@@ -75,7 +75,7 @@ window.sovaActions.v_content = {
 			if (doc.getField('view') !== 1)
 				doc.loadView('mainList', true);
 			else
-				doc.util.jsonByUrl(doc, `/api/getData?form=v_content&cmd=showC&lector=${doc.getField('leftList')}&nve=${doc.getField('upList')}&status=${doc.getField('status')}`)
+				doc.util.getJson(doc, `form=v_content&cmd=showC&lector=${doc.getField('leftList')}&nve=${doc.getField('upList')}&status=${doc.getField('status')}`)
 					.then( js => doc.setField('showCourse', js) )
 					.catch( e => doc.msg.error(e) );
 			

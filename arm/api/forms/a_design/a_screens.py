@@ -10,44 +10,41 @@ import json
 
 
 def blankScreens(key):
-    bi = 1001
-
     [lim, width] = [0, 0]
 
     def row(part, rootIndex, add):
-        global lim, width
+        global lim
 
-        r = {'boxIndex': rootIndex + add, 'rect': {'height': part} }
+        r = {'boxIndex': rootIndex + add, 'rect': {'height': part}}
 
         if add == 2:
             r['tuning'] = dict(bgStyle='color', backgroundColor='#fffFFF40',
-                border='borEQ', borderWidth=1, borderColor='#aaa')
+                               border='borEQ', borderWidth=1, borderColor='#aaa')
 
         elif add == 3:  # кнопки на нижней части
             centr = width / 2
             rad = 25
             t = (part - rad) / 2
             r['boxes'] = [
-                {   'rect': dict(top=t, left=centr - 4 * rad, height=rad, width=rad),
-                    'tuning': dict(bgStyle='color', backgroundColor='#00000060'),
-                    'boxIndex': rootIndex + add + 1
-                },
-                {   'rect': dict(top=t, left=centr - (rad / 2), height=rad, width=rad),
-                    'tuning': dict(bgStyle='color', backgroundColor='#00000060',
-                       border='borEQ', borderWidth=2, borderRadius=50, borderColor='#ffffff',
-                       shadow='outside', shadowX=0, shadowY=0, shadowR=0, shadowW=2, shadowColor='#00000080'),
-
-                    'boxIndex': rootIndex + add + 2
-                },
-                {   'rect': dict(top=t - 1, left=centr + 2.5 * rad, height=rad, width=rad),
-                    'tuning': dict(
+                {'rect': dict(top=t, left=centr - 4 * rad, height=rad, width=rad),
+                 'tuning': dict(bgStyle='color', backgroundColor='#00000060'),
+                 'boxIndex': rootIndex + add + 1
+                 },
+                {'rect': dict(top=t, left=centr - (rad / 2), height=rad, width=rad),
+                 'tuning': dict(bgStyle='color', backgroundColor='#00000060',
+                                border='borEQ', borderWidth=2, borderRadius=50, borderColor='#ffffff',
+                                shadow='outside', shadowX=0, shadowY=0, shadowR=0, shadowW=2, shadowColor='#00000080'),
+                 'boxIndex': rootIndex + add + 2
+                 },
+                {'rect': dict(top=t - 1, left=centr + 2.5 * rad, height=rad, width=rad),
+                 'tuning': dict(
                        border='borNE',
                        borderRightWidth=rad / 2 + 1, borderRightColor='#00000060',
                        borderTopWidth=rad / 2,
                        borderBottomWidth=rad / 2,
                     ),
-                    'boxIndex': rootIndex + add + 3
-                },
+                 'boxIndex': rootIndex + add + 3
+                 },
             ]
 
         lim += r['rect']['height']

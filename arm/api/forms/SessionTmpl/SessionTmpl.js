@@ -21,7 +21,7 @@ window.sovaActions = window.sovaActions || {};
 window.sovaActions.SessionTmpl = {
 	init: doc => {
 		doc.videoList = JSON.parse(doc.getField('VIDEOLIST') || '[]');
-		doc.videoList.sort((a, b) => (a.name || '') > (b.name || '') ? 1 : -1);
+		doc.videoList.sort((a, b) => `${a.name||''}-${a.url||''}` > `${b.name||''}-${b.url||''}` ? 1 : -1);
 		
 		for (let i=0; i < 10; i++) {
 			doc.sova.hide[`UM_Table_FD_${i}`] = doc => i !== doc.getField('UM_Table_FD');
@@ -43,17 +43,13 @@ window.sovaActions.SessionTmpl = {
 	
 	cmd: {
 		createYD: doc => {
-			let url=`/api/getData?form=${doc.form}&cmd=createYD&id=${doc.getField('ID')}`;
-			fetch(url, {method: 'get', credentials: 'include'})
-				.then( response => !response.ok ? 
-					response.text().then( tx => doc.msg.error(tx, 'getFormDir-error:'))
-					:
-					response.text().then( tx => {
+			let url=`form=${doc.form}&cmd=createYD&id=${doc.getField('ID')}`;
+			doc.util.getJson(doc, url, true)
+				.then( text => {
 						doc.setField('YDcreated', 1);
 						doc.forceUpdate();
 						// console.log(tx);
 					})
-				)
 				.catch( err => doc.msg.error(err.message, 'getFormDir-error:'));			
 		},
 		vkAut: (doc, url) => doc.util.xopen(url),
@@ -83,14 +79,14 @@ window.sovaActions.SessionTmpl = {
 			if (doc.mainDoc !== doc) {
 				if (doc.page.owner.form === 'v_content') {
 					let owner = doc.page.owner;
-					doc.util.jsonByUrl(doc, `/api/getData?form=v_content&cmd=getLectors&nve=${owner.getField('upList')}`)
+					doc.util.getJson(doc, `form=v_content&cmd=getLectors&nve=${owner.getField('upList')}`)
 						.then( sgr => {
 							owner.changeDropList('leftList', sgr, 0);
 					
 							if (owner.getField('view') === 1)
 								owner.loadView('mainList', true);
 							else
-								owner.util.jsonByUrl(owner, `/api/getData?form=v_content&cmd=showC&lector=${owner.getField('leftList')}&nve=${owner.getField('upList')}&status=${owner.getField('status')}`)
+								owner.util.getJson(owner, `form=v_content&cmd=showC&lector=${owner.getField('leftList')}&nve=${owner.getField('upList')}&status=${owner.getField('status')}`)
 									.then( js => owner.setField('showCourse', js) )
 									.catch( e => owner.msg.error(e) );
 						})
@@ -111,7 +107,7 @@ window.sovaActions.SessionTmpl = {
 			if (!id)
 				return doc.msg.ok('Сохраните документ перед обновлением.','Обновление видео|Документ не сохранен.');
     		
-    		doc.util.jsonByUrl(doc, `/api/getData?form=SessionTmpl&cmd=makeVideoY&id=${id}`)
+    		doc.util.getJson(doc, `form=SessionTmpl&cmd=makeVideoY&id=${id}`)
     			.then( js => {
 					for (let it of js || []) {
 						let e = false;
@@ -133,7 +129,7 @@ window.sovaActions.SessionTmpl = {
 			if (!id)
 				return doc.msg.ok('Сохраните документ перед обновлением.','Обновление видео|Документ не сохранен.');
     		
-    		doc.util.jsonByUrl(doc, `/api/getData?form=SessionTmpl&cmd=makeVideoVK&id=${id}`)
+    		doc.util.getJson(doc, `form=SessionTmpl&cmd=makeVideoVK&id=${id}`)
     			.then( js => {
 					for (let it of js || []) {
 						let e = false;
@@ -163,10 +159,14 @@ window.sovaActions.SessionTmpl = {
 	// *** *** ***
 	
 	recalc: {
+		HIDES: doc => doc.forceUpdate(),
 		UM_TABLE_FD: doc => doc.forceUpdate(),
 		SST_TABLE_FD: doc => doc.forceUpdate(),
 	},	
 	hide: {
+		rtf: doc => doc.getField('hides') !== 'rtf',
+		text: doc => doc.getField('hides') !== 'text',
+
 		jobs2: doc => !doc.getField('job1'),
 		jobs3: doc => !doc.getField('job2'),
 		jobs4: doc => !doc.getField('job3'),

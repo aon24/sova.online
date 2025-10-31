@@ -14,12 +14,17 @@ from arm.api.forms.lk_tools import showC, showCC, rightBtnLK
 from arm.api.forms.v_lk_curator.v_lk_curator import v_lk_curator
 
 import json
-from datetime import datetime, timedelta
 
 # *** *** ***
 
 
 class v_schedule(Page):
+    '''
+    CRM вид рсписание
+    Показвает офису расписание с выбором по группе, преподавателю, по куратору, по фамилии
+    а также эмулирует работу куратора, т.е. офис может создавать расписание для группы
+    и контролировать студентов
+    '''
     title = 'Сессии'
     dbAlias = 'nv_SessionGr'
     leftWidth = 105
@@ -39,9 +44,9 @@ class v_schedule(Page):
 
         data = []
         if dcUK.cmd == 'getSelected':
-            if dcUK.uplist == '2':
+            if dcUK.uplist == '2':  # Куратор+
                 data = v_lk_curator.getView(self, dcUK)
-            elif dcUK.view == '3' or dcUK.upList == '1':
+            elif dcUK.view == 'l' or dcUK.upList == '1':  # События / ФИО
                 data = self.getView(dcUK)
             else:
                 data = showCalendar(dcUK)
@@ -52,24 +57,21 @@ class v_schedule(Page):
         elif dcUK.cmd == 'changeLL':
             if dcUK.filter == '0':
                 data = list(swell('events'))
-                data.insert(0, 'Все')
+                data.insert(0, 'Все|')
             elif dcUK.filter == '1':
                 data = swell('куратор2')
             elif dcUK.filter == '2':
                 data = swell('преподаватель2')
         elif dcUK.cmd == 'changeLLCP':
             data = swell('sessionsGr_GrId_band', dcUK.group) or []
-            if dcUK.status == '0':
-                data = [s for s in data if s.endswith('|active')]
-            else:
-                data = [s for s in data if s.endswith('|closed')]
+            data = [s for s in data if s.endswith('|active') or dcUK.status != 'A']
 
         # CH shedule
         elif dcUK.cmd == 'changeUp':
             if dcUK.uplist == '1':
                 if dcUK.filter == '0':
                     data = list(swell('events'))
-                    data.insert(0, 'Все')
+                    data.insert(0, 'Все|')
                 elif dcUK.filter == '1':
                     data = swell('куратор2')
                 elif dcUK.filter == '2':
@@ -112,7 +114,7 @@ class v_schedule(Page):
                     **style(display='block', margin='auto'),
                     className='radioBand'),
 
-                *rightBtnLK('', self._userAgent, na='viewbar1'),
+                *rightBtnLK('', na='viewbar1'),
 
                 _div(name='cPlus',
                     children=v_lk_curator.setButtons,  # video+, video-... etc
@@ -121,18 +123,18 @@ class v_schedule(Page):
             ],
             **gridStyle('1px 1fr', borderWidth='0 0 2px 0', background='transparent'))
 
-        # слева экрана список групп для курса '/api/well?clues=allGroups'
+        # слева экрана список групп для курса 'cmd=well&clues=allGroups'
         self.leftList = _field('leftList', 'band', [], name='viewbar1')  # , className='list3str')
 
         url = '&'.join([
-            '/api/getData?form=v_schedule',
+            'form=v_schedule',
             'cmd=getSelected',
             'selected={leftList}',
             'status={status}',
             'filter={filter}',
             'upList={upList}',
             'view={changeView}',
-            'plan={plan}'
+            'plan={plan}' # закомментирован (было "планируемые/все"
         ])
         self.mainList = _div(**style(height='100%'), children=[
             _field('mainList', 'view', name='mainList', limit=100000, url=url, previewUrl=f'dbAlias={self.dbAlias}', expand='first'),
@@ -152,16 +154,15 @@ class v_schedule(Page):
                 if dcUK.status == '0' and sgr.status != 'active':  # кнопка работе
                     continue
 
-                if dcUK.selected != 'Все':
-                    sLeft, _, sRight = dcUK.selected.partition('|')
-                    if dcUK.filter == '0' and sRight != sgr.nvEvent:  # filter: 'События', 'Куратор', 'Преподаватель'
-                        continue
-                    if dcUK.filter == '1' and sLeft != sgr.curator.partition('|')[0]:
-                        continue
-                    if dcUK.filter == '2' and sLeft != sgr.lector.partition('|')[0]:
-                        continue
+                group = well('groups_groupId', sgr.nvgroup_id)
+                sLeft = dcUK.selected
+                if dcUK.filter == '0' and sLeft and sLeft != sgr.nvEvent:  # filter: 'События'
+                    continue
+                if dcUK.filter == '1' and sLeft != sgr.curator.partition('|')[2]:  # filter: 'Куратор'
+                    continue
+                if dcUK.filter == '2' and sLeft != sgr.lector.partition('|')[2]:  # filter: 'Преподаватель'
+                    continue
 
-                group = well('groups_groupId', sgr.nvgroup_id).title
                 title = self.getRef(sgr, group)
                 row = _div(**gridStyle('1fr auto', placeItems='center start'),
                     children=[title, _btnEdit('cmdEdit', sgr.id)])
@@ -174,32 +175,25 @@ class v_schedule(Page):
         if not dcUK.selected:
             return {'mainDocs': [['all','Группы не найдены'],],'refsDocs': None}
 
-        grId = dcUK.selected.partition('|')[2]
+        grId = dcUK.selected
 
         if '-' in grId:
             ls = well('sessionsGr_All')
         else:
-            ls = well('sessionsGr_GrId', grId)
-
-        days = 1 if dcUK.plan == '0' else 100000  # не показ эскизы через 1 день после оконч or isEmpty
-        yesterday = datetime.now() - timedelta(days=days)
-        last = yesterday.strftime("%Y-%m-%d")
+            ls = well('sessionsGr_GrId', grId) or []
+            ls.sort(key=lambda x: x.date_begin)
 
         for sgr in ls:
             if dcUK.status == '0' and sgr.status != 'active':
                 continue
 
-            dateEnd = sgr.date_end or sgr.date_begin
-            if dateEnd < last:
-                continue
-
-            group = well('groups_groupId', sgr.nvgroup_id).title
+            group = well('groups_groupId', sgr.nvgroup_id)
             title = self.getRef(sgr, group)
             btnD = _btnDel('deleteSessionGr', f'{sgr.id}|\n{group} ({sgr.d2})\n{sgr.title}')  # удалить док из вида mainList
 
             row = _div(**gridStyle('1fr auto auto', placeItems='center start'),
                 children=[title, _btnEdit('cmdEdit', sgr.id), btnD])
-            mainDocs.append([sgr.id,row])
+            mainDocs.append([sgr.id, row])
         return {'mainDocs': mainDocs,'refsDocs': None}
 
     # *** *** ***
@@ -216,7 +210,7 @@ class v_schedule(Page):
         return _div(children=[
             _span(f'{dbg} ',**style(fontWeight='bold')),
             _span(duration,**style(color='#840')),
-            _span(f' {group} ',**style(color='#840',fontWeight='bold')),
+            _span(f' {group.title} ', **style(color='#840', fontWeight='bold')),
             _span(f'(К: {curator} / Л: {lectors}) ',**style(color='#840')),
             _br(),
             _span(f'{vid}: {sgr.title}',**style(color='#555')),
@@ -227,9 +221,9 @@ class v_schedule(Page):
 
 def showCalendar(dcUK):
     dcUK.dateZ_id = 'dateZ_'
-    if dcUK.view == '0':  # 'к1', 'к2', 'эскиз', 'спис'
+    if dcUK.view == 'k1':  # 'к1', 'к2', 'эскиз', 'спис'
         data = showCC(dcUK)  # календарь
-    elif dcUK.view == '1':
+    elif dcUK.view == 'k2':
         data = showCC(dcUK)  # календарь
     else:
         data = showC(dcUK)  # эскизы

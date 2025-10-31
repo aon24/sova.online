@@ -12,10 +12,11 @@ def reportList(dt1, dt2):
     return [
         dict(
             module='modules.fbByFio',
-            title='SU 1. Обратная связь по фамилиям',
+            title='SU 1. Обратная связь',
             firstList=[
-                'SU 1.1 Кураторы',
-                'SU 1.2 Преподаватели',
+                'кураторы',
+                'преподаватели',
+                'по группам',
             ],
             addList=[v for k, v in well('eventsByCode').items() if k in ['1', 'L', 'CL']] + ['Все'],
             dt1=dt1,
@@ -45,7 +46,7 @@ def reportList(dt1, dt2):
         #         'Оплата',
         #         'Успеваемость',
         #     ],
-        #     who='/api/well?clues=студент2',
+        #     who='cmd=well&clues=студент2',
         #     dt1_label='по состоянию на',
         #     dt1=dt2,
         #     comment='Формы 3. Ежеквартальный отчет для АИС «Регион»',
@@ -63,7 +64,7 @@ def reportList(dt1, dt2):
         #         '2. Удовлетворены объемом теории',
         #         '3. Сопровождение обучения',
         #     ],
-        #     who='/api/well?clues=преподаватель2',
+        #     who='cmd=well&clues=преподаватель2',
         #     dt1=dt1,
         #     dt2=dt2,
         # ),

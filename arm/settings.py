@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # *** *** *** loadIniFile
 try:
     f = open('/etc/sova.ini')
-except:
+except Exception:
     f = open(os.path.join(BASE_DIR, 'DB', 'sova.ini'), encoding='utf-8')  # for windows
 
 for s in f.readlines():
@@ -28,7 +28,7 @@ f.close()
 try:
     with open(os.path.join(BASE_DIR, 'DB', 'contacts.txt'), encoding='utf-8') as f:
         config.contacts = f.read()
-except:
+except Exception:
     pass
 
 LOG_DIR = Path(config.LOG_DIR or BASE_DIR / 'log')

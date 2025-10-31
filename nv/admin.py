@@ -22,6 +22,7 @@ class CustomUserAdmin(UserAdmin):
 
 # *** *** ***
 
+
 admin.site.site_title = 'Админ'
 admin.site.site_header = 'Администратор'
 admin.site.index_title = 'Новый век'
@@ -62,4 +63,3 @@ def getModel(dcUK, cat):
         return None, None
 
     return m, model
-

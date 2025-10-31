@@ -18,6 +18,7 @@ from dateutil.relativedelta import relativedelta
 
 # *** *** ***
 
+
 def amgrLoop():
     '''
     m._run нигде не проверяется. Нужна для отображения в виде синем цветом
@@ -111,4 +112,3 @@ def checkTime(d):
                 dt += relativedelta(day=31)
                 schedDay += dt.day + 1
             return day == schedDay
-

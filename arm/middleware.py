@@ -1,4 +1,4 @@
-from arm.tools.DC import DC, DCC, well
+from arm.tools.DC import DC, well, config
 from arm.tools.first import snd, err
 from arm.tools.common import cleanPhone
 
@@ -11,6 +11,7 @@ from urllib.parse import unquote
 from user_agents import parse
 
 # todo: где в оаут2 есть сигнал для проверки емайл. Сделать блэклист
+
 
 def refresh(prof, **kv):
     f = False
@@ -91,7 +92,7 @@ class MobileMW(object):
         user = request.user
 
         path = request.path
-        if path.startswith('/admin') and not(user and user.is_superuser):
+        if path.startswith('/admin') and not (user and user.is_superuser):
             request.path = ''
             request.dcUK = DC()
             return self.get_response(request)
@@ -112,12 +113,16 @@ class MobileMW(object):
             _query=query,
         )
         dcUK = request.dcUK
+
         for p in query.split('&'):
             if '=' in p:
                 l, _, r = p.partition('=')
-                dcUK[l.strip()] = r.strip().replace('џ', '?')
+                dcUK[l.strip()] = r.strip()
 
         if not user.is_authenticated:
+            if config.DEMO_MODE:
+                from django.middleware.csrf import get_token
+                get_token(request)
             return self.get_response(request)
 
         dcUK._superUser = user.is_superuser
@@ -136,6 +141,7 @@ class MobileMW(object):
 
             dcUK._profilePK = prof.id
             dcUK.fullName = prof.full_name
+            dcUK._cssTheme = prof.cssTheme
         elif dcUK._staff:
             dcUK.fullName = request.user.first_name
         else:

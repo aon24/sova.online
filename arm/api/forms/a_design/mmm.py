@@ -5,6 +5,7 @@ Created on 2022
 
 '''
 
+
 def blank3mmm(scale):
     x, y, z = 400, 600, 270
 
@@ -17,8 +18,8 @@ def blank3mmm(scale):
             is3dX=x, is3dY=y, is3dZ=z,  # размеры стен и пола (это не rect !!!)
             sweep=45,  # нклон стен
             angleHide=45,  # угол скрытия
-            # rotate3Z=0, rotate3X=0,  #  поворот наклон
-            rotate3Z=30, rotate3X=75,  #  поворот наклон
+            # rotate3Z=0, rotate3X=0,  # поворот наклон
+            rotate3Z=30, rotate3X=75,  # поворот наклон
             coverOn=1,  # показать потолок
             bb3d=0,  # 3д-стены-мебель-++
             shadowColor3='#a17c3c', shadowW3=35, shadowR3=25,  # тень
@@ -50,22 +51,24 @@ def blank3d(key):
                 rect=dict(left=0, top=0, width=4000, height=3000),
                 boxes=[
                     dict(boxIndex=1000,  # - главный бокс для страницы
-                    rect=dict(left=100, top=100, width=1200, height=700),
-                    tuning=dict(bgStyle='color', backgroundColor='#fff',
-                        border='borEQ', borderWidth=3, borderRadius=7, borderColor='#aaa',
-                        borderRadiusMetric=1,
-                        # noIcons=1,
-                        # overflow='auto',
-                        fixed=1,
-                        k1000='rooms'
-                    ),
-                    boxes=[
-                        dict(# boxIndex=1001,
-                        rect=dict(left=400, top=300, width=0, height=0),
-                        tuning={},
-                        boxes=[blank3mmm(1)]
-                    )] if key == '3d+' else []
-                )]
+                         rect=dict(left=100, top=100, width=1200, height=700),
+                         tuning=dict(
+                            bgStyle='color', backgroundColor='#fff',
+                            border='borEQ', borderWidth=3, borderRadius=7, borderColor='#aaa',
+                            borderRadiusMetric=1,
+                            # noIcons=1,
+                            # overflow='auto',
+                            fixed=1,
+                            k1000='rooms'
+                                     ),
+                         boxes=[
+                            dict(
+                                # boxIndex=1001,
+                                rect=dict(left=400, top=300, width=0, height=0),
+                                tuning={},
+                                boxes=[blank3mmm(1)]
+                                )] if key == '3d+' else []
+                         )]
             ),
 
             # boxIndex = 200 rootBox
@@ -80,13 +83,13 @@ def blank3d(key):
 
 
 def row(part, rootIndex, add):
-    global lim, width
+    global lim
 
-    r = {'boxIndex': rootIndex + add, 'rect': {'height': part} }
+    r = {'boxIndex': rootIndex + add, 'rect': {'height': part}}
 
     if add == 2:
         r['tuning'] = dict(bgStyle='color', backgroundColor='#fffFFF40',
-            border='borEQ', borderWidth=1, borderColor='#aaa')
+                           border='borEQ', borderWidth=1, borderColor='#aaa')
 
     elif add == 3:  # кнопки на нижней части
         centr = width / 2

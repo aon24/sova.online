@@ -5,7 +5,7 @@ AON 9 mar 2018
 '''
 from arm.api.forms.formTools import _btnNew, _btnEdit, style, gridStyle, _btnD, _field, labField, labell, labeldc, _div, _btnDel, _span
 from arm.tools.DC import DC, DCC, well, swell
-from arm.tools.first import err
+from arm.tools.first import err, snd
 from arm.tools.common import today
 from arm.api.forms.classPage import Page
 from arm.api.forms.toolbars import toolbar
@@ -20,6 +20,13 @@ import json
 # *** *** ***
 
 class v_reports(Page):
+    '''
+    CRM вид Отчеты. Открвается по кнопке Отчеты
+    Сложная форма. Содержит слева описание запускемого отчет,
+    справа список выполненных отчетов,
+    а также может переключиться в список агентов(кнопка агенты),
+    а также, что выполняется, что запланировано и т.д.
+    '''
     domain = 'rf_nv'
     title = 'Отчеты'
     leftWidth = 350
@@ -57,55 +64,61 @@ class v_reports(Page):
 
     # *** *** ***
 
-    def putData(self, dcUK, buf):
-        try:
-            dc = DC(domain=self.domain)
-            for kv in buf.split('&'):
-                k, _, v = kv.partition('=')
-                dc[k] = v
-
-            if dcUK.cmd == 'startReport':
-                makeReport(dc)
-                return HttpResponse('OK')
-
-            elif dcUK.cmd == 'scheduleReport':
-                dc.report = 1
-                dc.form = 'Module'
-                dc.turn_on = 1
-                dc.status = 'active'
-                dcUK = DC(dbAlias='nv_reports_Report')
-                dcUK.doc = dc
-                dcUK.save()
-                return HttpResponse('OK')
-
-            else:
-                err(f'Unknown cmd: {dcUK.cmd}', cat=self.form)
-                return HttpResponse(f'PutData for {self.form}. Unknown cmd: {dcUK.cmd}', None, 200)
-
-        except Exception as ex:
-            s = f'PutData for form "{self.form}" (cmd={dcUK.cmd}): {ex}'
-            err(s, cat=self.form)
-            return HttpResponse(s, None, 200)
-
-    # *** *** ***
     def getData(self, dcUK):
-        if dcUK.cmd == 'getSelected':
-            if dcUK.db == '0':  # reports
-                data = self.getView(dcUK, dba='reports')
-            elif dcUK.db == '1':  # reports and schedule
-                data = self.getViewLM(dcUK, dba='reports')
-            else:  # agents (db == '2')
+        if not (dcUK._staff or 'куратор' in dcUK._role):
+            return '""'
+
+        dc = DC(domain=self.domain)
+        for kv in dcUK.buf.split('&'):
+            k, _, v = kv.partition('=')
+            dc[k] = v
+
+        if dcUK.cmd == 'startReport':
+            snd(f'Start report {dc.scheduled.upper()}: "{dc.title}". User: {dcUK.fullName}', cat='Report run')
+            makeReport(dc)
+            return HttpResponse('OK')
+
+        elif dcUK.cmd == 'scheduleReport':
+            snd(f'Add report to schedule {dc.scheduled.upper()}: "{dc.title}". User: {dcUK.fullName}', cat='Report run')
+            dc.report = 1
+            dc.form = 'Module'
+            dc.turn_on = 1
+            dc.status = 'active'
+            dcUK = DC(dbAlias='nv_reports_Report')
+            dcUK.doc = dc
+            dcUK.save()
+            return HttpResponse('OK')
+
+        # ***
+
+        elif dcUK.cmd == 'getSelected':
+            if dcUK.db == '0':  # reports (выбрано "отчеты")
+                data = self.getView(dcUK, clues='reports', dbAlias='nv_reports_Report')
+                # в базе отчетов ищем form=Report or html
+
+            elif dcUK.db == '1':  # reports and schedule (выбрано "расписание")
+                data = self.getViewLM(dcUK, clues='reportsJobs', dbAlias='nv_reports_Report')
+                # в базе отчетов ищем form=Module
+
+            else:  # agents (db == '2') (выбрано "агенты")
                 if dcUK.agentView == '0':  # список агентов
-                    data = self.getViewLM(dcUK, dba='modules')
+                    data = self.getViewLM(dcUK, clues='modules', dbAlias='nv_lm_Module')
                 else:  # результаты
-                    data = self.getView(dcUK, dba='modules')
+                    data = self.getView(dcUK, clues='modules', dbAlias='nv_lm_Module')
         else:
-            data = 'invalid cmd: {dcUK.cmd}'
+            data = f'invalid cmd: {dcUK.cmd}'
         return json.dumps(data, ensure_ascii=False)
 
     # *** *** ***
     
     def page(self, request):
+        # repList - список всех отчетов, которые есть в module nv_reports.{self.domain}.description
+        # self.domain задается в запросе или по умолчанию 'rf_nv'
+        # repListKeys выводится наверху слева - список [' Все собранные отчеты', 'title-1', 'title-2',...
+        # ниже отображаются параметры выбранного отчета, каждый див имет name=f'krd_{i}'
+        # условия скрытия параметров выбранного отчета в поле show:
+            # hide[`krd_${i}`] = doc => doc.getField('show') !== `krd_${i}`
+        # справа отображаются собранные отчеты для выбранного отчета
         repList = [
             DCC(
                 title=' Все собранные отчеты',
@@ -156,28 +169,30 @@ class v_reports(Page):
 
         return self.shamrock(expand='first', focus='', addUrl='&agentView={agentView}&category={category}&db={db}&title={title}&domain={domain}')
 
-    def getView(self, dcUK, dba):
+    def getView(self, dcUK, clues, dbAlias):
         if dcUK.domain == 'feedback' and not dcUK._superUser:
             return []  # only su
 
         mainDocs = []
         ids = []
-        if dba == 'reports':
-            dbAlias = 'nv_reports_Report'
-        else:
-            dbAlias = 'nv_lm_Module'
 
-        for m in well(dba):
+        for m in well(clues):
             if m.form != 'Report' or m.domain != dcUK.domain:
                 continue
 
             pk = m.id
 
-            if dba == 'reports' and dcUK.title not in ['Все собранные отчеты', m.title]:
+            if clues == 'reports' and dcUK.title not in ['Все собранные отчеты', m.title]:
                 continue
 
             ids.append(pk)
-            title = _div(f"{m.docNo}. {m.title}\n{m.starting_time} => {m.end_time}",
+            if m.end_time:
+                tm = f'период с {m.D("DT1")} по {m.D("DT2")}'
+            elif m.run:
+                tm = f'выполняется {m.DT("starting_time")}...'
+            else:
+                tm = f'{m.DT("_MODIFIED")} error'
+            title = _div(f"{m.docNo}. {m.title} ({m.firstList})\n{tm}",
                 className='mCell', s2=1, br=1, **style(width='100%', paddingLeft=2, letterSpacing=1))
 
             btnV = _btnEdit('cmdEdit', f'unid={pk}&dbAlias={dbAlias}&form=Report')
@@ -188,7 +203,7 @@ class v_reports(Page):
             mainDocs.append([pk, row])
 
         refsDocs = {}
-        for o in well(dba):
+        for o in well(clues):
             if o.form != 'html' or o.ref not in ids:
                 continue
 
@@ -273,16 +288,12 @@ class v_reports(Page):
 
 # *** *** ***
 
-    def getViewLM(self, dcUK, dba):
+    def getViewLM(self, dcUK, clues, dbAlias):
         category = dcUK.category
 
         mainDocs = []
-        if dba == 'reports':
-            dbAlias = 'nv_reports_Report'
-        else:
-            dbAlias = 'nv_lm_Module'
 
-        for m in well(dba):
+        for m in well(clues):
             if m.form != 'Module':
                 continue
 
@@ -306,7 +317,7 @@ class v_reports(Page):
             btnV = _btnEdit('cmdEdit', f'unid={pk}&dbAlias={dbAlias}&form=Module')
             btnD = _btnDel('cmdDel', f'mainList|{pk}|{dbAlias}')
 
-            row = _div(**style(display='grid', placeItems='center start', gridTemplateColumns='1fr auto auto'),
+            row = _div(**gridStyle('1fr auto auto', placeItems='center start'),
                 children=[title, btnV, btnD])
             mainDocs.append([pk, row])
 

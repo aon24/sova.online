@@ -1,8 +1,7 @@
 window.sovaActions = window.sovaActions || {};
 window.sovaActions.Profile = {
 	init: doc => {
-		for (let i=0; i < 10; i++)
-			doc.sova.hide[`PR_Table_FD_${i}`] = doc => i !== doc.getField('PR_Table_FD');
+		doc.tabNewHide('PR_Table_FD', null); // При recalc не выполнять cmd
 	},
 	init2: doc => {
 		let ls;

@@ -1,3 +1,13 @@
+/*
+        # repList - список всех отчетов, которые есть в module nv_reports.{self.domain}.description
+        # self.domain задается в запросе или по умолчанию 'rf_nv'
+        # repListKeys выводится наверху слева - список [' Все собранные отчеты', 'title-1', 'title-2',...
+        # ниже отображаются параметры выбранного отчета, каждый див имет name=f'krd_{i}'
+        # условия скрытия параметров выбранного отчета в поле show: 
+            # hide[`krd_${i}`] = doc => doc.getField('show') !== `krd_${i}`
+        # справа отображаются собранные отчеты для выбранного отчета
+
+*/
 // *** *** ***
 let reportFields = ['module', 'title', 'firstList', 'addList', 'who', 'dt1', 'dt2', 'dt3', 'dt4', 'comment'];
 var _currCat = 0;
@@ -7,10 +17,10 @@ let sheduleTimeList = doc => {
 	if (!scheduled)
 		return;
 	dt.setValue('');
-	dt.changeDropList(`/api/well?clues=scheduled_${scheduled}_day`);
+	dt.changeDropList(`cmd=well&clues=scheduled_${scheduled}_day`);
 	dt = doc.getControl('schedTime');
 	dt.setValue('');
-	dt.changeDropList(`/api/well?clues=scheduled_${scheduled}_time`);
+	dt.changeDropList(`cmd=well&clues=scheduled_${scheduled}_time`);
 };
 
 
@@ -98,6 +108,8 @@ window.sovaActions.v_reports = {
         },
         
         startReport: doc => {
+			// i: номер отображаемого отчета(список его параметров)
+			// поле show: krd_0 or krd_1 or ...
 			let i = doc.util.partition(doc.getField('show'), '_')[1];
             let act = `title=${doc.getField('title')}`;
 
@@ -109,7 +121,8 @@ window.sovaActions.v_reports = {
 				act += `&report_${it}=${doc.getField(fi)}`;
 			}
 
-			doc.util.serverAction(doc, `putData?form=v_reports&cmd=startReport`, act)
+			let body = JSON.stringify(['form=v_reports&cmd=startReport', act]);
+			doc.util.getJson(doc, body, true)
 				.then( res => res === 'OK' ?
 					doc.msg.box('Агент успешно запущен', 'Запуск сбора отчета')
 					:
@@ -120,6 +133,8 @@ window.sovaActions.v_reports = {
 
         
         scheduleReport: doc => {
+			// i: номер отображаемого отчета(список его параметров)
+			// поле show: krd_0 or krd_1 or ...
 			let i = doc.util.partition(doc.getField('show'), '_')[1];
             let act = `title=${doc.getField('title')}`;
 
@@ -131,7 +146,8 @@ window.sovaActions.v_reports = {
 				act += `&report_${it}=${doc.getField(fi)}`;
 			}
 
-			doc.util.serverAction(doc, `putData?form=v_reports&cmd=scheduleReport`, act)
+			let body = JSON.stringify(['form=v_reports&cmd=scheduleReport', act]);
+			doc.util.getJson(doc, body, true)
 				.then( res => res === 'OK' ?
 					doc.msg.box('Отчет добавлен в расписание', 'Сбор отчета по расписанию')
 					:

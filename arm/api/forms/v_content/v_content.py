@@ -17,6 +17,10 @@ import json
 
 
 class v_content(Page):
+    '''
+    CRM + ЛК преподавателя: вид Программа
+    '''
+
     title = 'Программа'
     leftWidth = 115
     dbAlias = 'nv_SessionTmpl'
@@ -65,10 +69,10 @@ class v_content(Page):
         # 1 вверху экрана список мероприятий upList: swell('events')
         self.upField = _div(children=[
             _div(className='toolbar', children=[toolbar.close_]),
-            _field('upList', 'band', [], recalcText=1, rowLength=1, className='event', addBtn='cmdNew', blocking=3),
+            _field('upList', 'band', [], recalcText=1, noAlias=1, rowLength=1, className='event', addBtn='cmdNew', blocking=3),
         ])
 
-        url = '/api/getData?form=v_content&cmd=showC&nve={upList}&lector={leftList}&status={status}&view={view}'
+        url = 'form=v_content&cmd=showC&nve={upList}&lector={leftList}&status={status}&view={view}'
         self.mainList = _div(children=[
             _field('mainList', 'view', name='mainList', limit=100000, url=url, previewUrl=f'dbAlias={self.dbAlias}'),
             _field('showCourse', 'json', name='showCourse')

@@ -5,7 +5,7 @@ window.sovaActions = window.sovaActions || {};
 window.sovaActions.v_lk_curator = {
 	init2: doc => {
 		if (doc.fieldValues.GRID)
-			doc.util.jsonByUrl(doc, `/api/well?clues=sessionsGr_GrId_band|${doc.fieldValues.GRID}`)
+			doc.util.getJson(doc, `form=v_lk_curator&event=${doc.getField('event')}&cmd=getSgr&group=${doc.fieldValues.GRID}`)
 				.then( sgr => { 
 					doc.changeDropList('leftList', sgr, 0);
 					setTimeout(() => doc.forceUpdate(), 100);
@@ -20,6 +20,23 @@ window.sovaActions.v_lk_curator = {
 	// *** *** ***
 
 	cmd: {
+		newPay: (doc, par, ctrl, shiftKey) => {
+			let [sgrId, sstId, pref] = par.split('|');
+			
+			let view = doc.getControl('mainList');
+			view.selectedDoc = sstId;
+			view.forceUpdate();
+						
+			let page = {
+				addUrl: `&sgrId=${sgrId}&sstId=${sstId}&profile=${pref}`,			
+				rsMode: 'new',
+				newForm: 'Payment',
+				dbAlias: 'nv_Payment',
+				title: 'Новый платеж',
+			};
+			doc.previewNew(page);
+		},
+		
 		selOne: doc => {
 			doc.checked = false;
 			for (let k in doc.register) {
@@ -30,7 +47,41 @@ window.sovaActions.v_lk_curator = {
 			}
 			doc.forceUpdate();
 		},
-		
+		setField: (doc, prm) => {
+			let text;
+			let [fi, id, value] = prm.split('|');
+
+			let view = doc.getControl('mainList');
+			view.selectedDoc = id;
+			view.forceUpdate();
+
+			switch(fi) {
+				case 'was_s':
+					text = value ? 'Установить "Пропустил"' : 'Установить "Был на занятии"';
+					break;
+				case 'esse_s':
+					text = value ? 'Сбросить "Эссе"' : 'Установить "Эссе"';
+					break;
+				case 'consultant_s':
+					text = value ? 'Сбросить "Консультант"' : 'Установить "Консультант"';
+					break;
+				case 'allow_s':
+					text = value ? 'Сбросить "Допуск"' : 'Установить "Допуск"';
+					break;
+			}
+			doc.msg.box('выбранному студенту ?', `Установка полей|${text}\n`)
+				.then( () => {
+					let body = JSON.stringify([`form=v_lk_curator&cmd=setField&field=${fi}`, `${id}=${value ? '' : '1'}`]);
+					doc.util.getJson(doc, body, true)
+						.then( res => {
+							if (res !== 'OK')
+								console.error(`http-status: ${res}`)
+							doc.loadView('mainList', true, id);
+						})
+						.catch( err => console.error(err) );
+				}) // end msg.box
+				.catch(() => {});
+		},
 		cmdSet: (doc, fi) => {
 			let text;
 			let value = '1';
@@ -63,14 +114,16 @@ window.sovaActions.v_lk_curator = {
 							buf += `${id}=${value}`;
 						}
 					}
-					if (buf)
-                        doc.util.serverAction(doc, `putData?form=v_lk_curator&cmd=setField&field=${fi}`, buf)
+					if (buf) {
+						let body = JSON.stringify([`form=v_lk_curator&cmd=setField&field=${fi}`, buf]);
+                        doc.util.getJson(doc, body, true)
 							.then( res => {
 								if (res !== 'OK')
 									console.error(`http-status: ${res}`)
 								doc.loadView('mainList', true);
 							})
 							.catch( err => console.error(err) );
+					}
 				}) // end msg.box
 				.catch(() => {});
 		},
@@ -109,6 +162,16 @@ window.sovaActions.v_lk_curator = {
 
 	},
 	recalc: {
+		EVENT: (doc, val) => {
+			if (doc.fieldValues.GRID)
+				doc.util.getJson(doc, `form=v_lk_curator&event=${val}&cmd=getSgr&group=${doc.fieldValues.GRID}`)
+					.then( sgr => { 
+						doc.changeDropList('leftList', sgr, 0);
+						setTimeout(() => doc.forceUpdate(), 100);
+					})
+					.catch( () => {});
+		},
+
 		SELECTALL: (doc, val) => {
 			let checked = false;
 			for (let k in doc.register) {
@@ -131,7 +194,13 @@ window.sovaActions.v_lk_curator = {
 		LEFTLIST: (doc, selectedLeft) => {
 			if (document.getElementById('chb_vm'))
 				document.getElementById('chb_vm').checked = doc.checked = false;
-			doc.loadView('mainList', true);
+			let mainList = doc.getControl('mainList');
+			mainList.mainDocs = [];
+			for (let k in doc.register) {
+				if (k.startsWith('SELONE_'))
+					delete doc.register[k];
+			} 
+			mainList.loadView(true); // true -> refresh
 		},
 
 		UPLIST: (doc, selectedLeft) => {
@@ -139,7 +208,7 @@ window.sovaActions.v_lk_curator = {
 				document.getElementById('chb_vm').checked = doc.checked = false;
 			
 			let grId = doc.getField('upList').partition('|')[1];
-			doc.util.jsonByUrl(doc, `/api/well?clues=sessionsGr_GrId_band|${grId}`)
+			doc.util.getJson(doc, `cmd=well&clues=sessionsGr_GrId_band|${grId}`)
 				.then( sgr => doc.changeDropList('leftList', sgr, 0))
 				.catch( () => {});				
 		},

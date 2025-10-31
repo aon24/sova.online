@@ -18,6 +18,16 @@ import json
 
 
 class SessionTmpl(Page):
+    '''
+    Шаблон сессий. Документ в БД. Таблица nv_SessionTmpl
+    SessionTmpl-SessionGr-SessionSt - три основные формы в ЛК
+    1. SessionTmpl - шаблон по которому создаются сессии групп и студентов.
+        содержит видео и другие материалы по конкретной сессии(лекции)
+    2. SessionGr - отображает(не хронит в себе) то, что есть в SessionTmpl,
+        хранит в себе привязку к шаблону и к группе и дату-время
+    3. SessionSt - отображает(не хронит в себе) то, что есть в SessionTmpl и в SessionGr,
+        хранит в себе привязку к сессии группы и к студенту, ответы на задания, обратную связь конкретного студня
+    '''
 
     def __init__(self, request):
         self.form = getattr(self, '__module__', '').rpartition('.')[2]
@@ -42,7 +52,7 @@ class SessionTmpl(Page):
                 if alias:
                     # y_makeFolder returned 200 (if OK) or None (if error)
                     rc = y_makeFolder(y, f'{serviceName}/{nveText}', m)  # disk:/Новый век/сессии
-                    rc = rc and y_makeFolder(y, f'{hide}/{nveText}', m)  #  disk:/Новый век(hide)/сессии
+                    rc = rc and y_makeFolder(y, f'{hide}/{nveText}', m)  # disk:/Новый век(hide)/сессии
                     rc = rc and y_makeFolder(y, f'{serviceName}/{nveText}/{stm.id}_{alias}', m)  # disk:/Новый век/сессии/46_<alias>
                     rc = rc and y_makeFolder(y, f'{hide}/{nveText}/{stm.id}', m)  # disk:/Новый век(hide)/сессии/46
                     return nvResponse(m.log, status=rc or 400)
@@ -59,7 +69,7 @@ class SessionTmpl(Page):
             data = f'invalid cmd: {dcUK.cmd}'
             err(f'invalid cmd: {dcUK.cmd}', cat='SessionTmpl.getData')
 
-        if data is None:
+        if data is not None:
             return json.dumps(data, ensure_ascii=False)
         else:
             return f'Server error. cmd: {dcUK.cmd}'
@@ -103,18 +113,13 @@ class SessionTmpl(Page):
                 ('Задания', self.jobs(tmpl=True), 80),
             ], center=True)
         ])
-        if self.noicons:
-            table = [
-                ('1️⃣', self.common(tmpl=True), 45, 'информация'),  # 🦉📓
-                ('УММ', mind, 60, 'учебные материалы')
-            ]
-        else:
-            table = [
-                ('/image/i.png', self.common(tmpl=True), 50, 'информация'),
-                ('/image/s_ummv.png', mind, 50, 'учебные материалы'),
-            ]
 
-        return  self.docPage([_tabNew('SST_Table_FD', tabs=table)], focus='title')
+        table = [
+            ('/image/i.png', self.common(tmpl=True), 50, 'информация'),
+            ('/image/s_ummv.png', mind, 50, 'учебные материалы'),
+        ]
+
+        return self.docPage([_tabNew('SST_Table_FD', tabs=table)], focus='title')
 
     # ***
 
@@ -124,35 +129,28 @@ class SessionTmpl(Page):
         doc.status = doc.status or 'active'
         doc.title = doc.title.strip()
 
-        if dcUK.mode in ['new', 'edit']:
-            if dcUK.mode == 'new':
-                if dcUK.sourceDoc:
-                    sourceDoc = well('sessionTmpl_id', dcUK.sourceDoc)
-                    for k in ['nvEvent', 'sticker', 'title', 'lector', 'DESCRIPTION', 'notes']:
-                        if sourceDoc[k]:
-                            doc[k] = sourceDoc[k]
-                else:
-                    doc.nvEvent = dcUK.nvEvent
-            if 'преподаватель' in dcUK._role:
-                if doc.lector and dcUK.fullName not in doc.lector:
-                    doc.lector += f'\n{dcUK.fullName}|{dcUK._profilePK}'
-                else:
+        if dcUK.mode == 'new':
+            if dcUK.sourceDoc:
+                sourceDoc = well('sessionTmpl_id', dcUK.sourceDoc)
+                for k in ['nvEvent', 'sticker', 'title', 'lector', 'DESCRIPTION', 'notes']:
+                    if sourceDoc[k]:
+                        doc[k] = sourceDoc[k]
+            else:
+                doc.nvEvent = dcUK.nvEvent
+                if 'преподаватель' in dcUK._role:
                     doc.lector = f'{dcUK.fullName}|{dcUK._profilePK}'
-
-                for l in doc.lector.split('\n'):
-                    fio = l.partition('|')[0]
-                    fio = '.'.join([x[:1] for x in fio.split()]) + '.'  # A.A.A.
 
         doc.sticker = doc.sticker or well('stickerByCode', dcUK.nvEvent)
         if doc.sticker:
-            doc.stickerImg = json.dumps([_div(**style(width=260, height=160, backgroundSize='100% 100%', backgroundImage=f"url('{doc.sticker}')"))], ensure_ascii=False)
+            doc.stickerImg = json.dumps([
+                _div(**style(width=260, height=160, backgroundSize='100% 100%', backgroundImage=f"url('{doc.sticker}')"))], ensure_ascii=False)
 
         if config.serviceName and config.Y_OAuthToken:
             doc.y = '1'
             if dcUK.mode != 'new':
                 alias = doc.title.strip()
                 alias = ''.join(c for c in alias if c.isalnum() or c in ' -_.')
-                if testYDFolder(doc):
+                if testYDFolder(doc, r):
                     doc.YDcreated = 1
                 path = f"{config.serviceName}/{well('eventsByCode', doc.nvEvent)}/{doc.id}_{alias}"
                 doc.openYDurl = f'https://disk.yandex.ru/client/disk/{path}'
@@ -173,7 +171,11 @@ def queryOpenForGrSt(doc, student=None):
     '''
     if student:
         docGr = well('sessionGr_Id', doc.sessionGr)
+        if not docGr:
+            return
         docTm = well('sessionTmpl_id', docGr.sessionTmpl)
+        if not docTm:
+            return
 
         doc.duration = docGr.duration
         doc.date_begin = docGr.date_begin
@@ -188,6 +190,8 @@ def queryOpenForGrSt(doc, student=None):
         doc.title = docTm.title
     else:  # SessionGr
         docTm = well('sessionTmpl_id', doc.sessionTmpl)
+        if not docTm:
+            return
         doc.lector = doc.lector or docTm.lector
         doc.openTmpl = f"{docTm.title}|previewNew|title={docTm.title}&form=SessionTmpl&unid={docTm.id}&dbAlias=nv_SessionTmpl&rsMode=edit"
 
@@ -196,21 +200,19 @@ def queryOpenForGrSt(doc, student=None):
     doc.nvEvent = docTm.nvEvent
     doc.partLabel = docTm.partLabel
     doc.description = docTm.description
-
     if docTm.videoList and docTm.videoList != '[]':
         if docTm.videoList[0] != '[':
             doc.videoList_FD = json.dumps([{'url': it} for it in docTm.videoList.split('\n') if it], ensure_ascii=False)
         else:
             doc.videoList_FD = docTm.videoList
 
-    if docTm.mtx:
-        doc.mtx = docTm.mtx
-        doc.fm = docTm.fm  # файлы
-        doc.href = docTm.href
-        doc.rtf = docTm.rtf
-        doc.colorStyleMap = docTm.colorStyleMap
+    # if docTm.mtx:
+    doc.mtx = docTm.mtx
+    doc.fm = docTm.fm  # файлы
+    doc.href = docTm.href
+    doc.rtf = docTm.rtf
+    doc.colorStyleMap = docTm.colorStyleMap
 
     return docTm
 
 # *** *** ***
-

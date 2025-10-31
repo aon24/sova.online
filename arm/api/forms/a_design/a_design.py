@@ -21,7 +21,7 @@ from arm.tools.dbToolkit.Book import histFromDB, snoDB
 from arm.tools.loadWell import loadLanding
 from arm.settings import BASE_DIR
 
-from arm.api.forms.formTools import style, _div, _field
+from arm.api.forms.formTools import style, _div, _field, _btnD
 from arm.api.forms.toolbars import toolbar
 from arm.api.forms.classPage import Page
 
@@ -39,7 +39,7 @@ class a_design(Page):
         self.form = 'a_design'
         s = f'/api/jsv?forms/{self.form}'
         self.jsCssUrlEdit = [f'{s}/{self.form}.js', f'{s}/turnOn.js']
-        self.jsCssUrlRead = [f'{s}/a_design_read.js', f'{s}/turnOn.js']
+        self.jsCssUrlRead = [f'{s}/a_design_read.js', f'{s}/turnOn.js', '/api/jsv?forms/arm/arm.css']
         self.dbAlias = 'draft'
         self.styles = '<link href="/static/fonts/home.css" rel="stylesheet">\n'
         # self.styles = '<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">\n'
@@ -57,15 +57,16 @@ class a_design(Page):
                 children=[
                     toolbar.info(mode),
                     _div(**style(height=hPage, overflow='auto'),
-                        children=[_field('root', 'box', **style(margin='auto', height=hPage))]),
+                         children=[_field('root', 'box', **style(margin='auto', height=hPage))]),
                 ]
             )
         elif mode == 'read':
             return _div(
                 **style(overflowY='auto', overflowX='hidden', minHeight='100%'),
                 children=[
-                    _field('root', 'box', **style(margin='auto', height='100%'))
-            ])
+                    _field('root', 'box', **style(margin='auto', height='100%')),
+                    _btnD('🛠️', 'previewArm', 'newForm=etc&title=Настройки&dbAlias=etc', className='propBtn', title='Масштаб и др. настройки')
+                ])
 
         return _div(
             className='bg52',
@@ -73,7 +74,7 @@ class a_design(Page):
             children=[
                 toolbar.design(mode),
                 _div(**style(height=hPage, overflow='auto', marginTop=50),
-                    children=[_field('root', 'box', **style(margin='auto', height=hPage))]),
+                     children=[_field('root', 'box', **style(margin='auto', height=hPage))]),
             ]
         )
 
@@ -114,6 +115,26 @@ class a_design(Page):
 
         if doc.pageName == 'login2d':
             doc.login2d_fd = getField('login2d_fd', request)
+
+        root = json.loads(doc.root)
+
+        def clearBox(parent):
+            tu = parent.get('tuning') or {}
+            tu2 = {}
+            for k, v in tu.items():
+                if v:
+                    tu2[k] = v
+            parent['tuning'] = tu2
+
+            for box in parent.get('cells') or []:
+                clearBox(box)
+            for box in parent.get('boxes') or []:
+                clearBox(box)
+
+        clearBox(root)
+        s = json.dumps(root, ensure_ascii=False)
+
+        doc.root = s
 
 # *** *** ***
 

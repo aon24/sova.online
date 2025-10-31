@@ -13,9 +13,8 @@ window.sovaActions.img = {
 			doc._first = true;
 			doc.page.forceUpdate();
 
-			let url=`/api/getData?form=${doc.form}&cmd=getFormDir`;
-			fetch(url, {method: 'get', credentials: 'include'})
-				.then( response => response.text())
+			let url=`form=${doc.form}&cmd=getFormDir`;
+			doc.util.getJson(doc, url, true)
 				.then( formDir => doc.formDir = formDir)
 				.catch( err => doc.msg.error(err.message, 'getFormDir-error:'));
 		}
@@ -122,8 +121,8 @@ window.sovaActions.img = {
 		chDir: (doc, path) => {
 			doc._path = path;
 			
-		    let url = `/api/newForm?form=img&list=${doc.getField('list')}&subDir=${path}&vl=${doc.getField('VL')}`;
-		    doc.util.jsonByUrl(doc, url)
+		    let url = `cmd=newForm&form=img&list=${doc.getField('list')}&subDir=${path}&vl=${doc.getField('VL')}`;
+		    doc.util.getJson(doc, url)
 		        .then( jsn => {
 		            doc.setDocProps(jsn);
 		            return jsn && jsn.urlForm ? doc.util.jsonByUrl(doc, jsn.urlForm) : null;
@@ -139,8 +138,8 @@ window.sovaActions.img = {
 	},
 	recalc: {
 		BTNLIST: (doc, val) => {
-			let url = `/api/newForm?form=img&list=${val}&subDir=${doc._path}&vl=${doc.getField('VL')}`;
-		    doc.util.jsonByUrl(doc, url)
+			let url = `cmd=newForm&form=img&list=${val}&subDir=${doc._path}&vl=${doc.getField('VL')}`;
+		    doc.util.getJson(doc, url)
 		        .then( jsn => {
 		            doc.setDocProps(jsn);
 		            return jsn && jsn.urlForm ? doc.util.jsonByUrl(doc, jsn.urlForm) : null;
