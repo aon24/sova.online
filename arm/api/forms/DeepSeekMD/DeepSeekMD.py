@@ -10,8 +10,6 @@ from .md_converter import md_to_xml_structure
 class DeepSeekMD(Page):
     title = 'MD File Viewer'
     form = 'deepseek_md'
-    noCaching = True
-    _PAGE_ = 1
 
     def __init__(self, request):
         # self.jsCssUrl = [f'/api/jsv?forms/{self.form}/{self.form}.js']
@@ -19,14 +17,14 @@ class DeepSeekMD(Page):
 
     def page(self, request):
         """Формирование структуры формы для отображения MD-файла"""
-        return _div(children=[
+        return self.docPage([_div(children=[
             _div(**style(padding='10px', borderBottom='1px solid #ccc', background='#f5f5f5'),
                  children=[_field('fileName', 'fd', **style(fontWeight='bold', fontSize='16px'))]
                  ),
             _div(**style(height='calc(100vh - 60px)', overflow='auto', padding='10px'),
                  children=[_field('content', 'json', **style(width='100%', minHeight='100%'))]
                  )
-        ])
+        ])])
 
     def queryOpen(self, request):
         """Загрузка и преобразование MD-файла"""
